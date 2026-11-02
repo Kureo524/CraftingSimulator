@@ -14,11 +14,11 @@ namespace Nucleaire.Game.UI
         public ResourceDef Resource;
         public int Amount;
         public Machine From;
-        /// <summary>Emplacement de barre rapide d'où vient l'objet (-1 : grille de l'inventaire ou machine).</summary>
-        public int HotbarSlot = -1;
+        /// <summary>Emplacement d'inventaire d'où vient la pile (-1 : machine).</summary>
+        public int Slot = -1;
 
-        public Payload(ResourceDef r, int amount, Machine from = null, int hotbarSlot = -1) { Resource = r; Amount = amount; From = from; HotbarSlot = hotbarSlot; }
-        public Payload With(int amount) => new(Resource, amount, From, HotbarSlot);
+        public Payload(ResourceDef r, int amount, Machine from = null, int slot = -1) { Resource = r; Amount = amount; From = from; Slot = slot; }
+        public Payload With(int amount) => new(Resource, amount, From, Slot);
     }
 
     /// <summary>Déplacement d'objets entre l'inventaire et les machines, comme dans Minecraft :
@@ -113,7 +113,7 @@ namespace Nucleaire.Game.UI
                     int n = rightDown ? One(Held.Resource) : Held.Amount;
                     int moved = target.Drop(Held.With(Mathf.Min(n, Held.Amount)));
                     Held.Amount -= moved;
-                    if (Held.Amount <= 0 || (Held.From == null && ctx.Session.Inventory.Count(Held.Resource) <= 0)) Held = null;
+                    if (Held != null && Held.Amount <= 0) Held = null;
                     leftDown = false;
                 }
                 else
@@ -167,7 +167,13 @@ namespace Nucleaire.Game.UI
                 }
             }
 
-            if (Held != null && Held.From == null) Held.Amount = Mathf.Min(Held.Amount, ctx.Session.Inventory.Count(Held.Resource));
+            if (Held != null && Held.From == null)
+            {
+                // La pile tenue reste dans son emplacement tant qu'elle n'est pas posée : on suit ce qu'il en reste.
+                var slots = ctx.Session.Inventory.Slots;
+                bool same = Held.Slot >= 0 && Held.Slot < slots.Count && slots[Held.Slot].Resource == Held.Resource;
+                Held.Amount = same ? Mathf.Min(Held.Amount, slots[Held.Slot].Amount) : 0;
+            }
             if (Held != null && Held.Amount <= 0) Held = null;
 
             var shown = dragging ? pressPayload : Held;

@@ -15,6 +15,7 @@ namespace Nucleaire
             World = new World(db, settings);
             Inventory = new PlayerInventory(settings.canisterCapacity);
             World.SharedStorage = Inventory;
+            Inventory.PrefersHotbar = r => db.PlaceableForItem(r) != null || r == db.SorterItem;
             Permissions = new PermissionGate();
             Actions = new PlayerActions(World, Inventory, Permissions);
             Workbench = new WorkbenchService(World, Inventory, Permissions);

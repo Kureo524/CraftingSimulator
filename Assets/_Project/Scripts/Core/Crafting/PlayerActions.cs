@@ -89,6 +89,17 @@ namespace Nucleaire.Crafting
             return true;
         }
 
+        /// <summary>Dépose depuis un emplacement précis de l'inventaire (la pile glissée par le joueur).</summary>
+        public int DepositFromSlot(Machine m, int slot, int amount)
+        {
+            if (!Gate.IsAllowed(PlayerPermission.Deposit) || slot < 0 || slot >= Inventory.Slots.Count) return 0;
+            var s = Inventory.Slots[slot];
+            if (s.IsEmpty) return 0;
+            int n = m.InsertManual(s.Resource, Mathf.Min(amount, s.Amount));
+            Inventory.RemoveFromSlot(slot, n);
+            return n;
+        }
+
         public int Deposit(Machine m, ResourceDef r, int amount)
         {
             if (!Gate.IsAllowed(PlayerPermission.Deposit)) return 0;

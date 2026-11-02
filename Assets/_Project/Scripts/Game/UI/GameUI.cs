@@ -132,8 +132,15 @@ namespace Nucleaire.Game.UI
                 if (!ctx.Input.Pressed(GameInput.HotbarSlot(i))) continue;
                 if (inventory.IsOpen)
                 {
-                    var r = HoveredResource();
-                    if (r != null && ctx.Hotbar.CanHold(r)) ctx.Hotbar.Assign(i, r);
+                    // Survol d'une pile + chiffre : l'échanger avec cet emplacement de la barre rapide.
+                    var panel = document.rootVisualElement?.panel;
+                    var mouse = UnityEngine.InputSystem.Mouse.current;
+                    if (panel != null && mouse != null)
+                    {
+                        var pos = mouse.position.ReadValue();
+                        int from = InventorySlotView.IndexUnder(panel.Pick(RuntimePanelUtils.ScreenToPanel(panel, new Vector2(pos.x, Screen.height - pos.y))));
+                        if (from >= 0 && from != i) ctx.Session.Inventory.Move(from, i, ctx.Session.Inventory.Slots[from].Amount);
+                    }
                 }
                 else if (!workbench.IsOpen && !Book.IsOpen) ctx.Hotbar.Select(i);
                 return;
