@@ -111,6 +111,7 @@ namespace Nucleaire.Game
         /// <summary>Aperçu de pose sur une case (null pour le cacher).</summary>
         public void SetHover(PlaceableDef def, Direction facing, Vector3Int? cell, bool valid)
         {
+            SetLevelGuide(def != null ? cell : null);
             if (def == null || cell == null)
             {
                 if (hover != null) hover.SetActive(false);
@@ -126,6 +127,59 @@ namespace Nucleaire.Game
             hover.transform.localPosition = GridMath.CellCenter(cell.Value);
             if (def is TransmitterDef td) Connect(hoverArms, td, cell.Value, null);
             Tint(hover, valid);
+        }
+
+        // ---------------- Repère d'étage ----------------
+
+        private Transform levelPlane, levelPillar, levelShadow;
+
+        /// <summary>Montre à quel étage l'objet sera posé : au sol, un cadre au pied de l'aperçu ;
+        /// en hauteur, un plan translucide à la hauteur de l'étage, une colonne et l'ombre de la case au sol.</summary>
+        private void SetLevelGuide(Vector3Int? cell)
+        {
+            ctx.PlacementCell = cell;
+            if (levelPlane == null)
+            {
+                levelPlane = Flat("Level plane", 5f, Palette.WithAlpha(Palette.Accent, 0.1f));
+                levelShadow = Flat("Level shadow", 0.96f, Palette.WithAlpha(Palette.Accent, 0.35f));
+                levelPillar = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
+                levelPillar.name = "Level pillar";
+                Destroy(levelPillar.GetComponent<Collider>());
+                levelPillar.SetParent(transform, false);
+                var r = levelPillar.GetComponent<Renderer>();
+                r.sharedMaterial = WorldView.TransparentMaterial;
+                r.shadowCastingMode = ShadowCastingMode.Off;
+                Shapes.SetColor(r, Palette.WithAlpha(Palette.Accent, 0.6f));
+            }
+            bool show = cell != null;
+            bool high = show && cell.Value.z > 0;
+            levelShadow.gameObject.SetActive(show);
+            levelPlane.gameObject.SetActive(high);
+            levelPillar.gameObject.SetActive(high);
+            if (!show) return;
+            var c = cell.Value;
+            float h = c.z * GridMath.LevelHeight;
+            // Au sol : cadre sous l'aperçu. En hauteur : ombre au sol + plan de l'étage.
+            levelShadow.localPosition = GridMath.CellCenter(new Vector3Int(c.x, c.y, 0), 0.012f);
+            if (!high) return;
+            levelPlane.localPosition = GridMath.CellCenter(c, 0.006f);
+            levelPillar.localPosition = GridMath.CellCenter(new Vector3Int(c.x, c.y, 0), h / 2f);
+            levelPillar.localScale = new Vector3(0.05f, h, 0.05f);
+        }
+
+        private Transform Flat(string name, float size, Color color)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            go.name = name;
+            Destroy(go.GetComponent<Collider>());
+            go.transform.SetParent(transform, false);
+            go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            go.transform.localScale = new Vector3(size, size, 1f);
+            var r = go.GetComponent<Renderer>();
+            r.sharedMaterial = WorldView.TransparentMaterial;
+            r.shadowCastingMode = ShadowCastingMode.Off;
+            Shapes.SetColor(r, color);
+            return go.transform;
         }
 
         // ---------------- Pose multiple ----------------

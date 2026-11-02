@@ -47,6 +47,9 @@ namespace Nucleaire.Game
         /// <summary>Ce qui est sous le curseur dans l'atelier (entité, face visée, trieur).</summary>
         public (IGridEntity entity, Direction? face, FaceSorter sorter) Hover { get; set; }
 
+        /// <summary>Case où l'objet en main sera posé (null : aucune) ; sert au repère d'étage.</summary>
+        public UnityEngine.Vector3Int? PlacementCell { get; set; }
+
         /// <summary>Face dont le trieur doit être montré à l'ouverture de la machine.</summary>
         public Direction? FocusSorterFace { get; set; }
 

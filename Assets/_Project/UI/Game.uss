@@ -389,3 +389,7 @@
 .sorter-chips { flex-wrap: wrap; margin-bottom: 8px; align-items: center; }
 .sorter-chip { margin: 0 6px 6px 0; }
 .sorter-actions { align-items: center; }
+
+/* Repère d'étage pendant la pose */
+.level-tag { position: absolute; translate: -50% -100%; padding: 2px 8px; border-radius: 8px; font-size: 10px; color: var(--text-2); background-color: rgba(14, 16, 26, 0.85); border-width: 1px; border-color: var(--border-strong); -unity-font-definition: url("Fonts/IBMPlexMono-Regular.ttf"); white-space: nowrap; }
+.level-tag--high { color: var(--text); border-color: var(--accent); background-color: rgba(40, 52, 80, 0.92); }

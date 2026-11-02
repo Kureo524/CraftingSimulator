@@ -25,6 +25,7 @@ namespace Nucleaire.Game.UI
         private readonly ViewFilterPanel viewFilter;
         private readonly CablePicker cablePicker;
         private readonly ConfigureOverlay configure;
+        private readonly LevelTag levelTag;
 
         public GameUI(GameContext ctx, UIDocument document, Camera cam, WorldView view)
         {
@@ -46,6 +47,7 @@ namespace Nucleaire.Game.UI
             cablePicker = new CablePicker(ctx, root);
             new ModePanels(ctx, root);
             configure = new ConfigureOverlay(ctx, root, cam);
+            levelTag = new LevelTag(ctx, root, cam);
             ctx.Deletion.Changed += () => { if (ctx.Deletion.Active) CloseAll(); };
             ctx.Configure.Changed += () => { if (ctx.Configure.Active) CloseAll(); };
             inventory = new InventoryPanel(ctx, root);
@@ -156,6 +158,7 @@ namespace Nucleaire.Game.UI
             viewFilter.Update();
             cablePicker.Update();
             configure.Update();
+            levelTag.Update();
             UpdateHotbarKeys();
             guide.Update();
             contextMenu.Update();

@@ -324,6 +324,20 @@ namespace Nucleaire.Game
                     ctx.Selection = null;
                     yield return new WaitForSecondsRealtime(0.5f);
                     break;
+                case "level":
+                {
+                    ctx.Session.Tutorial.Skip();
+                    ui.CloseAll();
+                    yield return null;
+                    vault = w.FirstMachine<VaultMachine>();
+                    ctx.Hotbar.Select(ctx.Hotbar.IndexOf(R("item_electric_furnace")));
+                    GetComponent<BuildController>().enabled = false;
+                    var pv = worldView.GetComponent<BuildPreview>();
+                    var furnaceDef = database.Machines.First(m => m.Id == "electric_furnace");
+                    for (int i = 0; i < 20; i++) { pv.SetHover(furnaceDef, Direction.North, vault.Position + new Vector3Int(0, 0, 1), true); yield return null; }
+                    yield return new WaitForSecondsRealtime(0.3f);
+                    break;
+                }
                 case "skip":
                     ctx.Session.Tutorial.Skip();
                     break;
