@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f984a2b7450ec389d9c2a7802ae6002b, type: 3}
+  m_Name: electric_furnace
+  m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.MachineDef
+  displayName: "Four \xE9lectrique"
+  description: Fond minerais et poudres, produit l'acier et le verre.
+  item: {fileID: 11400000, guid: d5e0a49613ba7bb239f75203eeeaa2f0, type: 2}
+  color: {r: 0.8627451, g: 0.14901961, b: 0.14901961, a: 1}
+  behaviour: 0
+  energyCapacity: 2000
+  itemCapacity: 64
+  fluidCapacity: 4000
+  upgradeSlots: 2
+  reactor:
+    fuel: {fileID: 0}
+    coolant: {fileID: 0}
+    waste: {fileID: 0}
+    heatedCoolant: {fileID: 0}
+    maxBurnRate: 10
+    coolantPerFuel: 20
+    heatedCoolantPerFuel: 20
+    wastePerFuel: 1
+    heatPerFuel: 5
+    ambientHeat: 20
+    passiveCooling: 2
+    meltdownHeat: 1000
+    restartHeat: 100
+  vent:
+    ventPerTick: 100
+    energyPerTick: 5

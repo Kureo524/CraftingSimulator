@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc6a74b91bbc604e8ad01cd3c01050c8, type: 3}
+  m_Name: objective_3_antimatter
+  m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.ObjectiveDef
+  title: "Pastille d'antimati\xE8re"
+  description: Le Graal de l'atelier.
+  target:
+    resource: {fileID: 11400000, guid: f19b9d47495ffa0abb6af8a228c9448d, type: 2}
+    amount: 1
+  order: 3
+  hint: "Le d\xE9phaseur consomme bien plus que des panneaux solaires ne peuvent
+    fournir\u2026"

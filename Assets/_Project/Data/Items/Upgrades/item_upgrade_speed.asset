@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa08eebe126afb3b4b8f60ee7cb328be, type: 3}
+  m_Name: item_upgrade_speed
+  m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.ResourceDef
+  displayName: "Am\xE9lioration de vitesse"
+  description: "+50 % de vitesse, mais \xD72 consommation d'\xE9nergie."
+  kind: 0
+  color: {r: 0.95686275, g: 0.24705882, b: 0.36862746, a: 1}
+  isBaseResource: 0

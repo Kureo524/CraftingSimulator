@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa08eebe126afb3b4b8f60ee7cb328be, type: 3}
+  m_Name: item_upgrade_heat_exchanger
+  m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.ResourceDef
+  displayName: "\xC9changeur thermique"
+  description: "R\xE9acteur : \u221230 % d'eau consomm\xE9e, mais \u221230 % de vapeur
+    produite."
+  kind: 0
+  color: {r: 0.21960784, g: 0.7411765, b: 0.972549, a: 1}
+  isBaseResource: 0

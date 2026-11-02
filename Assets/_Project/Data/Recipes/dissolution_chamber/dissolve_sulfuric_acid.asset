@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ab4c76dbc11393f2b998ec1c26db7c1, type: 3}
+  m_Name: dissolve_sulfuric_acid
+  m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.ProcessRecipe
+  displayName: 'Dissolution : acide sulfurique'
+  machine: {fileID: 11400000, guid: d4e18a2d9c88db711a0af5256e876378, type: 2}
+  inputs:
+  - resource: {fileID: 11400000, guid: caf29ec182bdd1fb3b0c9f49bb2a7a70, type: 2}
+    amount: 100
+  - resource: {fileID: 11400000, guid: baf9e81b3d74299078a59ff7c6f7f438, type: 2}
+    amount: 100
+  outputs:
+  - resource: {fileID: 11400000, guid: fe194ee29d5e80413a4d49b95ea4d5ca, type: 2}
+    amount: 100
+  durationTicks: 10
+  energyPerTick: 20

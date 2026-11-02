@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc6a74b91bbc604e8ad01cd3c01050c8, type: 3}
+  m_Name: objective_2_fuel
+  m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.ObjectiveDef
+  title: Combustible fissile
+  description: "Produis du combustible fissile \xE0 partir de l'uranium."
+  target:
+    resource: {fileID: 11400000, guid: 9686795ad21c215c5ae6f2de0504a141, type: 2}
+    amount: 1000
+  order: 2
+  hint: Remonte l'arbre depuis le combustible dans le livre de recettes. L'infuseur
+    chimique sert deux fois.

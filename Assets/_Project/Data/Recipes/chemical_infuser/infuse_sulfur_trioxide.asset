@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ab4c76dbc11393f2b998ec1c26db7c1, type: 3}
+  m_Name: infuse_sulfur_trioxide
+  m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.ProcessRecipe
+  displayName: "Synth\xE8se du trioxyde de soufre"
+  machine: {fileID: 11400000, guid: eb84f6d6afe558c35882b3e8a3a41e6b, type: 2}
+  inputs:
+  - resource: {fileID: 11400000, guid: 3ae1e34fe2fbcaaf2b66673a2ae33ae7, type: 2}
+    amount: 100
+  - resource: {fileID: 11400000, guid: c1bdde536d066930f899233be9219949, type: 2}
+    amount: 50
+  outputs:
+  - resource: {fileID: 11400000, guid: caf29ec182bdd1fb3b0c9f49bb2a7a70, type: 2}
+    amount: 100
+  durationTicks: 10
+  energyPerTick: 20

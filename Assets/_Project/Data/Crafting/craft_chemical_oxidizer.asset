@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d1b13225ed3d4e87b8ba52793ea73eb, type: 3}
+  m_Name: craft_chemical_oxidizer
+  m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.CraftingRecipe
+  ingredients:
+  - resource: {fileID: 11400000, guid: fc885915ae8c3b666932eda0d82e1b84, type: 2}
+    amount: 4
+  - resource: {fileID: 11400000, guid: 66a5c948967da3423a8be320e1ac840f, type: 2}
+    amount: 2
+  - resource: {fileID: 11400000, guid: 1c37ecbf66463ce199e3cf5a464cd092, type: 2}
+    amount: 2
+  result:
+    resource: {fileID: 11400000, guid: db0962f5ab2943ab9966276fbc374b8b, type: 2}
+    amount: 1

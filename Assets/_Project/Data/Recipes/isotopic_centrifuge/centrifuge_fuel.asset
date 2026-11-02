@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ab4c76dbc11393f2b998ec1c26db7c1, type: 3}
+  m_Name: centrifuge_fuel
+  m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.ProcessRecipe
+  displayName: 'Centrifugation : combustible'
+  machine: {fileID: 11400000, guid: 878f607773ff49e8cae84c1ebada76c3, type: 2}
+  inputs:
+  - resource: {fileID: 11400000, guid: f7c5834285cc8317fbacfeabe134ba4e, type: 2}
+    amount: 100
+  outputs:
+  - resource: {fileID: 11400000, guid: 9686795ad21c215c5ae6f2de0504a141, type: 2}
+    amount: 100
+  durationTicks: 20
+  energyPerTick: 40

@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f984a2b7450ec389d9c2a7802ae6002b, type: 3}
+  m_Name: fission_reactor
+  m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.MachineDef
+  displayName: "R\xE9acteur \xE0 fission"
+  description: "Br\xFBle du combustible fissile. Doit \xEAtre refroidi \xE0 l'eau,
+    sinon il surchauffe."
+  item: {fileID: 11400000, guid: cd87de9e96fa0ed1a91ff1d93da7e7a7, type: 2}
+  color: {r: 0.08627451, g: 0.6392157, b: 0.2901961, a: 1}
+  behaviour: 5
+  energyCapacity: 0
+  itemCapacity: 64
+  fluidCapacity: 8000
+  upgradeSlots: 2
+  reactor:
+    fuel: {fileID: 11400000, guid: 9686795ad21c215c5ae6f2de0504a141, type: 2}
+    coolant: {fileID: 11400000, guid: baf9e81b3d74299078a59ff7c6f7f438, type: 2}
+    waste: {fileID: 11400000, guid: c4a6bafc82130acb68d0612ff1b3685f, type: 2}
+    heatedCoolant: {fileID: 11400000, guid: a9e7a5436e6704287b1fb340fa6f0654, type: 2}
+    maxBurnRate: 10
+    coolantPerFuel: 10
+    heatedCoolantPerFuel: 10
+    wastePerFuel: 1
+    heatPerFuel: 6
+    ambientHeat: 20
+    passiveCooling: 3
+    meltdownHeat: 1000
+    restartHeat: 100
+  vent:
+    ventPerTick: 100
+    energyPerTick: 5

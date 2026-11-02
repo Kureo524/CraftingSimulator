@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d1b13225ed3d4e87b8ba52793ea73eb, type: 3}
+  m_Name: craft_supercritical_shifter
+  m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.CraftingRecipe
+  ingredients:
+  - resource: {fileID: 11400000, guid: fc885915ae8c3b666932eda0d82e1b84, type: 2}
+    amount: 10
+  - resource: {fileID: 11400000, guid: 1c37ecbf66463ce199e3cf5a464cd092, type: 2}
+    amount: 8
+  - resource: {fileID: 11400000, guid: 2daf24e48c0b9abe0a0df688a520cb12, type: 2}
+    amount: 2
+  - resource: {fileID: 11400000, guid: 9aac775fef56f7967b526595536365af, type: 2}
+    amount: 2
+  result:
+    resource: {fileID: 11400000, guid: 500538456ae99ff528d2cdb0ad6276ef, type: 2}
+    amount: 1
