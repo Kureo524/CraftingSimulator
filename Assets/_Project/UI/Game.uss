@@ -118,7 +118,7 @@
 .craft-actions { margin-top: 6px; }
 
 /* Journal */
-.hud-log { position: absolute; right: 12px; bottom: 120px; width: 400px; }
+.hud-log { position: absolute; right: 12px; bottom: 150px; width: 400px; }
 .log-line { margin-top: 3px; }
 .log-text { font-size: 10px; color: var(--text-2); -unity-text-align: upper-right; }
 
@@ -401,3 +401,8 @@
 .objectives__percent { color: var(--accent-text); }
 .objectives__body { margin-top: 10px; }
 .hud-objectives--folded { padding: 10px 14px; }
+
+/* Bascule Normal / Créatif (bas-droite) */
+.creative-toggle { position: absolute; right: 12px; bottom: 34px; flex-direction: row; align-items: center; padding: 4px 4px 4px 12px; border-radius: 16px; }
+.creative-toggle__label { margin-right: 8px; }
+.delete-mode .creative-toggle { display: none; }

@@ -26,6 +26,9 @@ namespace Nucleaire.Simulation
 
         /// <summary>Stockage commun à tous les vaults : c'est l'inventaire du joueur.</summary>
         public Crafting.PlayerInventory SharedStorage { get; set; }
+
+        /// <summary>Augmente à chaque pose, retrait ou déplacement : les multi-blocs se revérifient.</summary>
+        public int StructureVersion { get; private set; }
         public SimulationSettings Settings { get; }
         public LogisticsSystem Logistics { get; }
         public EventLog Events { get; } = new();
@@ -70,6 +73,11 @@ namespace Nucleaire.Simulation
                     grid[p] = m;
                     entity = m;
                     break;
+                case StructureDef sd:
+                    var block = new StructureBlock(sd, p);
+                    grid[p] = block;
+                    entity = block;
+                    break;
                 case TransmitterDef td:
                     var seg = new TransmitterSegment(td, p);
                     grid[p] = seg;
@@ -79,6 +87,7 @@ namespace Nucleaire.Simulation
                 default:
                     throw new ArgumentException($"Type de placeable inconnu : {def.GetType().Name}");
             }
+            StructureVersion++;
             EntityPlaced?.Invoke(entity);
             return entity;
         }
@@ -102,6 +111,7 @@ namespace Nucleaire.Simulation
             grid.Remove(from);
             m.Position = to;
             grid[to] = m;
+            StructureVersion++;
             EntityMoved?.Invoke(m, from);
             return true;
         }
@@ -112,6 +122,7 @@ namespace Nucleaire.Simulation
             grid.Remove(p);
             if (e is Machine m) machines.Remove(m);
             if (e is TransmitterSegment seg) Logistics.OnSegmentRemoved(seg);
+            StructureVersion++;
             EntityRemoved?.Invoke(e);
             return e;
         }
@@ -122,6 +133,7 @@ namespace Nucleaire.Simulation
         public void Step()
         {
             CurrentTick++;
+            foreach (var m in machines) if (m is IMultiblockController c) c.Structure.Refresh();
             foreach (var m in machines.ToList()) Logistics.PushOutputs(m);
             foreach (var m in machines.ToList()) foreach (var s in m.Sorters.ToList()) s.Tick();
             Logistics.Distribute();

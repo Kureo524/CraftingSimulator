@@ -41,6 +41,7 @@ namespace Nucleaire.Game.UI
             Legend(legend, "water", "Liquide : remplit la case");
             Legend(legend, "hydrogen", "Gaz : translucide, en volutes");
             keys = Ui.Text("", "system catalog__keys", panel);
+            ctx.CreativeChanged += _ => { Rebuild(); RefreshKeys(); };
             Ui.SetVisible(panel, false);
             Rebuild();
         }
@@ -64,8 +65,12 @@ namespace Nucleaire.Game.UI
             if (visible == IsVisible) return;
             Ui.SetVisible(panel, visible);
             if (!visible) search.Blur();
-            else keys.text = $"[Survole une icône : {ctx.Input.Display(GameInput.ShowRecipe)} = recette, {ctx.Input.Display(GameInput.ShowUsage)} = usages. Clic = recette.]";
+            else RefreshKeys();
         }
+
+        private void RefreshKeys() => keys.text = ctx.Creative
+            ? $"[Mode créatif : clic = prendre (Maj : une unité). {ctx.Input.Display(GameInput.ShowRecipe)} / {ctx.Input.Display(GameInput.ShowUsage)} = recette / usages.]"
+            : $"[Survole une icône : {ctx.Input.Display(GameInput.ShowRecipe)} = recette, {ctx.Input.Display(GameInput.ShowUsage)} = usages. Clic = recette.]";
 
         private int CategoryOf(ResourceDef r)
         {
@@ -83,8 +88,17 @@ namespace Nucleaire.Game.UI
                          .Where(r => q.Length == 0 || r.DisplayName.ToLowerInvariant().Contains(q))
                          .OrderBy(CategoryOf).ThenBy(r => r.Kind).ThenBy(r => r.DisplayName))
             {
-                var slot = IconSlot.Create(r, grid, classes: "rslot--catalog", extra: () => "Clic : comment l'obtenir.");
-                slot.RegisterCallback<ClickEvent>(_ => ctx.OpenRecipeBook(r, 0));
+                var slot = IconSlot.Create(r, grid, classes: "rslot--catalog", extra: () => ctx.Creative && r.Kind != ResourceKind.Energy
+                    ? (r.Kind == ResourceKind.Item ? "Créatif · clic : +64, Maj + clic : +1." : "Créatif · clic : +1 bonbonne, Maj + clic : +1 B.")
+                    : "Clic : comment l'obtenir.");
+                slot.RegisterCallback<ClickEvent>(evt =>
+                {
+                    if (!ctx.Creative || r.Kind == ResourceKind.Energy) { ctx.OpenRecipeBook(r, 0); return; }
+                    var inv = ctx.Session.Inventory;
+                    int n = r.Kind == ResourceKind.Item ? (evt.shiftKey ? 1 : 64) : (evt.shiftKey ? 1000 : inv.CanisterCapacity);
+                    inv.Add(r, n);
+                    ctx.Notify($"+{Ui.Amount(r, n).TrimStart('×')} {r.DisplayName.ToLowerInvariant()}", Nucleaire.Simulation.EventSeverity.Success);
+                });
                 n++;
             }
             count.text = n.ToString();

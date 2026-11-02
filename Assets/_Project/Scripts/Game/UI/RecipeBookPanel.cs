@@ -117,6 +117,8 @@ namespace Nucleaire.Game.UI
                     foreach (var e in ctx.Db.AllEntries.Where(e => e.Machine == machine && e.Source is RecipeSource.Process or RecipeSource.Reactor)) Card(e, r);
                     if (machine.Behaviour == MachineBehaviour.Vault) Ui.System("Fournit à l'infini toutes les ressources de base.", fiche);
                     if (machine.Behaviour == MachineBehaviour.Workbench) Ui.System("Permet de fabriquer machines, transmetteurs, composants et améliorations.", fiche);
+                    if (machine.IsMultiblockController)
+                        Ui.System("Multi-bloc : boîte creuse de 3×3×3 à 7×7×4. Coins en cadres structurels ; paroi en cadres, verre, ports et ce contrôleur ; composants à l'intérieur. " + machine.Description, fiche);
                     break;
             }
         }

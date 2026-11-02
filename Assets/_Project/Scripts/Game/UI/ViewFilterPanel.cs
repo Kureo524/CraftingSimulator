@@ -59,7 +59,7 @@ namespace Nucleaire.Game.UI
             filters.Add(("Machines", null, e => e is Machine));
             filters.Add(("Transmetteurs", null, e => e is TransmitterSegment));
             filters.Add(("Énergie : câbles et générateurs", ctx.Db.Energy, e =>
-                e is TransmitterSegment { TransmitterDef: { Carries: ResourceKind.Energy } } || e is Machine { ProducesEnergy: true } || e is BatteryMachine));
+                e is TransmitterSegment { TransmitterDef: { Carries: ResourceKind.Energy } } || e is Machine { ProducesEnergy: true }));
             filters.Add(("Liquides : tuyaux", ctx.Db.Resources.FirstOrDefault(r => r.Id == "water"), e => e is TransmitterSegment { TransmitterDef: { Carries: ResourceKind.Fluid } }));
             filters.Add(("Gaz : tubes pressurisés", ctx.Db.Resources.FirstOrDefault(r => r.Id == "hydrogen"), e => e is TransmitterSegment { TransmitterDef: { Carries: ResourceKind.Gas } }));
             filters.Add(("Objets : convoyeurs", ctx.Db.Resources.FirstOrDefault(r => r.Id == "iron_ingot"), e => e is TransmitterSegment { TransmitterDef: { Carries: ResourceKind.Item } }));

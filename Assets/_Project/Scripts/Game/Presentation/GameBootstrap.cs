@@ -338,6 +338,41 @@ namespace Nucleaire.Game
                     yield return new WaitForSecondsRealtime(0.3f);
                     break;
                 }
+                case "multiblock":
+                {
+                    ctx.Session.Tutorial.Skip();
+                    ui.CloseAll();
+                    yield return null;
+                    vault = w.FirstMachine<VaultMachine>();
+                    var o = vault.Position + new Vector3Int(-6, 2, 0);
+                    var size = new Vector3Int(5, 5, 3);
+                    var max = o + size - Vector3Int.one;
+                    StructureDef Sd(string id) => database.Structures.First(x => x.Id == id);
+                    for (int z = o.z; z <= max.z; z++)
+                    for (int y = o.y; y <= max.y; y++)
+                    for (int x = o.x; x <= max.x; x++)
+                    {
+                        var c = new Vector3Int(x, y, z);
+                        int border = (x == o.x || x == max.x ? 1 : 0) + (y == o.y || y == max.y ? 1 : 0) + (z == o.z || z == max.z ? 1 : 0);
+                        if (border == 0) { w.Place(Sd("fuel_assembly"), c); continue; }
+                        if (c == new Vector3Int(o.x + 2, o.y, 1)) { w.Place(database.Machines.First(m => m.Id == "fission_reactor"), c, Direction.South); continue; }
+                        if (c == new Vector3Int(max.x, o.y + 2, 1) || c == new Vector3Int(max.x, o.y + 1, 1)) { w.Place(database.Machines.First(m => m.Id == "multiblock_port"), c); continue; }
+                        bool glass = border == 1 && z == 1 && (y == o.y || x == o.x);
+                        w.Place(Sd(glass ? "structural_glass" : "structural_frame"), c);
+                    }
+                    w.Place(database.Machines.First(m => m.Id == "supercritical_shifter"), vault.Position + new Vector3Int(4, 2, 0), Direction.South);
+                    ctx.Creative = true;
+                    rig.SetZoomForTests(9f);
+                    rig.Focus(GridMath.CellCenter(vault.Position + new Vector3Int(-1, 4, 0)));
+                    yield return new WaitForSecondsRealtime(1f);
+                    break;
+                }
+                case "multiblock-ui":
+                    ctx.Selection = w.Machines.First(m => m.MachineDef.Id == "fission_reactor");
+                    yield return null;
+                    uiDocument.rootVisualElement.Q("inspector").Q<SegmentedControl>()?.Select(0);
+                    yield return new WaitForSecondsRealtime(0.5f);
+                    break;
                 case "skip":
                     ctx.Session.Tutorial.Skip();
                     break;

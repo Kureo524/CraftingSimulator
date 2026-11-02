@@ -15,6 +15,6 @@ MonoBehaviour:
   ticksPerSecond: 10
   gridSize: {x: 24, y: 24}
   directItemTransfer: 2
-  directFluidTransfer: 200
-  directEnergyTransfer: 2000
+  directFluidTransfer: 1000
+  directEnergyTransfer: 50000
   reactorWarningRatio: 0.7

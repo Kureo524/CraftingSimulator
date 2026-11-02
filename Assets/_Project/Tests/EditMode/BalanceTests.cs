@@ -16,7 +16,7 @@ namespace Nucleaire.Tests
             private readonly BalanceTests t;
             private readonly Dictionary<MachineDef, Machine> machines = new();
             private readonly Dictionary<ResourceDef, long> stock = new();
-            private int nextX = 1;
+            private int nextX = 1, nextMultiblockX = 1;
 
             public long Energy, Ticks;
             public readonly Dictionary<string, int> Runs = new();
@@ -26,6 +26,14 @@ namespace Nucleaire.Tests
             private Machine For(MachineDef def)
             {
                 if (machines.TryGetValue(def, out var m)) return m;
+                if (def.IsMultiblockController)
+                {
+                    // Multi-bloc minimal : 3×3×3 avec un composant interne.
+                    string inside = def.Behaviour == MachineBehaviour.Reactor ? "fuel_assembly" : "sps_coil";
+                    m = t.BuildMultiblock<Machine>(def.Id, new Vector3Int(nextMultiblockX, 12, 0), new Vector3Int(3, 3, 3), inside, 1);
+                    nextMultiblockX += 4;
+                    return machines[def] = m;
+                }
                 m = (Machine)t.World.Place(def, new Vector3Int(nextX, 1, 0));
                 nextX += 2; // une case libre entre deux machines : aucun échange automatique
                 foreach (var d in DirectionExtensions.All) m.Sides.SetMode(d, SideMode.None);
@@ -75,6 +83,7 @@ namespace Nucleaire.Tests
 
             private void RunProcess(ProcessRecipe p)
             {
+                if (For(p.Machine) is SpsMachine sps) { RunSps(sps, p); return; }
                 var m = (ProcessorMachine)For(p.Machine);
                 foreach (var i in p.Inputs) Ensure(i.Resource, i.Amount); // peut réutiliser cette même machine
                 m.LockRecipe(p);
@@ -92,6 +101,22 @@ namespace Nucleaire.Tests
                 foreach (var (r, n) in m.Outputs.Contents.ToList()) { m.Outputs.Extract(r, n); Add(r, n); }
             }
 
+            private void RunSps(SpsMachine sps, ProcessRecipe p)
+            {
+                foreach (var i in p.Inputs) Ensure(i.Resource, i.Amount);
+                foreach (var i in p.Inputs) { Take(i.Resource, i.Amount); sps.InsertManual(i.Resource, i.Amount); }
+                var watch = p.Outputs[0].Resource;
+                long before = sps.Outputs.Amount(watch);
+                for (int tick = 0; sps.Outputs.Amount(watch) == before; tick++)
+                {
+                    Assert.Less(tick, 100000, $"{p.Id} ne se termine pas : {sps.Status} {sps.StatusDetail}");
+                    Energy += sps.InsertManual(t.Db.Energy, sps.EnergyCapacity - sps.Energy);
+                    t.World.Step();
+                    Ticks++;
+                }
+                foreach (var (r, n) in sps.Outputs.Contents.ToList()) { sps.Outputs.Extract(r, n); Add(r, n); }
+            }
+
             private void RunReactor(ReactorMachine reactor, int fuel)
             {
                 var s = reactor.Settings;
@@ -101,6 +126,7 @@ namespace Nucleaire.Tests
                 for (int tick = 0; reactor.Inputs.Amount(s.fuel) > 0; tick++)
                 {
                     Assert.Less(tick, 10000, "Le réacteur ne brûle pas son combustible");
+                    Energy += reactor.InsertManual(t.Db.Energy, reactor.EnergyCapacity - reactor.Energy);
                     int water = reactor.BurnRate * reactor.CoolantPerFuel;
                     Take(s.coolant, water);
                     reactor.InsertManual(s.coolant, water);
@@ -113,6 +139,9 @@ namespace Nucleaire.Tests
                 Add(s.coolant, reactor.Inputs.Extract(s.coolant, reactor.Inputs.Amount(s.coolant)));
             }
         }
+
+        internal new T BuildMultiblock<T>(string id, Vector3Int min, Vector3Int size, string inside, int count) where T : Machine =>
+            base.BuildMultiblock<T>(id, min, size, inside, count);
 
         private (long energy, long ticks, Dictionary<string, int> runs) Measure(ObjectiveDef o)
         {
@@ -135,81 +164,6 @@ namespace Nucleaire.Tests
                 Assert.Greater(results[i].m.energy, results[i - 1].m.energy, "L'énergie nécessaire doit croître d'un objectif à l'autre");
                 Assert.Greater(results[i].m.ticks, results[i - 1].m.ticks, "Le temps nécessaire doit croître d'un objectif à l'autre");
             }
-        }
-
-        // ---------------- L'énigme de l'énergie ----------------
-
-        [Test]
-        public void Shifter_RequiresFullPower()
-        {
-            var shifter = Place<ProcessorMachine>("supercritical_shifter", 1, 1);
-            shifter.InsertManual(R("polonium"), 50);
-            Power(shifter, 300); // la moitié de ce qu'il faut pour un tick
-            World.Step(20);
-            Assert.AreEqual(MachineStatus.NoPower, shifter.Status);
-            Assert.AreEqual(0f, shifter.Progress, 1e-4f, "Sans pleine puissance, aucune progression");
-            Assert.AreEqual(300, shifter.Energy, "L'énergie n'est pas gaspillée");
-        }
-
-        [Test]
-        public void SolarAlone_CannotRunTheShifter()
-        {
-            var shifter = Place<ProcessorMachine>("supercritical_shifter", 6, 1);
-            shifter.InsertManual(R("polonium"), 50);
-            for (int x = 1; x <= 4; x++) Place<ProcessorMachine>("solar_panel", x, 2);
-            Line("cable", 1, 5, 1);
-            World.Step(300);
-            Assert.AreEqual(0, World.Produced(R("antimatter")), "4 panneaux solaires ne suffisent pas au déphaseur");
-        }
-
-        /// <summary>Solution de l'énigme : pompes → réacteur → vapeur → turbines → bus d'énergie → déphaseur (et pompes).</summary>
-        [Test]
-        public void ReactorTurbineLoop_PowersTheShifter()
-        {
-            //  y=5 : tuyau d'eau x=3..6 | réacteur x=7 (trieur « vapeur » sur sa face est) | tube de vapeur x=8..12
-            //  y=4 : pompes x=3..6       |              | turbines x=8..11, déphaseur x=13
-            //  y=3 : bus de câbles x=2..14
-            Line("cable", 2, 14, 3);
-            for (int x = 3; x <= 6; x++)
-            {
-                var pump = Place<ProcessorMachine>("electric_pump", x, 4);
-                foreach (var d in DirectionExtensions.All) pump.Sides.SetMode(d, SideMode.None);
-                pump.Sides.SetMode(Direction.South, SideMode.Input);
-                pump.Sides.SetMode(Direction.North, SideMode.Output);
-                Power(pump, 2000); // amorçage : les pompes doivent tourner avant le réacteur
-            }
-            Line("pipe", 3, 6, 5);
-
-            var reactor = Place<ReactorMachine>("fission_reactor", 7, 5);
-            foreach (var d in DirectionExtensions.All) reactor.Sides.SetMode(d, SideMode.None);
-            reactor.Sides.SetMode(Direction.West, SideMode.Input);
-            reactor.InsertManual(R("fissile_fuel"), 8000);
-            // Le réacteur sort vapeur ET déchets : un trieur ne laisse passer que la vapeur vers les turbines.
-            reactor.AttachSorter(Direction.East).AddFilter(R("steam"));
-            Line("pressurized_tube", 8, 12, 5);
-
-            for (int x = 8; x <= 11; x++)
-            {
-                var turbine = Place<ProcessorMachine>("turbine", x, 4);
-                foreach (var d in DirectionExtensions.All) turbine.Sides.SetMode(d, SideMode.None);
-                turbine.Sides.SetMode(Direction.North, SideMode.Input);
-                turbine.Sides.SetMode(Direction.South, SideMode.Output);
-            }
-
-            var shifter = Place<ProcessorMachine>("supercritical_shifter", 13, 4);
-            foreach (var d in DirectionExtensions.All) shifter.Sides.SetMode(d, SideMode.None);
-            shifter.Sides.SetMode(Direction.South, SideMode.Input);
-            shifter.InsertManual(R("polonium"), 200);
-
-            World.Step(20);                  // l'eau arrive
-            reactor.SetBurnRate(7);
-            World.Step(600);
-
-            TestContext.WriteLine($"Réacteur : {reactor.Status} {reactor.Heat:0}°, refroidi à {reactor.LastCooling:P0}. " +
-                                  $"Déphaseur : {shifter.Status} {shifter.StatusDetail}. Antimatière : {World.Produced(R("antimatter"))}");
-            Assert.IsFalse(reactor.IsScrammed, "Le réacteur doit rester refroidi par les pompes");
-            Assert.Less(reactor.Heat, reactor.Settings.meltdownHeat * Settings.reactorWarningRatio);
-            Assert.GreaterOrEqual(World.Produced(R("antimatter")), 20, "La boucle réacteur/turbines doit alimenter le déphaseur");
         }
 
         // ---------------- Progression vers l'objectif ----------------

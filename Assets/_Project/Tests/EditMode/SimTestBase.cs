@@ -38,6 +38,42 @@ namespace Nucleaire.Tests
             for (int x = x0; x <= x1; x++) World.Place(T(transmitterId), new Vector3Int(x, y, 0));
         }
 
+        protected StructureDef S(string id) => Db.Structures.First(s => s.Id == id);
+
+        /// <summary>Construit un multi-bloc : boîte creuse de cadres, contrôleur au milieu de la face sud (étage min+1),
+        /// ports aux positions données (réglage de toutes leurs faces), composants internes depuis le coin bas.</summary>
+        protected T BuildMultiblock<T>(string controllerId, Vector3Int min, Vector3Int size, string interiorId, int interiorCount,
+            params (Vector3Int pos, SideMode mode, int slot)[] ports) where T : Machine
+        {
+            var max = min + size - Vector3Int.one;
+            var ctrl = new Vector3Int(min.x + size.x / 2, min.y, min.z + 1);
+            T controller = null;
+            int placed = 0;
+            for (int z = min.z; z <= max.z; z++)
+            for (int y = min.y; y <= max.y; y++)
+            for (int x = min.x; x <= max.x; x++)
+            {
+                var c = new Vector3Int(x, y, z);
+                bool border = x == min.x || x == max.x || y == min.y || y == max.y || z == min.z || z == max.z;
+                if (!border)
+                {
+                    if (interiorId != null && placed < interiorCount) { World.Place(S(interiorId), c); placed++; }
+                    continue;
+                }
+                if (c == ctrl) { controller = (T)World.Place(M(controllerId), c, Direction.South); continue; }
+                var port = ports.FirstOrDefault(p => p.pos == c);
+                if (port.pos == c && ports.Length > 0 && ports.Any(p => p.pos == c))
+                {
+                    var pm = (Machine)World.Place(M("multiblock_port"), c);
+                    foreach (var d in DirectionExtensions.All) pm.Sides.Set(d, new SideSetting(port.mode, null, port.slot));
+                    continue;
+                }
+                World.Place(S("structural_frame"), c);
+            }
+            World.Step(); // validation
+            return controller;
+        }
+
         /// <summary>Remplit le tampon d'énergie d'une machine (sans passer par ses faces).</summary>
         protected void Power(Machine m, int amount) => m.InsertManual(Db.Energy, amount);
     }

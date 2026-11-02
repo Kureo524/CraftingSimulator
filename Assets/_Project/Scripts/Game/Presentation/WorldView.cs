@@ -96,6 +96,7 @@ namespace Nucleaire.Game
             {
                 case Machine m: go.AddComponent<MachineView>().Init(m); break;
                 case TransmitterSegment s: go.AddComponent<TransmitterView>().Init(s, world); break;
+                case StructureBlock b: go.AddComponent<StructureView>().Init(b); break;
             }
             views[e] = new View { Go = go, Renderers = go.GetComponentsInChildren<Renderer>(), Colliders = go.GetComponentsInChildren<Collider>() };
         }

@@ -12,9 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f984a2b7450ec389d9c2a7802ae6002b, type: 3}
   m_Name: fission_reactor
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.MachineDef
-  displayName: "R\xE9acteur \xE0 fission"
-  description: "Br\xFBle du combustible fissile. Doit \xEAtre refroidi \xE0 l'eau,
-    sinon il surchauffe."
+  displayName: "Réacteur à fission"
+  description: "Multi-bloc : boîte creuse de cadres, verre et ports, contrôleur dans la paroi, assemblages de combustible à l'intérieur. Plus d'assemblages = plus de combustion possible, plus d'eau et d'énergie de contrôle."
   item: {fileID: 11400000, guid: cd87de9e96fa0ed1a91ff1d93da7e7a7, type: 2}
   color: {r: 0.08627451, g: 0.6392157, b: 0.2901961, a: 1}
   behaviour: 5

@@ -12,9 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa08eebe126afb3b4b8f60ee7cb328be, type: 3}
   m_Name: item_fission_reactor
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.ResourceDef
-  displayName: "R\xE9acteur \xE0 fission"
-  description: "Br\xFBle du combustible fissile. Doit \xEAtre refroidi \xE0 l'eau,
-    sinon il surchauffe."
+  displayName: "Contrôleur de fission"
+  description: "Pilote un réacteur à fission multi-bloc : à placer dans la paroi."
   kind: 0
   color: {r: 0.08627451, g: 0.6392157, b: 0.2901961, a: 1}
   isBaseResource: 0

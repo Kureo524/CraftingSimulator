@@ -9,11 +9,17 @@ namespace Nucleaire.Data
         Vault,
         /// <summary>Obsolète : l'établi est désormais un panneau. Conservé pour la numérotation des assets.</summary>
         Workbench,
-        /// <summary>Stocke de l'énergie.</summary>
+        /// <summary>Contrôleur de matrice à induction (multi-bloc) : stocke l'énergie.</summary>
         Battery,
         /// <summary>Détruit un gaz ou un liquide en consommant de l'énergie.</summary>
         Vent,
-        /// <summary>Réacteur à fission : combustion pilotée, refroidissement à l'eau, chaleur.</summary>
+        /// <summary>Contrôleur de réacteur à fission (multi-bloc) : combustion pilotée, refroidissement à l'eau, chaleur.</summary>
         Reactor,
+        /// <summary>Contrôleur de déphaseur supercritique (multi-bloc) : polonium + énergie énorme → antimatière.</summary>
+        Sps,
+        /// <summary>Contrôleur de réacteur à fusion (multi-bloc) : allumage coûteux, puis énergie massive.</summary>
+        FusionReactor,
+        /// <summary>Port d'un multi-bloc : entrée / sortie de la structure.</summary>
+        MultiblockPort,
     }
 }

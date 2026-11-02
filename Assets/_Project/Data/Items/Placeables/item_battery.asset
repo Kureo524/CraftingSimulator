@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa08eebe126afb3b4b8f60ee7cb328be, type: 3}
   m_Name: item_battery
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.ResourceDef
-  displayName: Batterie
-  description: "Stocke l'\xE9nergie."
+  displayName: "Contrôleur d'induction"
+  description: "Pilote une matrice à induction multi-bloc : à placer dans la paroi."
   kind: 0
   color: {r: 0.7921569, g: 0.5411765, b: 0.015686275, a: 1}
   isBaseResource: 0

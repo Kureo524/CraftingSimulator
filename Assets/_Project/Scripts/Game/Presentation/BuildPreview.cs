@@ -129,6 +129,41 @@ namespace Nucleaire.Game
             Tint(hover, valid);
         }
 
+        // ---------------- Multi-blocs : blocs manquants ----------------
+
+        private readonly List<GameObject> structureGhosts = new();
+        private int structureVersion = -1;
+
+        /// <summary>Pour chaque multi-bloc incomplet, des cubes fantômes aux cases de paroi encore vides
+        /// (le gabarit 3×3×3 tant que rien n'est construit).</summary>
+        private void UpdateStructureGhosts()
+        {
+            if (structureVersion == world.StructureVersion) return;
+            structureVersion = world.StructureVersion;
+            foreach (var g in structureGhosts) Destroy(g);
+            structureGhosts.Clear();
+            foreach (var m in world.Machines)
+            {
+                if (m is not IMultiblockController c) continue;
+                c.Structure.Refresh();
+                if (c.Structure.Formed) continue;
+                foreach (var cell in c.Structure.Missing)
+                {
+                    var g = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    g.name = "Missing wall";
+                    Destroy(g.GetComponent<Collider>());
+                    g.transform.SetParent(transform, false);
+                    g.transform.localPosition = GridMath.CellCenter(cell, 0.5f);
+                    g.transform.localScale = Vector3.one * 0.86f;
+                    var r = g.GetComponent<Renderer>();
+                    r.sharedMaterial = WorldView.TransparentMaterial;
+                    r.shadowCastingMode = ShadowCastingMode.Off;
+                    Shapes.SetColor(r, Palette.WithAlpha(Palette.Lavender, 0.16f));
+                    structureGhosts.Add(g);
+                }
+            }
+        }
+
         // ---------------- Repère d'étage ----------------
 
         private Transform levelPlane, levelPillar, levelShadow;
@@ -186,6 +221,7 @@ namespace Nucleaire.Game
 
         private void LateUpdate()
         {
+            UpdateStructureGhosts();
             var def = ctx.Plan.Active ? ctx.BuildPlaceable : null;
             if (!planDirty && planKey == (def, ctx.BuildFacing)) return;
             planDirty = false;
@@ -270,6 +306,9 @@ namespace Nucleaire.Game
                 case TransmitterDef td:
                     arms = new Transform[6];
                     TransmitterView.BuildGeometry(go.transform, td, arms);
+                    break;
+                case StructureDef sd:
+                    StructureView.BuildModel(go.transform, sd);
                     break;
             }
             foreach (var r in go.GetComponentsInChildren<Renderer>())

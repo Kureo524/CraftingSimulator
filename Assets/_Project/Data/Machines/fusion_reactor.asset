@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f984a2b7450ec389d9c2a7802ae6002b, type: 3}
+  m_Name: fusion_reactor
+  m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.MachineDef
+  displayName: "Réacteur à fusion"
+  description: "Multi-bloc. Allumage très coûteux (une fission ne sera pas de trop), puis énergie massive tant qu'il reçoit du combustible D-T."
+  item: {fileID: 11400000, guid: e43190478fb04d55963e27154a2430eb, type: 2}
+  color: {r: 0.7500, g: 0.5500, b: 0.9500, a: 1}
+  behaviour: 7
+  energyCapacity: 0
+  itemCapacity: 64
+  fluidCapacity: 4000
+  upgradeSlots: 0
+  reactor:
+    fuel: {fileID: 0}
+    coolant: {fileID: 0}
+    waste: {fileID: 0}
+    heatedCoolant: {fileID: 0}
+    maxBurnRate: 10
+    coolantPerFuel: 20
+    heatedCoolantPerFuel: 20
+    wastePerFuel: 1
+    heatPerFuel: 5
+    ambientHeat: 20
+    passiveCooling: 2
+    meltdownHeat: 1000
+    restartHeat: 100
+  vent:
+    ventPerTick: 100
+    energyPerTick: 5
+  multiblock:
+    fusionFuel: {fileID: 11400000, guid: 4f7b31149d1f45b78ab8954656a1161c, type: 2}

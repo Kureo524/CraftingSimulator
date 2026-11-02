@@ -15,8 +15,8 @@ namespace Nucleaire.Data
 
         [Header("Transfert direct machine → machine voisine (par tick et par face)")]
         [Min(1)] public int directItemTransfer = 2;
-        [Min(1)] public int directFluidTransfer = 200;
-        [Min(1)] public int directEnergyTransfer = 2000;
+        [Min(1)] public int directFluidTransfer = 1000;
+        [Min(1)] public int directEnergyTransfer = 50000;
 
         [Header("Réacteur")]
         [Range(0f, 1f)] public float reactorWarningRatio = 0.7f;

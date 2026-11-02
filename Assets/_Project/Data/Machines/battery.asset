@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f984a2b7450ec389d9c2a7802ae6002b, type: 3}
   m_Name: battery
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.MachineDef
-  displayName: Batterie
-  description: "Stocke l'\xE9nergie."
+  displayName: "Matrice à induction"
+  description: "Multi-bloc de stockage d'énergie : cellules (capacité) et fournisseurs (débit) à l'intérieur. Une petite fuite grandit avec le volume."
   item: {fileID: 11400000, guid: 797a07e28771fd84bac9da047ad810fd, type: 2}
   color: {r: 0.7921569, g: 0.5411765, b: 0.015686275, a: 1}
   behaviour: 3

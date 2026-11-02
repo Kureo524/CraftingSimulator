@@ -33,7 +33,7 @@ namespace Nucleaire.Simulation
         public ResourceStorage Outputs { get; protected set; }
 
         public int Energy { get; protected set; }
-        public int EnergyCapacity => Mathf.RoundToInt(MachineDef.EnergyCapacity * CapacityMultiplier);
+        public virtual int EnergyCapacity => Mathf.RoundToInt(MachineDef.EnergyCapacity * CapacityMultiplier);
         public virtual bool ConsumesEnergy => false;
         public virtual bool ProducesEnergy => false;
 
@@ -50,7 +50,13 @@ namespace Nucleaire.Simulation
         public event Action<Machine> StatusChanged;
 
         /// <summary>Capacité par ressource, améliorations comprises.</summary>
-        protected int CapacityFor(ResourceKind kind) => Mathf.RoundToInt(MachineDef.CapacityFor(kind) * CapacityMultiplier);
+        protected virtual int CapacityFor(ResourceKind kind) => Mathf.RoundToInt(MachineDef.CapacityFor(kind) * CapacityMultiplier);
+
+        /// <summary>Énergie qu'un port peut faire sortir de ce tick (multi-blocs).</summary>
+        public virtual int ExportableEnergy => ProducesEnergy ? Energy : 0;
+
+        /// <summary>Entrée par un port de multi-bloc.</summary>
+        internal int AcceptFromPort(ResourceDef r, int amount, bool simulate) => Accept(r, amount, simulate);
 
         protected ResourceDef EnergyDef => World.Db.Energy;
 

@@ -47,6 +47,17 @@ namespace Nucleaire.Game
         /// <summary>Ce qui est sous le curseur dans l'atelier (entité, face visée, trieur).</summary>
         public (IGridEntity entity, Direction? face, FaceSorter sorter) Hover { get; set; }
 
+        private bool creative;
+
+        /// <summary>Mode créatif : le catalogue donne n'importe quel objet (pour présenter le système de craft).</summary>
+        public bool Creative
+        {
+            get => creative;
+            set { if (creative == value) return; creative = value; CreativeChanged?.Invoke(value); }
+        }
+
+        public event Action<bool> CreativeChanged;
+
         /// <summary>Case où l'objet en main sera posé (null : aucune) ; sert au repère d'étage.</summary>
         public UnityEngine.Vector3Int? PlacementCell { get; set; }
 

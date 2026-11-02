@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.CraftingRecipe
   ingredients:
   - resource: {fileID: 11400000, guid: fc885915ae8c3b666932eda0d82e1b84, type: 2}
-    amount: 10
+    amount: 4
   - resource: {fileID: 11400000, guid: 1c37ecbf66463ce199e3cf5a464cd092, type: 2}
-    amount: 8
+    amount: 4
   - resource: {fileID: 11400000, guid: 2daf24e48c0b9abe0a0df688a520cb12, type: 2}
     amount: 2
   - resource: {fileID: 11400000, guid: 9aac775fef56f7967b526595536365af, type: 2}

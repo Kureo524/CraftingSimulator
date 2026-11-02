@@ -18,6 +18,7 @@ namespace Nucleaire.Data
         [Header("Comportements spécifiques")]
         [SerializeField] private ReactorSettings reactor = new ReactorSettings();
         [SerializeField] private VentSettings vent = new VentSettings();
+        [SerializeField] private MultiblockSettings multiblock = new MultiblockSettings();
 
         public MachineBehaviour Behaviour => behaviour;
         public int EnergyCapacity => energyCapacity;
@@ -26,6 +27,8 @@ namespace Nucleaire.Data
         public int UpgradeSlots => upgradeSlots;
         public ReactorSettings Reactor => reactor;
         public VentSettings Vent => vent;
+        public MultiblockSettings Multiblock => multiblock;
+        public bool IsMultiblockController => behaviour is MachineBehaviour.Reactor or MachineBehaviour.Battery or MachineBehaviour.Sps or MachineBehaviour.FusionReactor;
 
         public int CapacityFor(ResourceKind kind) => kind switch
         {

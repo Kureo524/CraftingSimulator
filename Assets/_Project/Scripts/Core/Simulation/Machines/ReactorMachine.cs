@@ -7,11 +7,11 @@ namespace Nucleaire.Simulation
     /// <summary>Réacteur à fission. Le joueur règle la vitesse de combustion.
     /// Chaque mB brûlé exige de l'eau, qui devient de la vapeur. Sans eau (ou si la vapeur n'est pas évacuée),
     /// la chaleur monte ; au-delà du seuil : arrêt d'urgence, le combustible est perdu.</summary>
-    public sealed class ReactorMachine : Machine
+    public class ReactorMachine : Machine
     {
         private readonly ReactorSettings s;
 
-        public ReactorMachine(MachineDef def, World world, Vector3Int pos) : base(def, world, pos, SideMode.Input)
+        public ReactorMachine(MachineDef def, World world, Vector3Int pos, SideMode sides = SideMode.Input) : base(def, world, pos, sides)
         {
             s = def.Reactor;
             Inputs = new ResourceStorage(new[] { s.fuel.Kind, s.coolant.Kind }, CapacityFor, new[] { s.fuel, s.coolant });
@@ -34,7 +34,13 @@ namespace Nucleaire.Simulation
         public int HeatedCoolantPerFuel => Mathf.RoundToInt(s.heatedCoolantPerFuel * Multiplier(MachineStat.HeatedCoolant));
         public bool CanRestart => IsScrammed && Heat <= s.restartHeat;
 
-        public void SetBurnRate(int rate) => BurnRate = Math.Clamp(rate, 0, s.maxBurnRate);
+        /// <summary>Combustion maximale (mB/tick).</summary>
+        public virtual int MaxBurnRate => s.maxBurnRate;
+
+        public void SetBurnRate(int rate) => BurnRate = Math.Clamp(rate, 0, MaxBurnRate);
+
+        /// <summary>Le réacteur peut-il brûler ce tick ? (multi-bloc complet, contrôle alimenté…)</summary>
+        protected virtual bool Operational(out MachineStatus status, out string why) { status = MachineStatus.Idle; why = null; return true; }
 
         public bool Restart()
         {
@@ -59,6 +65,15 @@ namespace Nucleaire.Simulation
                     : $"Refroidissement en cours ({Heat:0}°, relance possible sous {s.restartHeat:0}°).");
                 return;
             }
+
+            if (!Operational(out var blocked, out var why))
+            {
+                Cool();
+                LastHeatDelta = Heat - before;
+                SetStatus(blocked, why);
+                return;
+            }
+            if (BurnRate > MaxBurnRate) BurnRate = MaxBurnRate;
 
             int fuel = Inputs.Amount(s.fuel);
             int wasteRoom = s.wastePerFuel > 0 ? Outputs.Space(s.waste) / s.wastePerFuel : int.MaxValue;

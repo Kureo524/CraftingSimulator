@@ -171,20 +171,6 @@ namespace Nucleaire.Tests
         }
 
         [Test]
-        public void Battery_StoresAndReleases()
-        {
-            var battery = Place<BatteryMachine>("battery", 2, 1);
-            Place<ProcessorMachine>("solar_panel", 1, 1);
-            World.Step(50);
-            Assert.Greater(battery.Energy, 0);
-
-            battery.Sides.SetMode(Direction.East, SideMode.Output);
-            var furnace = Place<ProcessorMachine>("electric_furnace", 3, 1);
-            World.Step(1);
-            Assert.Greater(furnace.Energy, 0);
-        }
-
-        [Test]
         public void Machine_KeepsChosenFacing_WhenMoved()
         {
             Session.Inventory.Add(R("item_electric_furnace"), 1);

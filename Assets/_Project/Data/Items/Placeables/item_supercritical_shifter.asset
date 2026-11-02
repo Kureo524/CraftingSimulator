@@ -12,9 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa08eebe126afb3b4b8f60ee7cb328be, type: 3}
   m_Name: item_supercritical_shifter
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.ResourceDef
-  displayName: "D\xE9phaseur supercritique"
-  description: "Transforme le polonium en antimati\xE8re. \xC9norme consommation
-    d'\xE9nergie."
+  displayName: "Contrôleur de déphaseur"
+  description: "Pilote un déphaseur supercritique multi-bloc : à placer dans la paroi."
   kind: 0
   color: {r: 0.7529412, g: 0.14901961, b: 0.827451, a: 1}
   isBaseResource: 0

@@ -12,12 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f984a2b7450ec389d9c2a7802ae6002b, type: 3}
   m_Name: supercritical_shifter
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.MachineDef
-  displayName: "D\xE9phaseur supercritique"
-  description: "Transforme le polonium en antimati\xE8re. \xC9norme consommation
-    d'\xE9nergie."
+  displayName: "Déphaseur supercritique"
+  description: "Multi-bloc : polonium + énergie énorme → antimatière. Chaque bobine supraconductrice accélère, mais il exige à chaque tick l'énergie de toutes ses bobines."
   item: {fileID: 11400000, guid: 500538456ae99ff528d2cdb0ad6276ef, type: 2}
   color: {r: 0.7529412, g: 0.14901961, b: 0.827451, a: 1}
-  behaviour: 0
+  behaviour: 6
   energyCapacity: 30000
   itemCapacity: 64
   fluidCapacity: 4000

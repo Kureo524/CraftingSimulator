@@ -14,6 +14,7 @@ namespace Nucleaire.Data
         [SerializeField] private List<ResourceDef> resources = new();
         [SerializeField] private List<MachineDef> machines = new();
         [SerializeField] private List<TransmitterDef> transmitters = new();
+        [SerializeField] private List<StructureDef> structures = new();
         [SerializeField] private List<ProcessRecipe> processes = new();
         [SerializeField] private List<CraftingRecipe> craftingRecipes = new();
         [SerializeField] private List<UpgradeDef> upgrades = new();
@@ -32,6 +33,8 @@ namespace Nucleaire.Data
         public IReadOnlyList<ResourceDef> Resources => resources;
         public IReadOnlyList<MachineDef> Machines => machines;
         public IReadOnlyList<TransmitterDef> Transmitters => transmitters;
+        /// <summary>Blocs de multi-bloc (cadres, verre, composants internes).</summary>
+        public IReadOnlyList<StructureDef> Structures => structures;
         public IReadOnlyList<ProcessRecipe> Processes => processes;
         public IReadOnlyList<CraftingRecipe> CraftingRecipes => craftingRecipes;
         public IReadOnlyList<UpgradeDef> Upgrades => upgrades;
@@ -145,7 +148,7 @@ namespace Nucleaire.Data
                 foreach (var i in e.Inputs.Where(i => i.Resource != null)) Add(using_, i.Resource, e);
             }
 
-            foreach (var p in machines.Cast<PlaceableDef>().Concat(transmitters))
+            foreach (var p in machines.Cast<PlaceableDef>().Concat(transmitters).Concat(structures))
                 if (p != null && p.Item != null && !placeableByItem.ContainsKey(p.Item)) placeableByItem[p.Item] = p;
             foreach (var u in upgrades)
                 if (u != null && u.Item != null) upgradeByItem[u.Item] = u;
@@ -159,9 +162,10 @@ namespace Nucleaire.Data
 
 #if UNITY_EDITOR
         public void EditorSetContent(List<ResourceDef> res, List<MachineDef> mach, List<TransmitterDef> trans,
-            List<ProcessRecipe> proc, List<CraftingRecipe> craft, List<UpgradeDef> upg, List<ObjectiveDef> obj)
+            List<ProcessRecipe> proc, List<CraftingRecipe> craft, List<UpgradeDef> upg, List<ObjectiveDef> obj, List<StructureDef> structs = null)
         {
             resources = res; machines = mach; transmitters = trans; processes = proc;
+            structures = structs ?? new List<StructureDef>();
             craftingRecipes = craft; upgrades = upg; objectives = obj;
             entries = null;
         }

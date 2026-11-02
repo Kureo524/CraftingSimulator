@@ -10,6 +10,9 @@ namespace Nucleaire.Simulation
     {
         public StorageSlot(ResourceKind kind) { Kind = kind; }
 
+        /// <summary>Ressource attitrée de cet emplacement (null : n'importe laquelle du bon type).</summary>
+        public ResourceDef Preferred { get; internal set; }
+
         public ResourceKind Kind { get; }
         /// <summary>Ressource contenue (null si vide).</summary>
         public ResourceDef Resource { get; internal set; }
@@ -41,6 +44,11 @@ namespace Nucleaire.Simulation
         {
             unbounded = false;
             foreach (var k in slotKinds) slots.Add(new StorageSlot(k));
+            // Autant de ressources autorisées que d'emplacements, dans le même ordre : chaque emplacement a « sa » ressource
+            // (les faces « Entrée 2 / Sortie 2 » visent ainsi toujours la même chose).
+            var list = allowed?.ToList();
+            if (list != null && list.Count == slots.Count && list.Select((r, i) => r != null && r.Kind == slots[i].Kind).All(x => x))
+                for (int i = 0; i < slots.Count; i++) slots[i].Preferred = list[i];
         }
 
         public IReadOnlyList<StorageSlot> Slots => slots;
@@ -60,6 +68,11 @@ namespace Nucleaire.Simulation
         private StorageSlot SlotOf(ResourceDef r) => slots.FirstOrDefault(s => s.Resource == r && s.Amount > 0);
         private StorageSlot EmptySlot(ResourceKind k) => slots.FirstOrDefault(s => s.Kind == k && s.IsEmpty);
 
+        private StorageSlot EmptySlotFor(ResourceDef r) =>
+            slots.FirstOrDefault(s => s.Kind == r.Kind && s.IsEmpty && s.Preferred == r)
+            ?? slots.FirstOrDefault(s => s.Kind == r.Kind && s.IsEmpty && s.Preferred == null)
+            ?? EmptySlot(r.Kind);
+
         public int Space(ResourceDef r)
         {
             if (!Accepts(r)) return 0;
@@ -73,7 +86,7 @@ namespace Nucleaire.Simulation
             if (amount <= 0) return 0;
             int n = Math.Min(amount, Space(r));
             if (n <= 0 || simulate) return Math.Max(0, n);
-            var s = SlotOf(r) ?? EmptySlot(r.Kind);
+            var s = SlotOf(r) ?? EmptySlotFor(r);
             if (s == null) { s = new StorageSlot(r.Kind); slots.Add(s); }
             s.Resource = r;
             s.Amount += n;

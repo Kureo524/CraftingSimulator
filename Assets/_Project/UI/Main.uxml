@@ -21,6 +21,7 @@
             <ui:VisualElement name="delete-panel" class="glass mode-panel mode-panel--danger hidden" />
             <ui:VisualElement name="configure-panel" class="glass mode-panel mode-panel--accent hidden" />
         </ui:VisualElement>
+        <ui:VisualElement name="creative-toggle" class="glass glass--light creative-toggle" />
         <ui:VisualElement name="view-filter" class="glass glass--light view-filter" />
         <ui:VisualElement name="context-layer" class="layer-fill" picking-mode="Ignore" />
         <ui:VisualElement name="inventory-layer" class="modal-layer modal-layer--with-catalog hidden">

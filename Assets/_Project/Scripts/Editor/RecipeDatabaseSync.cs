@@ -28,7 +28,7 @@ namespace Nucleaire.EditorTools
             if (db == null) return null;
 
             db.EditorSetContent(Load<ResourceDef>(), Load<MachineDef>(), Load<TransmitterDef>(), Load<ProcessRecipe>(),
-                Load<CraftingRecipe>(), Load<UpgradeDef>(), Load<ObjectiveDef>().OrderBy(o => o.Order).ToList());
+                Load<CraftingRecipe>(), Load<UpgradeDef>(), Load<ObjectiveDef>().OrderBy(o => o.Order).ToList(), Load<StructureDef>());
             EditorUtility.SetDirty(db);
             AssetDatabase.SaveAssetIfDirty(db);
 

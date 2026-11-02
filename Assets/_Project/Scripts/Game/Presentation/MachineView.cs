@@ -31,10 +31,11 @@ namespace Nucleaire.Game
             accentRenderer = accent.GetComponent<Renderer>();
             topY = ComputeTop();
 
+            float plateOffset = IsFullCell(m.MachineDef) ? 0.5f : 0.43f;
             foreach (var d in DirectionExtensions.Horizontal)
             {
                 var dir = GridMath.DirectionVector(d);
-                var plate = Shapes.Box(transform, dir * 0.43f + Vector3.up * 0.26f, Vector3.one, Palette.SideInput, "Side " + d);
+                var plate = Shapes.Box(transform, dir * plateOffset + Vector3.up * 0.26f, Vector3.one, Palette.SideInput, "Side " + d);
                 plate.localRotation = Quaternion.LookRotation(dir);
                 plate.localScale = new Vector3(0.34f, 0.2f, 0.04f);
                 sidePlates[(int)d] = plate;
@@ -45,7 +46,7 @@ namespace Nucleaire.Game
 
             var col = gameObject.AddComponent<BoxCollider>();
             col.center = new Vector3(0, 0.5f, 0);
-            col.size = new Vector3(0.94f, 1f, 0.94f);
+            col.size = IsFullCell(m.MachineDef) ? new Vector3(0.98f, 1f, 0.98f) : new Vector3(0.94f, 1f, 0.94f);
             gameObject.AddComponent<EntityRef>().Entity = m;
             m.Sides.Changed += RefreshSides;
             m.AttachmentsChanged += RefreshSorters;
@@ -105,6 +106,9 @@ namespace Nucleaire.Game
             if (machine != null) { machine.Sides.Changed -= RefreshSides; machine.AttachmentsChanged -= RefreshSorters; }
         }
 
+        /// <summary>Blocs de multi-bloc (contrôleurs, ports) : ils occupent toute la case, comme la paroi.</summary>
+        public static bool IsFullCell(MachineDef def) => def.IsMultiblockController || def.Behaviour == MachineBehaviour.MultiblockPort;
+
         /// <summary>Modèle 3D d'une machine (corps, plaque d'identité, avant), tourné selon son orientation.
         /// Sert aussi à l'aperçu de pose.</summary>
         public static (Transform root, Transform accent, Transform rotor) BuildModel(Transform parent, MachineDef def, Direction facing)
@@ -117,6 +121,28 @@ namespace Nucleaire.Game
             Transform accent, rotor = null;
             var transform = root;
             var body = Palette.MachineBody;
+            if (def.IsMultiblockController || def.Behaviour == MachineBehaviour.MultiblockPort)
+            {
+                // Contrôleur : bloc plein avec un écran ; port : bloc plein avec des plaques sur chaque côté.
+                Shapes.Box(transform, new Vector3(0, 0.5f, 0), new Vector3(0.96f, 0.96f, 0.96f), body, "Body");
+                if (def.Behaviour == MachineBehaviour.MultiblockPort)
+                {
+                    accent = Shapes.Box(transform, new Vector3(0, 0.985f, 0), new Vector3(0.5f, 0.03f, 0.5f), accentColor, "Top");
+                    foreach (var dd in DirectionExtensions.Horizontal)
+                    {
+                        var dv = GridMath.DirectionVector(dd);
+                        var ring = Shapes.Box(transform, dv * 0.485f + Vector3.up * 0.5f, Vector3.one, Palette.MachineBodyDark, "Port " + dd);
+                        ring.localRotation = Quaternion.LookRotation(dv);
+                        ring.localScale = new Vector3(0.56f, 0.56f, 0.03f);
+                    }
+                }
+                else
+                {
+                    Shapes.Box(transform, new Vector3(0, 0.55f, 0.485f), new Vector3(0.66f, 0.46f, 0.03f), Palette.MachineBodyDark, "Screen frame");
+                    accent = Shapes.Box(transform, new Vector3(0, 0.55f, 0.5f), new Vector3(0.56f, 0.36f, 0.02f), accentColor, "Screen");
+                }
+                return (root, accent, rotor);
+            }
             switch (def.Id)
             {
                 case "solar_panel":
@@ -130,28 +156,6 @@ namespace Nucleaire.Game
                     Shapes.Cylinder(transform, new Vector3(0, 0.38f, 0), 0.7f, 0.46f, body, "Body");
                     accent = Shapes.Cylinder(transform, new Vector3(0, 0.63f, 0), 0.5f, 0.04f, accentColor, "Accent");
                     rotor = Shapes.Box(transform, new Vector3(0, 0.68f, 0), new Vector3(0.56f, 0.03f, 0.08f), Palette.Text2, "Rotor");
-                    break;
-                case "fission_reactor":
-                    Shapes.Box(transform, new Vector3(0, 0.08f, 0), new Vector3(0.9f, 0.16f, 0.9f), Palette.MachineBodyDark, "Base");
-                    Shapes.Cylinder(transform, new Vector3(0, 0.55f, 0), 0.78f, 0.8f, body, "Vessel");
-                    accent = Shapes.Cylinder(transform, new Vector3(0, 0.97f, 0), 0.5f, 0.06f, accentColor, "Core");
-                    break;
-                case "supercritical_shifter":
-                    Shapes.Box(transform, new Vector3(0, BodyHeight / 2f, 0), new Vector3(0.86f, BodyHeight, 0.86f), body, "Body");
-                    accent = Shapes.Sphere(transform, new Vector3(0, BodyHeight + 0.18f, 0), 0.34f, accentColor, "Core");
-                    break;
-                case "battery":
-                    Shapes.Box(transform, new Vector3(0, 0.36f, 0), new Vector3(0.6f, 0.72f, 0.6f), body, "Body");
-                    accent = Shapes.Box(transform, new Vector3(0, 0.74f, 0), new Vector3(0.3f, 0.05f, 0.3f), accentColor, "Cap");
-                    break;
-                case "sorter":
-                    Shapes.Box(transform, new Vector3(0, 0.2f, -0.05f), new Vector3(0.7f, 0.4f, 0.7f), body, "Body");
-                    Shapes.Box(transform, new Vector3(0, 0.2f, 0.36f), new Vector3(0.5f, 0.28f, 0.12f), Palette.MachineBodyDark, "Nozzle");
-                    accent = Shapes.Box(transform, new Vector3(0, 0.42f, 0.05f), new Vector3(0.12f, 0.03f, 0.42f), accentColor, "Arrow");
-                    var tipL = Shapes.Box(transform, new Vector3(-0.08f, 0.42f, 0.22f), new Vector3(0.06f, 0.03f, 0.22f), accentColor, "Arrow L");
-                    tipL.localRotation = Quaternion.Euler(0, -40f, 0);
-                    var tipR = Shapes.Box(transform, new Vector3(0.08f, 0.42f, 0.22f), new Vector3(0.06f, 0.03f, 0.22f), accentColor, "Arrow R");
-                    tipR.localRotation = Quaternion.Euler(0, 40f, 0);
                     break;
                 case "vault":
                     Shapes.Box(transform, new Vector3(0, 0.36f, 0), new Vector3(0.92f, 0.72f, 0.92f), body, "Body");

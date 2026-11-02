@@ -49,7 +49,7 @@ namespace Nucleaire.Data
                 if (!ids.Add(r.Id)) report.Errors.Add($"Identifiant de ressource en double : {r.Id}.");
             }
 
-            foreach (var p in db.Machines.Cast<PlaceableDef>().Concat(db.Transmitters))
+            foreach (var p in db.Machines.Cast<PlaceableDef>().Concat(db.Transmitters).Concat(db.Structures))
             {
                 if (p == null) { report.Errors.Add("Placeable nul dans la base."); continue; }
                 if (p is MachineDef { Behaviour: MachineBehaviour.Workbench }) report.Errors.Add($"{p.Id} : l'établi n'est plus une machine posable.");
@@ -60,7 +60,7 @@ namespace Nucleaire.Data
             {
                 if (p == null) { report.Errors.Add("Procédé nul dans la base."); continue; }
                 if (p.Machine == null) report.Errors.Add($"Procédé {p.Id} sans machine.");
-                else if (p.Machine.Behaviour != MachineBehaviour.Processor)
+                else if (p.Machine.Behaviour is not (MachineBehaviour.Processor or MachineBehaviour.Sps))
                     report.Errors.Add($"Procédé {p.Id} attribué à {p.Machine.Id}, qui n'exécute pas de procédés.");
                 if (p.Outputs.Count == 0) report.Errors.Add($"Procédé {p.Id} sans sortie.");
                 CheckStacks(p.Id, p.Inputs, report, allowEnergy: false);
