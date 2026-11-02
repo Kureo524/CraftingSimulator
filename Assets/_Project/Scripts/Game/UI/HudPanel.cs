@@ -12,7 +12,8 @@ namespace Nucleaire.Game.UI
     public sealed class HudPanel
     {
         private readonly GameContext ctx;
-        private readonly VisualElement objectives, log, toasts;
+        private readonly VisualElement log, toasts;
+        private VisualElement objectives;
         private readonly Label clock, modeHint;
         private readonly List<(ObjectiveDef def, VisualElement fill, Label amount, VisualElement badge)> rows = new();
         private readonly VisualElement compassNeedle;
@@ -46,17 +47,24 @@ namespace Nucleaire.Game.UI
 
         // ---------------- Objectifs ----------------
 
-        private Label goalPercent, goalSteps;
+        private Label goalPercent, goalSteps, headerPercent, chevron;
+        private VisualElement objectivesBody;
+        private bool objectivesOpen;
         private VisualElement goalFill, goalNext;
         private int lastGoalDone = -1;
 
         private void BuildObjectives()
         {
             objectives.Clear();
-            var header = Ui.El("row", objectives);
+            // En-tête toujours visible : nom et pourcentage global. Clic : déplier / replier le détail.
+            var header = Ui.El("row objectives__header", objectives);
+            chevron = Ui.Text("", "objectives__chevron", header);
             Ui.Text("Objectif final", "title grow", header);
-            var book = Ui.Button("Livre de recettes", () => ctx.OpenRecipeBook(), "btn btn--small", header);
-            Tooltips.Register(book, "Livre de recettes (B)", "Toutes les façons d'obtenir chaque ressource, et ce qu'elle permet de fabriquer.");
+            headerPercent = Ui.Text("0 %", "number--small objectives__percent", header);
+            header.RegisterCallback<ClickEvent>(_ => SetObjectivesOpen(!objectivesOpen));
+            Tooltips.Register(header, "Objectif final", "Clic : afficher ou masquer le détail (progression, prochaines étapes, jalons).");
+            var outer = objectives;
+            objectives = objectivesBody = Ui.El("objectives__body", outer);
 
             var goal = ctx.Session.Goal;
             if (goal != null)
@@ -97,7 +105,17 @@ namespace Nucleaire.Game.UI
             var hint = Ui.El("status-window objective-hint", objectives);
             hint.name = "objective-hint";
             Ui.Text("", "system", hint);
+            objectives = outer;
+            SetObjectivesOpen(objectivesOpen);
             RefreshObjectives();
+        }
+
+        private void SetObjectivesOpen(bool open)
+        {
+            objectivesOpen = open;
+            Ui.SetVisible(objectivesBody, open);
+            objectives.EnableInClassList("hud-objectives--folded", !open);
+            chevron.text = open ? "▾" : "▸";
         }
 
         private void RefreshObjectives()
@@ -117,6 +135,7 @@ namespace Nucleaire.Game.UI
             if (goal != null)
             {
                 goalPercent.text = $"{goal.Ratio * 100f:0} %";
+                headerPercent.text = goalPercent.text;
                 goalSteps.text = $"{goal.Done} / {goal.Steps.Count} étapes de l'arbre";
                 Ui.SetGauge(goalFill, goal.Ratio, goal.Ratio >= 1f ? "success" : null);
                 if (goal.Done != lastGoalDone)

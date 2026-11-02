@@ -393,3 +393,11 @@
 /* Repère d'étage pendant la pose */
 .level-tag { position: absolute; translate: -50% -100%; padding: 2px 8px; border-radius: 8px; font-size: 10px; color: var(--text-2); background-color: rgba(14, 16, 26, 0.85); border-width: 1px; border-color: var(--border-strong); -unity-font-definition: url("Fonts/IBMPlexMono-Regular.ttf"); white-space: nowrap; }
 .level-tag--high { color: var(--text); border-color: var(--accent); background-color: rgba(40, 52, 80, 0.92); }
+
+/* Objectif final repliable */
+.objectives__header { align-items: center; margin-bottom: 0; }
+.hud-objectives > .objectives__header { margin-bottom: 0; }
+.objectives__chevron { width: 14px; color: var(--text-3); font-size: 11px; padding: 0; margin: 0 4px 0 0; }
+.objectives__percent { color: var(--accent-text); }
+.objectives__body { margin-top: 10px; }
+.hud-objectives--folded { padding: 10px 14px; }
