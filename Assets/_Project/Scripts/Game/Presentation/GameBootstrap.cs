@@ -52,6 +52,7 @@ namespace Nucleaire.Game
 
             worldView = new GameObject("World").AddComponent<WorldView>();
             worldView.Init(ctx);
+            worldView.gameObject.AddComponent<MultiblockFx>().Init(session.World);
 
             ui = new GameUI(ctx, uiDocument, rig.Camera, worldView);
             input.Suspended = () => ui.IsTyping;
