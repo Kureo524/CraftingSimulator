@@ -5,7 +5,8 @@ using UnityEngine.InputSystem;
 namespace Nucleaire.Game
 {
     /// <summary>Caméra isométrique orthographique : déplacement (raccourcis ou clic molette), zoom (molette),
-    /// rotation par quarts de tour (R par défaut).</summary>
+    /// rotation libre au défilement horizontal (deux doigts sur le pavé tactile, molette inclinable),
+    /// et R pour aller au quart de tour suivant (angles « iso » 45°, 135°…).</summary>
     public sealed class IsoCameraRig : MonoBehaviour
     {
         [SerializeField] private float pitch = 32f;
@@ -13,10 +14,11 @@ namespace Nucleaire.Game
         [SerializeField] private float minZoom = 3.5f, maxZoom = 16f;
         [SerializeField] private float panSpeed = 1.1f;   // en « tailles d'écran » par seconde
         [SerializeField] private float smoothing = 12f;
+        [Tooltip("Degrés de rotation par unité de défilement horizontal.")]
+        [SerializeField] private float freeRotateSpeed = 3f;
 
         private Vector3 target, smoothTarget;
         private float zoom = 7.5f, smoothZoom = 7.5f;
-        private int quarter;
         private float yaw = 45f, smoothYaw = 45f;
         private Vector2 bounds;
 
@@ -83,9 +85,15 @@ namespace Nucleaire.Game
                     float unitsPerPixel = 2f * zoom / Screen.height;
                     Pan(-delta * unitsPerPixel * 1.2f);
                 }
-                float scroll = mouse.scroll.ReadValue().y;
-                if (Mathf.Abs(scroll) > 0.01f && !PointerOverUI())
-                    zoom = Mathf.Clamp(zoom * (scroll > 0 ? 0.88f : 1.14f), minZoom, maxZoom);
+                var wheel = mouse.scroll.ReadValue();
+                bool overUI = PointerOverUI();
+                // Défilement horizontal : rotation libre. Vertical : zoom.
+                if (Mathf.Abs(wheel.x) > Mathf.Abs(wheel.y) && Mathf.Abs(wheel.x) > 0.01f)
+                {
+                    if (!overUI && RotationAllowed()) RotateFree(wheel.x * freeRotateSpeed);
+                }
+                else if (Mathf.Abs(wheel.y) > 0.01f && !overUI)
+                    zoom = Mathf.Clamp(zoom * (wheel.y > 0 ? 0.88f : 1.14f), minZoom, maxZoom);
             }
 
             Apply(false);
@@ -101,10 +109,21 @@ namespace Nucleaire.Game
             target.z = Mathf.Clamp(target.z, 0f, bounds.y);
         }
 
+        /// <summary>R : aller au quart de tour suivant (45°, 135°, 225°, 315°), même après une rotation libre.</summary>
         public void Rotate(int dir)
         {
-            quarter = (quarter + dir + 4) % 4;
-            yaw += dir * 90f;
+            float steps = (yaw - 45f) / 90f;
+            float next = dir > 0 ? Mathf.Floor(steps + 1e-3f) + 1f : Mathf.Ceil(steps - 1e-3f) - 1f;
+            yaw = 45f + next * 90f;
+            Rotated?.Invoke();
+        }
+
+        /// <summary>Rotation libre (défilement horizontal), suivie sans lissage pour rester sous le doigt.</summary>
+        public void RotateFree(float degrees)
+        {
+            degrees = Mathf.Clamp(degrees, -20f, 20f);
+            yaw += degrees;
+            smoothYaw += degrees;
             Rotated?.Invoke();
         }
 
