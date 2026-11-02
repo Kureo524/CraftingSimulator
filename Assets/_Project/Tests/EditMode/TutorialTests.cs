@@ -83,5 +83,28 @@ namespace Nucleaire.Tests
             }
             Assert.AreEqual(PlayerPermission.All, tutorial.Steps.Last().unlocks, "La dernière étape débloque tout");
         }
+
+        [Test]
+        public void FinishingTutorial_ResetsTheBoard()
+        {
+            var t = Session.Tutorial;
+            while (t.Active && t.Current.condition == TutorialCondition.None || t.Index < 2) t.Next();
+            var vault = World.FirstMachine<Simulation.VaultMachine>();
+            Session.Inventory.Add(R("item_solar_panel"), 1);
+            while (t.Active) t.Next();
+            Assert.IsTrue(Session.BoardWasReset);
+            Assert.AreEqual(1, World.Machines.Count, "Seul le vault reste");
+            Assert.AreEqual(0, Session.Inventory.Count(R("iron_ore")));
+            Assert.AreEqual(Db.StartingInventory.Where(x => x.IsValid && x.Resource.Id == "item_solar_panel").Sum(x => x.Amount),
+                Session.Inventory.Count(R("item_solar_panel")), "Inventaire de départ restauré");
+        }
+
+        [Test]
+        public void SkippingTutorial_AlsoResetsTheBoard()
+        {
+            Session.Tutorial.Skip();
+            Assert.IsTrue(Session.BoardWasReset);
+            Assert.AreEqual(1, World.Machines.Count);
+        }
     }
 }

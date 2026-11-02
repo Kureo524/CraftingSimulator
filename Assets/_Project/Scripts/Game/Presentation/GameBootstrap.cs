@@ -100,7 +100,8 @@ namespace Nucleaire.Game
         /// <summary>Échap : ferme ce qui est ouvert, du plus récent au plus général ; sinon ouvre les options.</summary>
         private void Cancel()
         {
-            if (ctx.ContextTarget != null) ctx.ContextTarget = null;
+            if (ui.CancelTransfer()) { }
+            else if (ctx.ContextTarget != null) ctx.ContextTarget = null;
             else if (ctx.MovingMachine != null) ctx.MovingMachine = null;
             else if (ctx.BuildItem != null) ctx.BuildItem = null;
             else if (!ui.CloseTopPanel())
@@ -150,6 +151,24 @@ namespace Nucleaire.Game
                     while (ctx.Session.Tutorial.Index < 8) ctx.Session.Tutorial.Next();
                     yield return new WaitForSecondsRealtime(1f);
                     break;
+                case "machine":
+                    ctx.Session.Tutorial.Skip();
+                    ctx.Session.Inventory.Add(R("item_electric_furnace"), 1);
+                    ctx.Session.Inventory.Add(R("iron_ore"), 24);
+                    ctx.Session.Inventory.Add(R("coal"), 12);
+                    ctx.Session.Inventory.Add(R("water"), 9500);
+                    ctx.Session.Inventory.Add(R("hydrogen"), 2500);
+                    ctx.Session.Actions.TryPlace(R("item_electric_furnace"), vault.Position + new Vector3Int(3, 0, 0), out _);
+                    ctx.Selection = w.At(vault.Position + new Vector3Int(3, 0, 0));
+                    yield return new WaitForSecondsRealtime(0.8f);
+                    break;
+                case "vault-pick":
+                    ctx.Selection = vault;
+                    yield return null;
+                    var pick = uiDocument.rootVisualElement.Q("inspector").Query(className: "rslot--vault").AtIndex(3);
+                    if (pick != null) using (var click = ClickEvent.GetPooled()) { click.target = pick; pick.SendEvent(click); }
+                    yield return new WaitForSecondsRealtime(0.5f);
+                    break;
                 case "skip":
                     ctx.Session.Tutorial.Skip();
                     break;
@@ -186,6 +205,8 @@ namespace Nucleaire.Game
                     ctx.Selection = w.Machines.OfType<ProcessorMachine>().FirstOrDefault(m => m.MachineDef.Id == "electrolyser") ?? (IGridEntity)vault;
                     break;
                 case "sides":
+                    vault.Sides.Set(Direction.North, SideMode.Output, R("iron_ore"));
+                    vault.Sides.Set(Direction.Up, SideMode.Output, null);
                     ctx.Selection = vault;
                     yield return null;
                     uiDocument.rootVisualElement.Q("inspector").Q<SegmentedControl>()?.Select(1);

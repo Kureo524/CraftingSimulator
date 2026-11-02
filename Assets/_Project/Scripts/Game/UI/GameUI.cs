@@ -21,6 +21,7 @@ namespace Nucleaire.Game.UI
         private readonly OptionsPanel options;
         private readonly CatalogPanel catalog;
         private readonly TutorialGuide guide;
+        private readonly ItemTransfer transfer;
 
         public GameUI(GameContext ctx, UIDocument document, Camera cam, WorldView view)
         {
@@ -38,6 +39,14 @@ namespace Nucleaire.Game.UI
             inspector = new InspectorPanel(ctx, root.Q("inspector"));
             contextMenu = new ContextMenuPanel(ctx, root, cam);
             inventory = new InventoryPanel(ctx, root);
+            transfer = new ItemTransfer(ctx, root);
+            // Ouvrir une machine ouvre l'écran machine + inventaire ; le fermer abandonne la sélection.
+            inventory.Closed += () => { transfer.Cancel(); ctx.Selection = null; };
+            ctx.SelectionChanged += e =>
+            {
+                if (e != null) inventory.Open();
+                else if (inventory.IsOpen) inventory.Rebuild();
+            };
             workbench = new WorkbenchPanel(ctx, root);
             options = new OptionsPanel(ctx, root);
             Book = new RecipeBookPanel(ctx, root);
@@ -51,7 +60,19 @@ namespace Nucleaire.Game.UI
 
         /// <summary>Un panneau utilise lui-même certaines touches (R / U sur une icône, inventaire, livre, options).</summary>
         public bool CapturesKeys => inventory.IsOpen || Book.IsOpen || options.IsOpen || ctx.Input.IsRebinding || HoveredResource() != null;
-        public bool IsTyping => catalog.IsTyping;
+        public bool IsTyping
+        {
+            get
+            {
+                var focused = document.rootVisualElement?.panel?.focusController?.focusedElement as VisualElement;
+                for (var e = focused; e != null; e = e.parent)
+                    if (e.ClassListContains("unity-base-text-field")) return true;
+                return false;
+            }
+        }
+
+        /// <summary>Annule l'objet en main ou le glisser en cours. Renvoie vrai s'il y en avait un.</summary>
+        public bool CancelTransfer() => transfer.Cancel();
 
         /// <summary>Ressource dont l'icône est sous le curseur (n'importe quel panneau), ou null.</summary>
         public ResourceDef HoveredResource()
@@ -101,7 +122,9 @@ namespace Nucleaire.Game.UI
             hud.Update(cameraYaw, cutaway);
             inspector.Update();
             overlay.Update();
+            tutorial.Compact = inventory.IsOpen || workbench.IsOpen || Book.IsOpen || options.IsOpen;
             tutorial.Update();
+            transfer.Update();
             guide.Update();
             contextMenu.Update();
             catalog.SetVisible(inventory.IsOpen || Book.IsOpen);

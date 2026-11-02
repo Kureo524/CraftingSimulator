@@ -268,3 +268,33 @@
 .options__row { min-height: 30px; padding: 2px 4px; }
 .options__key { min-width: 150px; }
 .options__actions { margin-top: 4px; }
+
+/* ---------- Écran machine + inventaire ---------- */
+.inventory-column { height: 100%; justify-content: center; align-items: center; padding: 14px 0; }
+.machine-panel { width: 570px; flex-shrink: 1; min-height: 160px; max-height: 64%; padding: 12px; margin-bottom: 10px; border-radius: 24px; background-color: rgba(22, 22, 30, 0.9); }
+.machine-panel .inspector__scroll { flex-grow: 1; flex-shrink: 1; min-height: 60px; }
+.inventory { flex-shrink: 0; }
+.inventory-layer--machine .inventory__filter { display: none; }
+.inventory-layer--machine .inventory .sheet-title { font-size: 13px; }
+.inspector__drop-hint { margin-top: 4px; }
+.rslot--canister .ricon { left: 4px; top: 3px; right: 4px; bottom: 3px; }
+.drag-ghost { position: absolute; width: 44px; height: 44px; opacity: 0.92; }
+.craft-card--focus { border-color: var(--accent); background-color: var(--accent-soft); }
+
+/* Vault : quantité à prendre */
+.rslot--picked { border-color: var(--accent); background-color: var(--accent-soft); }
+.vault-picker { margin-top: 8px; padding: 10px 12px; border-radius: 14px; border-width: 1px; border-color: rgba(138, 168, 224, 0.28); border-top-color: rgba(138, 168, 224, 0.45); border-left-color: rgba(138, 168, 224, 0.45); background-color: rgba(16, 20, 32, 0.55); }
+.vault-picker__head { align-items: center; margin-bottom: 8px; }
+.vault-picker__icon { position: relative; left: 0; top: 0; width: 32px; height: 32px; margin-right: 10px; }
+.vault-picker__row { align-items: center; flex-wrap: wrap; }
+.vault-picker__btn { margin-right: 4px; min-width: 44px; }
+.vault-picker__field { width: 70px; margin: 0 4px 0 6px; }
+
+/* Faces : les cases s'adaptent à leur contenu (le bouton ne rétrécit plus) */
+.sides-cell { height: auto; min-height: 104px; width: 140px; }
+.sides-cell > * { flex-shrink: 0; }
+.sides-cell .side-mode { min-height: 24px; }
+
+/* Tutoriel au-dessus des panneaux */
+#tutorial-layer .quest { position: absolute; left: 12px; top: 12px; width: 320px; }
+.quest--compact .quest__body, .quest--compact .rail, .quest--compact .quest__foot { display: none; }

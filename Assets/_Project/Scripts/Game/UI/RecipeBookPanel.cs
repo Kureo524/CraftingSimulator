@@ -150,6 +150,13 @@ namespace Nucleaire.Game.UI
             }
             Ui.Text(machineName, "bold", machineChip);
             Ui.El("spacer", head);
+            if (e.Source == RecipeSource.Workbench && e.Outputs.Count > 0)
+            {
+                var result = e.Outputs[0].Resource;
+                var go = Ui.Button("Fabriquer à l'établi", () => { Close(); ctx.OpenWorkbench(result); }, "btn btn--primary btn--small", head);
+                go.name = "book-craft-" + result.Id;
+                Tooltips.Register(go, "Fabriquer à l'établi", "Ouvre l'établi directement sur cette recette.");
+            }
             if (e.Source == RecipeSource.Process)
             {
                 float seconds = e.DurationTicks / (float)ctx.World.Settings.ticksPerSecond;

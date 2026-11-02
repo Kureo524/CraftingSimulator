@@ -5,12 +5,10 @@
         <ui:VisualElement name="overlay" class="world-overlay" picking-mode="Ignore" />
         <ui:VisualElement name="top-left" class="hud-top-left" picking-mode="Ignore">
             <ui:VisualElement name="objectives" class="glass glass--light hud-objectives" />
-            <ui:VisualElement name="tutorial" class="glass quest" />
         </ui:VisualElement>
         <ui:VisualElement name="top-right" class="hud-top-right" picking-mode="Ignore" />
         <ui:Label name="cutaway-hint" class="system cutaway-hint hidden" picking-mode="Ignore" />
         <ui:VisualElement name="toasts" class="toasts" picking-mode="Ignore" />
-        <ui:VisualElement name="inspector" class="glass glass--light hud-inspector hidden" />
         <ui:VisualElement name="log" class="hud-log" picking-mode="Ignore" />
         <ui:VisualElement name="bottom" class="hud-bottom" picking-mode="Ignore">
             <ui:Label name="mode-hint" class="system mode-hint hidden" picking-mode="Ignore" />
@@ -18,7 +16,10 @@
         </ui:VisualElement>
         <ui:VisualElement name="context-layer" class="layer-fill" picking-mode="Ignore" />
         <ui:VisualElement name="inventory-layer" class="modal-layer modal-layer--with-catalog hidden">
-            <ui:VisualElement name="inventory" class="glass glass--light inventory" />
+            <ui:VisualElement name="inventory-column" class="inventory-column">
+                <ui:VisualElement name="inspector" class="glass glass--light machine-panel hidden" />
+                <ui:VisualElement name="inventory" class="glass glass--light inventory" />
+            </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="workbench-layer" class="modal-layer hidden">
             <ui:VisualElement name="workbench" class="glass glass--light workbench" />
@@ -27,6 +28,9 @@
             <ui:VisualElement name="book" class="book" />
         </ui:VisualElement>
         <ui:VisualElement name="catalog" class="glass glass--light catalog hidden" />
+        <ui:VisualElement name="tutorial-layer" class="layer-fill" picking-mode="Ignore">
+            <ui:VisualElement name="tutorial" class="glass quest hidden" />
+        </ui:VisualElement>
         <ui:VisualElement name="scenario-layer" class="modal-layer scenario-layer hidden">
             <ui:VisualElement name="scenario" class="glass scenario" />
         </ui:VisualElement>
@@ -34,6 +38,7 @@
             <ui:VisualElement name="options" class="glass glass--light options" />
         </ui:VisualElement>
         <ui:VisualElement name="tutorial-guide" class="layer-fill" picking-mode="Ignore" />
+        <ui:VisualElement name="drag-layer" class="layer-fill" picking-mode="Ignore" />
         <ui:VisualElement name="tooltip-layer" class="tooltip-layer" picking-mode="Ignore" />
     </ui:VisualElement>
 </ui:UXML>

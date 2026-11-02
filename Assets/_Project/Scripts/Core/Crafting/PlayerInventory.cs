@@ -5,10 +5,23 @@ using Nucleaire.Data;
 
 namespace Nucleaire.Crafting
 {
-    /// <summary>Inventaire du joueur : uniquement des solides (les fluides restent dans les machines et tuyaux).</summary>
+    /// <summary>Inventaire du joueur : solides (à l'unité), liquides et gaz (en mB, rangés en bonbonnes).
+    /// L'énergie ne se transporte pas.</summary>
     public sealed class PlayerInventory
     {
         private readonly Dictionary<ResourceDef, int> items = new();
+
+        public PlayerInventory(int canisterCapacity = 4000) => CanisterCapacity = Math.Max(1, canisterCapacity);
+
+        /// <summary>Contenance d'une bonbonne (liquide ou gaz), en mB.</summary>
+        public int CanisterCapacity { get; }
+
+        /// <summary>Contenu des bonbonnes d'un fluide : des bonbonnes pleines, puis une partiellement remplie.</summary>
+        public IEnumerable<int> Canisters(ResourceDef r)
+        {
+            int left = Count(r);
+            while (left > 0) { int n = Math.Min(left, CanisterCapacity); yield return n; left -= n; }
+        }
 
         public event Action Changed;
 
@@ -18,7 +31,13 @@ namespace Nucleaire.Crafting
         public bool HasAll(IEnumerable<ResourceStack> stacks) =>
             stacks.Where(s => s.IsValid).GroupBy(s => s.Resource).All(g => Count(g.Key) >= g.Sum(s => s.Amount));
 
-        public static bool CanHold(ResourceDef r) => r != null && r.Kind == ResourceKind.Item;
+        public static bool CanHold(ResourceDef r) => r != null && r.Kind != ResourceKind.Energy;
+
+        public void Clear()
+        {
+            items.Clear();
+            Changed?.Invoke();
+        }
 
         public int Add(ResourceDef r, int amount)
         {

@@ -32,10 +32,15 @@ namespace Nucleaire.Game.UI
             ctx.SelectionChanged += Show;
             ctx.Session.Inventory.Changed += () => { if (current != null && CurrentTab is "État" or "Améliorations") RebuildTab(); };
             ctx.World.EntityMoved += (e, _) => { if (e == current) Show(current); };
+            // Ce qu'on lâche n'importe où sur le panneau de la machine y est déposé.
+            ItemTransfer.RegisterTarget(root, p => MachineDrop.Accepts(current as Machine, p),
+                p => { int n = MachineDrop.Deposit(ctx, (Machine)current, p); if (n > 0) RebuildTabIfUpgrades(); return n; });
             Show(null);
         }
 
         public bool IsOpen => current != null;
+
+        private void RebuildTabIfUpgrades() { if (CurrentTab == "Améliorations") RebuildTab(); }
 
         // ---------------- Structure ----------------
 
@@ -212,12 +217,15 @@ namespace Nucleaire.Game.UI
                     {
                         if (!ctx.Require(PlayerPermission.Take)) return;
                         ctx.Session.Actions.Take(m, r, int.MaxValue);
-                    }));
+                    }, from: m));
                 else
                     updaters.Add(SlotWidgets.Tank(parent, s, () => storage.Capacity(s.Resource ?? FirstOfKind(s.Kind)), r =>
                     {
                         if (ctx.Require(PlayerPermission.Take)) ctx.Session.Actions.Dump(m, r);
-                    }));
+                    }, r =>
+                    {
+                        if (ctx.Require(PlayerPermission.Take)) ctx.Session.Actions.Take(m, r, int.MaxValue);
+                    }, m));
             }
         }
 
@@ -238,31 +246,9 @@ namespace Nucleaire.Game.UI
 
         private void DepositSection(Machine m)
         {
-            if (m.Inputs == null || !m.Inputs.Slots.Any(s => s.Kind == ResourceKind.Item)) return;
-            var sec = Ui.Section("Déposer depuis l'inventaire", content);
-            var accepted = ctx.Session.Inventory.Items.Where(kv => m.Inputs.Accepts(kv.Key)).ToList();
-            if (accepted.Count == 0)
-            {
-                Ui.System("Aucun objet de ton inventaire n'entre dans cette machine.", sec);
-                return;
-            }
-            foreach (var (r, count) in accepted)
-            {
-                var row = Ui.El("list-row", sec);
-                Ui.Swatch(Palette.Muted(r.Color), row);
-                Ui.Text(r.DisplayName, "grow", row);
-                Ui.Text($"×{count}", "meta", row).style.marginRight = 6;
-                foreach (var (label, n) in new[] { ("+1", 1), ("+10", 10), ("Tout", int.MaxValue) })
-                {
-                    var b = Ui.Button(label, () =>
-                    {
-                        if (!ctx.Require(PlayerPermission.Deposit)) return;
-                        if (ctx.Session.Actions.Deposit(m, r, n) == 0)
-                            ctx.Notify($"{m.MachineDef.DisplayName} : pas d'emplacement libre pour {r.DisplayName.ToLowerInvariant()}.");
-                    }, "btn btn--small", row);
-                    b.style.marginLeft = 4;
-                }
-            }
+            if (m.Inputs == null || m.Inputs.Slots.Count == 0) return;
+            var help = Ui.El("status-window inspector__drop-hint", content);
+            Ui.Text("[Dépose les ingrédients depuis l'inventaire juste en dessous : glisse-les sur la machine. Les liquides et gaz s'y versent depuis leurs bonbonnes.]", "system", help);
         }
 
         // ---------------- Réacteur ----------------
@@ -464,24 +450,79 @@ namespace Nucleaire.Game.UI
 
         // ---------------- Vault ----------------
 
+        private ResourceDef vaultPick;
+
         private void BuildVault(VaultMachine v)
         {
             var info = Ui.El("status-window", content);
             info.style.marginBottom = 12;
-            Ui.Text("[Ressources de base illimitées. Pour automatiser, ouvre l'onglet Faces : mets une face en sortie et choisis la ressource.]", "system", info);
+            Ui.Text("[Ressources de base illimitées. Clique une ressource puis choisis la quantité. Pour automatiser, ouvre l'onglet Faces : mets une face en sortie et choisis la ressource.]", "system", info);
 
             var sec = Ui.Section("Prendre", content);
             var grid = Ui.El("islot-grid", sec);
+            var picker = Ui.El("vault-picker", sec);
+            if (vaultPick != null && !v.BaseResources.Contains(vaultPick)) vaultPick = null;
             foreach (var r in v.BaseResources)
             {
-                var box = IconSlot.Create(r, grid, "∞", "rslot--vault", () => "Clic : +10 dans l'inventaire. Maj + clic : +64.");
-                box.RegisterCallback<ClickEvent>(evt =>
+                var box = IconSlot.Create(r, grid, "∞", "rslot--vault", () => "Clic : choisir la quantité à prendre.");
+                box.EnableInClassList("rslot--picked", r == vaultPick);
+                box.RegisterCallback<ClickEvent>(_ =>
                 {
-                    if (!ctx.Require(PlayerPermission.VaultTake)) return;
-                    int n = evt.shiftKey ? 64 : 10;
-                    ctx.Session.Actions.TakeFromVault(v, r, n);
+                    vaultPick = r;
+                    foreach (var other in grid.Children()) other.RemoveFromClassList("rslot--picked");
+                    box.AddToClassList("rslot--picked");
+                    BuildPicker(v, picker);
                 });
             }
+            BuildPicker(v, picker);
+        }
+
+        /// <summary>Quantités à prendre dans le vault pour la ressource choisie : ×1, ×10, ×100 ou un nombre libre.
+        /// Les liquides et gaz se comptent en seaux (1 B = 1000 mB).</summary>
+        private void BuildPicker(VaultMachine v, VisualElement picker)
+        {
+            picker.Clear();
+            var r = vaultPick;
+            if (r == null)
+            {
+                Ui.Text("[Choisis une ressource ci-dessus.]", "system", picker);
+                return;
+            }
+            bool fluid = r.Kind != ResourceKind.Item;
+            int unit = fluid ? 1000 : 1;
+            var head = Ui.El("row vault-picker__head", picker);
+            var icon = new ResourceIcon(r) { Canister = fluid };
+            icon.AddToClassList("vault-picker__icon");
+            head.Add(icon);
+            var titles = Ui.El("col grow", head);
+            Ui.Text(r.DisplayName, "bold", titles);
+            var have = Ui.Text("", "meta", titles);
+            void Refresh() => have.text = $"Dans l'inventaire : {Ui.Amount(r, ctx.Session.Inventory.Count(r))}";
+            Refresh();
+
+            void Take(int n)
+            {
+                if (n <= 0 || !ctx.Require(PlayerPermission.VaultTake)) return;
+                int got = ctx.Session.Actions.TakeFromVault(v, r, n * unit);
+                if (got > 0) ctx.Notify($"+{Ui.Amount(r, got).TrimStart('×')} {r.DisplayName.ToLowerInvariant()}", EventSeverity.Success);
+                Refresh();
+            }
+
+            var row = Ui.El("row vault-picker__row", picker);
+            foreach (var n in new[] { 1, 10, 100 })
+            {
+                var b = Ui.Button(fluid ? $"{n} B" : $"×{n}", () => Take(n), "btn btn--small vault-picker__btn", row);
+                Tooltips.Register(b, "Prendre", fluid ? $"{n * unit} mB, rangés en bonbonnes de {ctx.Session.Inventory.CanisterCapacity} mB." : $"{n} {r.DisplayName.ToLowerInvariant()}.");
+            }
+            var custom = new IntegerField { value = 64 };
+            custom.AddToClassList("vault-picker__field");
+            row.Add(custom);
+            Ui.Text(fluid ? "B" : "", "meta", row).style.marginRight = 6;
+            Ui.Button("Prendre", () => Take(custom.value), "btn btn--primary btn--small", row);
+            custom.RegisterCallback<KeyDownEvent>(evt =>
+            {
+                if (evt.keyCode is KeyCode.Return or KeyCode.KeypadEnter) Take(custom.value);
+            });
         }
 
         // ---------------- Réseau ----------------

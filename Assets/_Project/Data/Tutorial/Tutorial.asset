@@ -37,7 +37,7 @@ MonoBehaviour:
     unlocks: 1
   - title: Le vault
     objective: "Prendre du minerai de fer"
-    body: "Clique sur le vault (le grand bloc gris) pour ouvrir son panneau, survole les ic\xF4nes pour lire leur nom, puis clique sur le minerai de fer (roche grise piquet\xE9e de brun) pour en prendre (Maj + clic : 64). Prends aussi du charbon. Ses ressources de base sont illimit\xE9es."
+    body: "Clique sur le vault (le grand bloc gris) pour ouvrir son panneau, survole les ic\xF4nes pour lire leur nom, puis clique sur le minerai de fer (roche grise piquet\xE9e de brun) et choisis une quantit\xE9 (\xD710, \xD7100\u2026). Prends aussi du charbon. Ses ressources de base sont illimit\xE9es."
     condition: 2
     resource: {fileID: 11400000, guid: c7d4b147f2e7249c5838218055a46da9, type: 2}
     machine: {fileID: 0}
@@ -61,7 +61,7 @@ MonoBehaviour:
     unlocks: 4608
   - title: "Premi\xE8re fonte"
     objective: "Fondre un lingot de fer"
-    body: "S\xE9lectionne le four : d\xE9pose ton minerai de fer dans ses emplacements. Le four fond tout seul ce qu'on lui donne, comme dans Minecraft. Quand le lingot appara\xEEt en sortie, clique dessus pour le r\xE9cup\xE9rer. Le panneau indique toujours pourquoi une machine est bloqu\xE9e."
+    body: "Ouvre le four : ton inventaire s'affiche dessous. Glisse le minerai de fer sur le four (ou clique-le, puis clique le four). Le four fond tout seul ce qu'on lui donne, comme dans Minecraft. Quand le lingot appara\xEEt en sortie, clique dessus pour le r\xE9cup\xE9rer. Le panneau indique toujours pourquoi une machine est bloqu\xE9e."
     condition: 5
     resource: {fileID: 11400000, guid: d0acb630fec9ae07ba389a482eac3de3, type: 2}
     machine: {fileID: 0}
@@ -97,7 +97,7 @@ MonoBehaviour:
     unlocks: 256
   - title: "\xC0 toi de jouer"
     objective: 
-    body: "Tout est d\xE9bloqu\xE9. Le panneau \xAB Objectif final \xBB montre ta progression
+    body: "Fin de l'entra\xEEnement : l'atelier va \xEAtre remis \xE0 z\xE9ro et tu repars de rien, pour de bon. Tout est d\xE9bloqu\xE9. Le panneau \xAB Objectif final \xBB montre ta progression
       vers l'antimati\xE8re et les prochaines \xE9tapes possibles. Premier jalon : 4
       lingots d'acier (fer + charbon au four), puis le combustible fissile. Astuce
       : fais tourner les pompes avant d'allumer le r\xE9acteur."

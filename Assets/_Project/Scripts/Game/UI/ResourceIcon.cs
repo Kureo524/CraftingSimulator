@@ -25,6 +25,23 @@ namespace Nucleaire.Game.UI
             Resource = r;
         }
 
+        /// <summary>Affiche la ressource dans un contenant (bonbonne de gaz, jerrican de liquide) rempli à <see cref="Level"/>.</summary>
+        public bool Canister
+        {
+            get => canister;
+            set { if (canister == value) return; canister = value; MarkDirtyRepaint(); }
+        }
+
+        /// <summary>Remplissage du contenant, de 0 à 1.</summary>
+        public float Level
+        {
+            get => level;
+            set { value = Mathf.Clamp01(value); if (Mathf.Approximately(level, value)) return; level = value; MarkDirtyRepaint(); }
+        }
+
+        private bool canister;
+        private float level = 1f;
+
         public ResourceDef Resource
         {
             get => resource;
@@ -72,6 +89,8 @@ namespace Nucleaire.Game.UI
             p.lineCap = LineCap.Round;
             var c = Palette.Muted(resource.Color, 0.15f);
 
+            if (canister && resource.Kind == ResourceKind.Gas) { GasBottle(p, c); return; }
+            if (canister && resource.Kind == ResourceKind.Fluid) { Jerrycan(p, c); return; }
             switch (resource.Kind)
             {
                 case ResourceKind.Fluid: Fluid(p, c); return;
@@ -186,6 +205,66 @@ namespace Nucleaire.Game.UI
             Circle(p, 0.26f, 0.3f, 0.06f, A(Color.white, 0.12f), bubble, S(0.03f));
             Circle(p, 0.74f, 0.24f, 0.045f, A(Color.white, 0.12f), bubble, S(0.03f));
             Circle(p, 0.78f, 0.74f, 0.035f, A(Color.white, 0.12f), bubble, S(0.03f));
+        }
+
+        // --- Contenants de l'inventaire ---
+        private static readonly Color Metal = new(0.55f, 0.57f, 0.64f);
+
+        /// <summary>Remplit le bas d'un rectangle arrondi jusqu'au niveau donné.</summary>
+        private void FillBottom(Painter2D p, float x0, float y0, float x1, float y1, float r, float lvl, Color color)
+        {
+            if (lvl <= 0.001f) return;
+            if (lvl >= 0.985f) { RoundRect(p, x0, y0, x1, y1, r, color); return; }
+            float yl = Mathf.Min(y1 - (y1 - y0) * lvl, y1 - r * 0.6f);
+            p.BeginPath();
+            p.MoveTo(P(x0, yl));
+            p.LineTo(P(x1, yl));
+            p.LineTo(P(x1, y1 - r));
+            p.ArcTo(P(x1, y1), P(x1 - r, y1), S(r));
+            p.LineTo(P(x0 + r, y1));
+            p.ArcTo(P(x0, y1), P(x0, y1 - r), S(r));
+            p.ClosePath();
+            p.fillColor = color;
+            p.Fill();
+        }
+
+        /// <summary>Bonbonne de gaz : corps arrondi en verre, col et robinet ; intérieur translucide à bulles.</summary>
+        private void GasBottle(Painter2D p, Color c)
+        {
+            const float x0 = 0.27f, y0 = 0.25f, x1 = 0.73f, y1 = 0.93f, r = 0.17f;
+            RoundRect(p, 0.43f, 0.15f, 0.57f, 0.27f, 0.02f, Shade(Metal, 0.8f), Outline, S(0.03f));
+            RoundRect(p, 0.34f, 0.07f, 0.66f, 0.15f, 0.03f, Metal, Outline, S(0.03f));
+            RoundRect(p, x0, y0, x1, y1, r, new Color(0.08f, 0.09f, 0.13f, 0.85f));
+            float lvl = level;
+            FillBottom(p, x0 + 0.03f, y0 + 0.03f, x1 - 0.03f, y1 - 0.03f, r - 0.03f, lvl, A(Light(c, 0.15f), 0.6f));
+            if (lvl > 0.08f)
+            {
+                float top = y1 - 0.03f - (y1 - y0 - 0.06f) * lvl;
+                var bubble = A(Color.white, 0.7f);
+                if (lvl > 0.35f) Circle(p, 0.42f, Mathf.Max(top + 0.12f, 0.5f), 0.04f, A(Color.white, 0.1f), bubble, S(0.025f));
+                Circle(p, 0.58f, 0.78f, 0.05f, A(Color.white, 0.1f), bubble, S(0.025f));
+                Circle(p, 0.46f, 0.86f, 0.03f, A(Color.white, 0.1f), bubble, S(0.025f));
+            }
+            RoundRect(p, x0, y0, x1, y1, r, new Color(0, 0, 0, 0), A(Light(c, 0.5f), 0.9f), S(0.045f));
+            Line(p, A(Color.white, 0.45f), S(0.035f), 0.35f, 0.38f, 0.35f, 0.62f);
+        }
+
+        /// <summary>Jerrican de liquide : corps rectangulaire, poignée et bec ; intérieur opaque avec une surface.</summary>
+        private void Jerrycan(Painter2D p, Color c)
+        {
+            const float x0 = 0.18f, y0 = 0.27f, x1 = 0.82f, y1 = 0.92f, r = 0.08f;
+            RoundRect(p, 0.26f, 0.12f, 0.54f, 0.3f, 0.06f, new Color(0, 0, 0, 0), Metal, S(0.06f));
+            RoundRect(p, 0.62f, 0.12f, 0.76f, 0.28f, 0.02f, Shade(Metal, 0.85f), Outline, S(0.03f));
+            RoundRect(p, x0, y0, x1, y1, r, new Color(0.08f, 0.09f, 0.13f, 0.9f));
+            float lvl = level;
+            FillBottom(p, x0 + 0.03f, y0 + 0.03f, x1 - 0.03f, y1 - 0.03f, r - 0.02f, lvl, Shade(c, 0.9f));
+            if (lvl > 0.04f && lvl < 0.985f)
+            {
+                float yl = y1 - 0.03f - (y1 - y0 - 0.06f) * lvl;
+                Line(p, A(Light(c, 0.55f), 0.8f), S(0.035f), x0 + 0.05f, yl + 0.01f, x1 - 0.05f, yl + 0.01f);
+            }
+            RoundRect(p, x0, y0, x1, y1, r, new Color(0, 0, 0, 0), Metal, S(0.05f));
+            Line(p, A(Metal, 0.7f), S(0.03f), x0 + 0.06f, y0 + 0.08f, x1 - 0.06f, y1 - 0.08f);
         }
 
         // --- Énergie : éclair ---

@@ -13,7 +13,7 @@ namespace Nucleaire.Game.UI
         private static Texture2D bubbles;
 
         /// <summary>Case d'objet. Clic : action (prendre). Renvoie la fonction de mise à jour.</summary>
-        public static Action ItemSlot(VisualElement parent, StorageSlot slot, Func<int> capacity, Action<ResourceDef> onClick, string caption = null)
+        public static Action ItemSlot(VisualElement parent, StorageSlot slot, Func<int> capacity, Action<ResourceDef> onClick, string caption = null, Machine from = null)
         {
             var root = Ui.El("islot-wrap", parent);
             var box = Ui.El("islot", root);
@@ -22,7 +22,9 @@ namespace Nucleaire.Game.UI
             var count = Ui.Text("", "rslot__count", box);
             count.pickingMode = PickingMode.Ignore;
             if (caption != null) Ui.Text(caption, "meta islot__caption", root);
-            box.RegisterCallback<ClickEvent>(_ => { if (!slot.IsEmpty) onClick?.Invoke(slot.Resource); });
+            // Clic : récupérer ; glisser vers l'inventaire : idem.
+            ItemTransfer.RegisterSource(box, () => slot.IsEmpty ? null : new Payload(slot.Resource, slot.Amount, from),
+                _ => { if (!slot.IsEmpty) onClick?.Invoke(slot.Resource); return true; });
             IconSlot.Bind(box, () => slot.IsEmpty ? null : slot.Resource, () => $"×{slot.Amount} / {capacity()} · clic : récupérer",
                 ("Emplacement d'objet vide", "Dépose un objet depuis l'inventaire (liste plus bas), ou relie une face d'entrée."));
             return () =>
@@ -35,7 +37,7 @@ namespace Nucleaire.Game.UI
         }
 
         /// <summary>Cuve (liquide) ou réservoir (gaz). Bouton « Vider » pour se débarrasser d'un contenu indésirable.</summary>
-        public static Action Tank(VisualElement parent, StorageSlot slot, Func<int> capacity, Action<ResourceDef> onDump)
+        public static Action Tank(VisualElement parent, StorageSlot slot, Func<int> capacity, Action<ResourceDef> onDump, Action<ResourceDef> onTake = null, Machine from = null)
         {
             bool gas = slot.Kind == ResourceKind.Gas;
             var root = Ui.El("tank-wrap", parent);
@@ -51,7 +53,9 @@ namespace Nucleaire.Game.UI
             Ui.Text(gas ? "gaz" : "liquide", "meta tank__kind", root);
             var dump = Ui.Button("Vider", () => { if (!slot.IsEmpty) onDump?.Invoke(slot.Resource); }, "btn btn--ghost btn--small tank__dump", root);
             Tooltips.Register(dump, "Vider", "Rejette tout le contenu de ce réservoir (il est perdu). Utile pour débloquer une machine.");
-            IconSlot.Bind(tank, () => slot.IsEmpty ? null : slot.Resource, () => $"{slot.Amount} / {capacity()} mB",
+            ItemTransfer.RegisterSource(tank, () => slot.IsEmpty ? null : new Payload(slot.Resource, slot.Amount, from),
+                _ => { if (!slot.IsEmpty) onTake?.Invoke(slot.Resource); return true; });
+            IconSlot.Bind(tank, () => slot.IsEmpty ? null : slot.Resource, () => $"{slot.Amount} / {capacity()} mB · clic : remplir des bonbonnes",
                 (gas ? "Réservoir de gaz vide" : "Cuve de liquide vide", "Se remplit par une face d'entrée reliée à un tube (gaz) ou un tuyau (liquide)."));
             return () =>
             {

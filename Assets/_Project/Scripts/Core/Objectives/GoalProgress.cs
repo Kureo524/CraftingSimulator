@@ -51,6 +51,13 @@ namespace Nucleaire.Objectives
 
         private bool IsSatisfied(ResourceDef r) => r.IsBaseResource || r == db.Energy || obtained.Contains(r) || !steps.Contains(r);
 
+        /// <summary>Oublie tout ce qui a été obtenu (nouvelle partie).</summary>
+        public void Reset()
+        {
+            obtained.Clear();
+            Changed?.Invoke();
+        }
+
         private void Mark(ResourceDef r)
         {
             if (r == null || !obtained.Add(r)) return;

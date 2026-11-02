@@ -10,6 +10,8 @@ namespace Nucleaire.Data
         public Vector2Int gridSize = new(24, 24);
         [Tooltip("Nombre d'étages constructibles.")]
         [Min(1)] public int levels = 4;
+        [Tooltip("Contenance d'une bonbonne de l'inventaire (liquide ou gaz), en mB.")]
+        [Min(100)] public int canisterCapacity = 4000;
 
         [Header("Transfert direct machine → machine voisine (par tick et par face)")]
         [Min(1)] public int directItemTransfer = 2;

@@ -26,7 +26,7 @@ namespace Nucleaire.Game.UI
             var inv = Ui.Button("Inventaire", ctx.OpenInventory, "btn btn--small", top);
             inv.name = "hotbar-inventory";
             Tooltips.Register(inv, () => ("Inventaire", $"Touche {ctx.Input.Display(GameInput.Inventory)}. Avec le catalogue de tout le jeu."));
-            var wb = Ui.Button("Établi", ctx.OpenWorkbench, "btn btn--small", top);
+            var wb = Ui.Button("Établi", () => ctx.OpenWorkbench(), "btn btn--small", top);
             wb.name = "hotbar-workbench";
             wb.style.marginLeft = 4;
             Tooltips.Register(wb, () => ("Établi", $"Touche {ctx.Input.Display(GameInput.Workbench)}. Fabrique machines, tuyaux et améliorations."));
@@ -73,8 +73,9 @@ namespace Nucleaire.Game.UI
                 var slot = Ui.El("slot", scroll);
                 slot.EnableInClassList("slot--active", ctx.BuildItem == r);
                 slot.EnableInClassList("slot--placeable", placeable != null);
-                slot.Add(new ResourceIcon(r));
-                Ui.Text(count.ToString(), "rslot__count", slot).pickingMode = PickingMode.Ignore;
+                bool fluid = r.Kind is ResourceKind.Fluid or ResourceKind.Gas;
+                slot.Add(new ResourceIcon(r) { Canister = fluid, Level = fluid ? (float)count / ctx.Session.Inventory.CanisterCapacity : 1f });
+                Ui.Text(fluid ? $"{count / 1000f:0.#}B" : count.ToString(), "rslot__count", slot).pickingMode = PickingMode.Ignore;
 
                 slot.RegisterCallback<ClickEvent>(_ =>
                 {

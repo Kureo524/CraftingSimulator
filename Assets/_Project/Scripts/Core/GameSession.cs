@@ -13,25 +13,49 @@ namespace Nucleaire
         public GameSession(RecipeDatabase db, SimulationSettings settings, TutorialDef tutorial = null)
         {
             World = new World(db, settings);
-            Inventory = new PlayerInventory();
+            Inventory = new PlayerInventory(settings.canisterCapacity);
             Permissions = new PermissionGate();
             Actions = new PlayerActions(World, Inventory, Permissions);
             Workbench = new WorkbenchService(World, Inventory, Permissions);
             Objectives = new ObjectiveTracker(World);
 
-            // Machines de départ posées côte à côte au centre de l'atelier (déplaçables ensuite).
-            var center = (Vector3Int)(settings.gridSize / 2);
-            var placed = db.PrePlacedMachines.Where(m => m != null).ToList();
-            for (int i = 0; i < placed.Count; i++)
-                World.Place(placed[i], center + new Vector3Int(i * 2 - placed.Count + 1, -2, 0));
-
-            foreach (var s in db.StartingInventory.Where(s => s.IsValid)) Inventory.Add(s.Resource, s.Amount);
+            SetupBoard();
 
             var finalGoal = Objectives.Objectives.LastOrDefault()?.Target.Resource;
             if (finalGoal != null) Goal = new GoalProgress(World, Inventory, finalGoal);
             Tutorial = new TutorialTracker(this, tutorial);
+            // Le tutoriel se joue sur un plateau d'essai : à sa fin (ou s'il est passé), on repart de zéro pour de bon.
+            Tutorial.Advanced += () => { if (Tutorial.Finished && !BoardWasReset) ResetBoard(); };
             World.Log(EventSeverity.Info, "Bienvenue dans l'atelier. Ouvre le livre de recettes pour voir comment fabriquer l'antimatière.");
         }
+
+        /// <summary>Machines de départ posées au centre de l'atelier, et inventaire de départ.</summary>
+        private void SetupBoard()
+        {
+            var db = World.Db;
+            var center = (Vector3Int)(World.Settings.gridSize / 2);
+            var placed = db.PrePlacedMachines.Where(m => m != null).ToList();
+            for (int i = 0; i < placed.Count; i++)
+                World.Place(placed[i], center + new Vector3Int(i * 2 - placed.Count + 1, -2, 0));
+            foreach (var s in db.StartingInventory.Where(s => s.IsValid)) Inventory.Add(s.Resource, s.Amount);
+        }
+
+        /// <summary>Vide l'atelier, l'inventaire et les statistiques, puis remet le plateau de départ.</summary>
+        public void ResetBoard()
+        {
+            BoardWasReset = true;
+            World.Clear();
+            World.ResetProduction();
+            Inventory.Clear();
+            Objectives.Reset();
+            SetupBoard();
+            Goal?.Reset();
+            World.Log(EventSeverity.Info, "Nouvelle partie : l'atelier est vide, à toi de jouer jusqu'à l'antimatière.");
+            BoardReset?.Invoke();
+        }
+
+        public bool BoardWasReset { get; private set; }
+        public event System.Action BoardReset;
 
         public World World { get; }
         public PlayerInventory Inventory { get; }

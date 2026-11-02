@@ -23,6 +23,7 @@ namespace Nucleaire.Game.UI
         private readonly WorldView view;
 
         private bool hasTarget, targetIsRect;
+        private VisualElement lastIcon;
         private Rect targetRect;
         private Vector2 targetPoint, anchor;
 
@@ -83,7 +84,14 @@ namespace Nucleaire.Game.UI
                     break;
 
                 case TutorialCondition.HaveItem:
-                    if (ctx.Selection is VaultMachine && PointIcon("inspector", s.resource)) break;
+                    if (ctx.Selection is VaultMachine && PointIcon("inspector", s.resource))
+                    {
+                        // Ressource choisie : montrer le bouton de quantité.
+                        if (lastIcon != null && lastIcon.ClassListContains("rslot--picked"))
+                            PointUi(root.Q("inspector").Q(className: "vault-picker__btn"));
+                        break;
+                    }
+                    if (ctx.Selection is VaultMachine) { PointTab("Ressources"); break; }
                     PointMachine(vault);
                     break;
 
@@ -114,7 +122,10 @@ namespace Nucleaire.Game.UI
                     bool atWorkbench = ctx.Db.RecipesProducing(s.resource).Any(e => e.Source == RecipeSource.Workbench);
                     if (atWorkbench)
                     {
-                        if (PointIcon("workbench", s.resource)) break;
+                        var craft = root.Q("craft-" + s.resource.Id);
+                        if (craft != null && IsShown(craft)) { PointUi(craft); break; }
+                        var fromBook = root.Q("book-craft-" + s.resource.Id);
+                        if (fromBook != null && IsShown(fromBook)) { PointUi(fromBook); break; }
                         PointUi(root.Q("hotbar-workbench"));
                         break;
                     }
@@ -124,7 +135,7 @@ namespace Nucleaire.Game.UI
                         // Panneau ouvert : la sortie si elle est prête, sinon l'ingrédient à déposer.
                         if (PointIcon("inspector", s.resource)) break;
                         var input = maker.Recipes.Where(r => r.Outputs.Any(o => o.Resource == s.resource)).SelectMany(r => r.Inputs).Select(i => i.Resource).Distinct();
-                        foreach (var r in input) if (PointIcon("inspector", r)) return;
+                        foreach (var r in input) if (PointIcon("inventory", r)) return;
                         break;
                     }
                     PointMachine(maker);
@@ -134,8 +145,7 @@ namespace Nucleaire.Game.UI
                 case TutorialCondition.VaultOutputFiltered:
                     if (ctx.Selection == vault)
                     {
-                        var tab = root.Q("inspector")?.Query<Button>(className: "segmented__item").Where(b => b.text == "Faces").First();
-                        if (tab != null && !tab.ClassListContains("segmented__item--active")) PointUi(tab);
+                        PointTab("Faces");
                         break;
                     }
                     PointMachine(vault);
@@ -146,6 +156,16 @@ namespace Nucleaire.Game.UI
                     break;
             }
         }
+
+        private void PointTab(string label)
+        {
+            var tab = root.Q("inspector")?.Query<Button>(className: "segmented__item").Where(b => b.text == label).First();
+            if (tab != null && !tab.ClassListContains("segmented__item--active")) PointUi(tab);
+        }
+
+        /// <summary>Un panneau plein écran couvre le monde : inutile d'y montrer une machine.</summary>
+        private bool ModalOpen() => new[] { "inventory-layer", "workbench-layer", "book-layer", "options-layer" }
+            .Any(n => root.Q(n) is { } l && !l.ClassListContains("hidden"));
 
         private void PointUi(VisualElement e)
         {
@@ -162,13 +182,14 @@ namespace Nucleaire.Game.UI
             if (c == null || !IsShown(c)) return false;
             var e = c.Query<VisualElement>().Where(x => x.userData is Func<ResourceDef> f && f() == r && IsShown(x)).First();
             if (e == null) return false;
+            lastIcon = e;
             PointUi(e);
             return hasTarget;
         }
 
         private void PointMachine(Machine m)
         {
-            if (m == null || !view.IsVisible(m)) return;
+            if (m == null || !view.IsVisible(m) || ModalOpen()) return;
             var p3 = GridMath.CellCenter(m.Position, 0.55f);
             if (cam.WorldToViewportPoint(p3).z <= 0) return;
             hasTarget = true;

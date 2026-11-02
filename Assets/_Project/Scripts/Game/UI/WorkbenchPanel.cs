@@ -13,7 +13,9 @@ namespace Nucleaire.Game.UI
         private readonly VisualElement layer, panel, list;
         private readonly SegmentedControl filter;
         private readonly Toggle craftableOnly;
+        private readonly ScrollView scroll;
         private int category;
+        private ResourceDef focus;
 
         public WorkbenchPanel(GameContext ctx, VisualElement root)
         {
@@ -35,7 +37,7 @@ namespace Nucleaire.Game.UI
             craftableOnly.AddToClassList("workbench__toggle");
             craftableOnly.RegisterValueChangedCallback(_ => Rebuild());
             bar.Add(craftableOnly);
-            var scroll = new ScrollView(ScrollViewMode.Vertical);
+            scroll = new ScrollView(ScrollViewMode.Vertical);
             scroll.AddToClassList("grow");
             panel.Add(scroll);
             list = scroll.contentContainer;
@@ -47,7 +49,28 @@ namespace Nucleaire.Game.UI
         }
 
         public bool IsOpen => !layer.ClassListContains("hidden");
-        public void Open() { Ui.SetVisible(layer, true); Rebuild(); }
+        public void Open() => Open(null);
+
+        /// <summary>Ouvre l'établi ; avec une ressource, montre et met en avant sa recette.</summary>
+        public void Open(ResourceDef r)
+        {
+            Ui.SetVisible(layer, true);
+            focus = r;
+            var recipe = r == null ? null : ctx.Session.Workbench.Recipes.FirstOrDefault(c => c.Result.Resource == r);
+            if (recipe != null)
+            {
+                craftableOnly.SetValueWithoutNotify(false);
+                category = CategoryOf(recipe);
+                filter.Select(category, notify: false);
+            }
+            Rebuild();
+            if (recipe != null)
+            {
+                var card = list.Q("card-" + r.Id);
+                if (card != null) scroll.schedule.Execute(() => scroll.ScrollTo(card)).StartingIn(50);
+                layer.schedule.Execute(() => { focus = null; list.Q("card-" + r.Id)?.RemoveFromClassList("craft-card--focus"); }).StartingIn(2500);
+            }
+        }
         public void Close() => Ui.SetVisible(layer, false);
         public void Toggle() { if (IsOpen) Close(); else ctx.OpenWorkbench(); }
 
@@ -74,6 +97,8 @@ namespace Nucleaire.Game.UI
             {
                 bool can = wb.CanCraft(c, out var reason);
                 var card = Ui.El("glass card craft-card", list);
+                card.name = "card-" + c.Result.Resource.Id;
+                card.EnableInClassList("craft-card--focus", focus == c.Result.Resource);
                 card.EnableInClassList("craft-card--disabled", !can);
                 var head = Ui.El("row", card);
                 IconSlot.Create(c.Result.Resource, head, c.Result.Amount > 1 ? c.Result.Amount.ToString() : null, "rslot--small");
@@ -96,6 +121,7 @@ namespace Nucleaire.Game.UI
                 var actions = Ui.El("row craft-actions", card);
                 Ui.El("spacer", actions);
                 var one = Ui.Button("Fabriquer", () => { if (wb.Craft(c) == 0 && !wb.CanCraft(c, out var r)) ctx.Notify(r); }, can ? "btn btn--primary btn--small" : "btn btn--small", actions);
+                one.name = "craft-" + c.Result.Resource.Id;
                 one.SetEnabled(can);
                 var five = Ui.Button("×5", () => wb.Craft(c, 5), "btn btn--small", actions);
                 five.style.marginLeft = 4;

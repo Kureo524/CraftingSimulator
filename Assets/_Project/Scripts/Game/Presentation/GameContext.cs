@@ -16,6 +16,12 @@ namespace Nucleaire.Game
             Session = session;
             Runner = runner;
             Input = input;
+            session.World.EntityRemoved += e =>
+            {
+                if (selection == e) Selection = null;
+                if (contextTarget == e) ContextTarget = null;
+            };
+            session.BoardReset += () => { Selection = null; ContextTarget = null; BuildItem = null; MovingMachine = null; };
         }
 
         public GameInput Input { get; }
@@ -42,10 +48,11 @@ namespace Nucleaire.Game
 
         public event Action<IGridEntity> ContextTargetChanged;
         public event Action<Machine> MovingChanged;
-        public event Action WorkbenchRequested;
+        /// <summary>Ouverture de l'établi, éventuellement sur la recette d'une ressource.</summary>
+        public event Action<ResourceDef> WorkbenchRequested;
         public event Action InventoryRequested;
 
-        public void OpenWorkbench() { if (Require(PlayerPermission.Craft)) WorkbenchRequested?.Invoke(); }
+        public void OpenWorkbench(ResourceDef focus = null) { if (Require(PlayerPermission.Craft)) WorkbenchRequested?.Invoke(focus); }
         public void OpenInventory() => InventoryRequested?.Invoke();
 
         public GameSession Session { get; }

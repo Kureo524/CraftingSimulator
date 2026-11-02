@@ -29,6 +29,12 @@ namespace Nucleaire.Objectives
         public long? CompletedAt(ObjectiveDef o) => completedAtTick.TryGetValue(o, out var t) ? t : null;
         public ObjectiveDef Current => Objectives.FirstOrDefault(o => !IsCompleted(o));
 
+        public void Reset()
+        {
+            completed.Clear();
+            completedAtTick.Clear();
+        }
+
         private void Check()
         {
             foreach (var o in Objectives)

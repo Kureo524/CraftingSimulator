@@ -130,6 +130,15 @@ namespace Nucleaire.Simulation
 
         // ---------------- Statistiques & journal ----------------
 
+        /// <summary>Retire toutes les entités de l'atelier.</summary>
+        public void Clear()
+        {
+            foreach (var p in grid.Keys.ToList()) Remove(p);
+        }
+
+        /// <summary>Remet à zéro les statistiques de production.</summary>
+        public void ResetProduction() => produced.Clear();
+
         public long Produced(ResourceDef r) => r != null && produced.TryGetValue(r, out var n) ? n : 0;
 
         public void RecordProduction(ResourceDef r, int amount)

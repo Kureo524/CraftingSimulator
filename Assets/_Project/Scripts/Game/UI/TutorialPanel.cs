@@ -42,6 +42,12 @@ namespace Nucleaire.Game.UI
             Rebuild();
         }
 
+        /// <summary>Un panneau est ouvert : la carte se réduit à son titre et sa consigne.</summary>
+        public bool Compact
+        {
+            set => card.EnableInClassList("quest--compact", value);
+        }
+
         /// <summary>Carte de quête visible (le guide s'y accroche).</summary>
         public VisualElement QuestCard => tracker.Active && !IsAnnouncement && !collapsed ? card : null;
         public bool Celebrating => celebrateUntil > 0f;
@@ -152,7 +158,7 @@ namespace Nucleaire.Game.UI
                 if (confirmSkip) tracker.Skip();
                 else { confirmSkip = true; Rebuild(); }
             }, confirmSkip ? "btn btn--danger btn--small" : "btn btn--ghost btn--small", parent);
-            Tooltips.Register(skip, "Passer le tutoriel", "Débloque immédiatement toutes les actions et affiche l'objectif final.");
+            Tooltips.Register(skip, "Passer le tutoriel", "Débloque toutes les actions, remet l'atelier à zéro et affiche l'objectif final.");
         }
 
         /// <summary>Progression en constellation : une étoile par étape, reliées par un trait fin.</summary>
