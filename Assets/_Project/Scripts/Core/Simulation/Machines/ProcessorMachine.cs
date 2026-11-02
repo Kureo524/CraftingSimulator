@@ -67,7 +67,11 @@ namespace Nucleaire.Simulation
             }
 
             if (blocked != null) SetStatus(MachineStatus.OutputFull, $"Sortie pleine pour « {blocked.DisplayName} » : vide ou évacue les produits.");
-            else SetStatus(LockedRecipe == null && Inputs.IsEmpty ? MachineStatus.Idle : MachineStatus.MissingInput, DescribeMissing(candidates));
+            else if (LockedRecipe == null && Inputs.IsEmpty)
+                SetStatus(MachineStatus.Idle, recipes.Any(r => r.Inputs.Count > 0)
+                    ? "Aucun ingrédient : dépose-en depuis l'inventaire ou relie une face d'entrée."
+                    : "");
+            else SetStatus(MachineStatus.MissingInput, DescribeMissing(candidates));
             return false;
         }
 

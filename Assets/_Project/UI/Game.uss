@@ -1,0 +1,110 @@
+/* Mise en page du HUD de l'atelier (les composants sont dans Theme.uss). */
+
+.hud-root { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.world-overlay, .tooltip-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+
+/* Objectifs */
+.hud-top-left { position: absolute; left: 12px; top: 12px; width: 320px; }
+.hud-objectives { padding: 14px 16px; }
+.hud-objectives > .row { margin-bottom: 8px; }
+.objective { padding: 8px 10px; margin-bottom: 4px; border-radius: 12px; transition-property: background-color; transition-duration: 0.12s; }
+.objective:hover { background-color: var(--hover); }
+.objective .gauge { margin: 6px 0 2px 0; }
+.objective-hint { margin-top: 6px; }
+
+/* Contrôles */
+.hud-top-right { position: absolute; right: 12px; top: 12px; flex-direction: row; align-items: center; }
+.hud-top-right > * { margin-left: 8px; }
+.clock { height: 34px; padding: 0 12px; justify-content: center; border-radius: 14px; }
+.compass { width: 38px; height: 38px; border-radius: 19px; align-items: center; justify-content: center; }
+.compass__needle { width: 36px; height: 36px; align-items: center; }
+.compass__label { color: var(--lavender); -unity-font-definition: url("Fonts/GothicA1-Bold.ttf"); font-size: 11px; margin-top: 2px; -unity-text-align: middle-center; }
+.compass__tick { width: 2px; height: 7px; border-radius: 1px; background-color: var(--lavender); margin-top: 1px; }
+
+/* Messages */
+.toasts { position: absolute; top: 60px; left: 30%; right: 30%; align-items: center; }
+.toast { max-width: 520px; }
+
+/* Inspecteur */
+.hud-inspector { position: absolute; right: 12px; top: 58px; bottom: 132px; width: 400px; padding: 12px; }
+.inspector__header { padding: 12px 14px; margin-bottom: 10px; border-radius: 18px; }
+.inspector__desc { margin-top: 8px; }
+.inspector__actions { margin-top: 10px; }
+.inspector__actions > .btn { margin-left: 6px; }
+.inspector__tabs { margin-bottom: 10px; align-self: flex-start; }
+.inspector__subtabs { margin-bottom: 10px; align-self: flex-start; }
+.inspector__scroll { flex-grow: 1; }
+.inspector__field { margin-top: 8px; }
+.inspector__slider { margin: 6px 0; }
+.gauge--inline { margin: 3px 0 0 0; height: 3px; }
+
+.recipe-line { margin-bottom: 8px; }
+.recipe-flow { flex-wrap: wrap; margin-top: 4px; }
+.arrow { margin: 0 6px 0 2px; font-size: 14px; }
+
+/* Faces */
+.sides-cross { margin-bottom: 12px; }
+.sides-row { justify-content: center; align-items: center; margin-bottom: 6px; }
+.sides-cell { width: 118px; height: 104px; margin: 0 3px; padding: 6px; border-radius: 14px; align-items: center; justify-content: center; }
+.sides-cell--empty { border-width: 0; background-color: rgba(0, 0, 0, 0); }
+.sides-center { justify-content: center; }
+.sides-cell .side-mode { width: 100%; margin: 4px 0; }
+.side-mode--input { border-color: var(--accent); background-color: var(--accent-soft); }
+.side-mode--output { border-color: var(--lavender); background-color: var(--lavender-soft); }
+.side-mode--none { color: var(--text-3); }
+.side-filter { width: 100%; }
+.side-filter .unity-base-popup-field__input { padding: 2px 6px; font-size: 11px; }
+.side-filter .unity-base-popup-field__text { overflow: hidden; text-overflow: ellipsis; }
+.side-neighbour { -unity-text-align: middle-center; white-space: normal; }
+.side-warning { color: var(--warning); }
+
+/* Établi */
+.craft-card { padding: 10px 12px; }
+.craft-card--disabled { opacity: 0.75; }
+.craft-actions { margin-top: 6px; }
+
+/* Journal */
+.hud-log { position: absolute; left: 12px; bottom: 132px; width: 420px; }
+.log-line { margin-top: 3px; }
+.log-text { font-size: 10px; color: var(--text-2); }
+
+/* Barre d'inventaire */
+.hud-bottom { position: absolute; left: 12px; right: 12px; bottom: 12px; align-items: center; }
+.mode-hint { margin-bottom: 8px; padding: 4px 12px; border-radius: 12px; background-color: rgba(16, 20, 32, 0.75); }
+.hotbar { flex-direction: column; padding: 8px 10px; max-width: 100%; border-radius: 22px; }
+.hotbar__filter { align-self: center; margin-bottom: 6px; }
+.hotbar__scroll { max-width: 1100px; height: 74px; }
+.hotbar__scroll .unity-scroll-view__content-container { flex-direction: row; }
+.hotbar__empty { margin: 20px; }
+.slot {
+    width: 74px; height: 66px; margin: 0 3px; padding: 6px;
+    border-radius: 12px; border-width: 1px;
+    border-color: var(--border); border-top-color: var(--rim); border-left-color: var(--rim);
+    background-color: var(--surface-raised);
+    transition-property: border-color, background-color, translate; transition-duration: 0.15s;
+}
+.slot:hover { border-color: var(--border-strong); background-color: rgba(232, 238, 250, 0.11); }
+.slot--placeable:hover { translate: 0 -2px; }
+.slot--active { border-color: var(--accent); background-color: var(--accent-soft); }
+.slot__swatch { position: absolute; left: 7px; top: 8px; width: 12px; height: 12px; }
+.slot__count { position: absolute; right: 8px; top: 2px; }
+.slot__name { position: absolute; left: 7px; right: 6px; bottom: 5px; white-space: normal; -unity-text-align: lower-left; }
+
+/* Livre de recettes */
+.modal-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgba(8, 8, 12, 0.55); align-items: center; justify-content: center; }
+.book { width: 88%; height: 84%; max-width: 1180px; flex-direction: row; }
+.book__left { width: 300px; padding: 14px; margin-right: 12px; border-radius: 22px; background-color: var(--glass); }
+.book__search { margin: 10px 0 8px 0; }
+.book__filter { margin-bottom: 8px; flex-wrap: wrap; }
+.book__filter .segmented__item { padding: 0 7px; font-size: 11px; }
+.book__right { flex-grow: 1; }
+.book__header { padding: 14px 16px; margin-bottom: 12px; }
+.book__header .btn--icon { margin-right: 8px; }
+.book__desc { margin-top: 8px; }
+.book__tabs { align-self: flex-start; margin-bottom: 12px; }
+.recipe-card { padding: 12px 14px; }
+.machine-chip { margin-right: 8px; }
+
+/* Indicateurs au-dessus des machines */
+.overlay-marker { position: absolute; translate: -50% -100%; align-items: center; }
+.overlay-gauge { width: 36px; height: 4px; margin: 0; background-color: rgba(10, 10, 15, 0.7); }

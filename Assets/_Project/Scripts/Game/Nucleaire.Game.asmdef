@@ -1,0 +1,14 @@
+{
+    "name": "Nucleaire.Game",
+    "rootNamespace": "Nucleaire.Game",
+    "references": ["Nucleaire.Core", "Unity.InputSystem"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

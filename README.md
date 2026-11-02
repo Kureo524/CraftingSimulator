@@ -24,7 +24,22 @@ l'établi, les relie par câbles / tuyaux / tubes / convoyeurs et configure leur
 Ajouter une recette = créer un asset `ProcessRecipe` dans `Data/Recipes`, sans toucher au code.
 
 ## Contrôles
-_À compléter._
+| Action | Touche |
+|---|---|
+| Déplacer la caméra | ZQSD (AZERTY) / WASD (QWERTY), flèches, ou clic molette maintenu |
+| Zoom | Molette |
+| Tourner la caméra | A / E (AZERTY) — Q / E (QWERTY) |
+| Inspecter une machine | Clic gauche |
+| Poser un objet | Clic sur un objet posable de l'inventaire, puis clic gauche (glisser pour les tuyaux) |
+| Annuler la pose | Clic droit ou Échap |
+| Démonter | Clic droit sur un élément (les liquides/gaz qu'il contient sont perdus) |
+| Livre de recettes | B |
+| Pause / reprise | Espace (vitesses ×1, ×2, ×4 en haut à droite) |
+
+## Vérification
+- Tests EditMode : `Unity -batchmode -projectPath . -runTests -testPlatform EditMode`
+- Build Linux : `Unity -batchmode -quit -projectPath . -executeMethod Nucleaire.EditorTools.DevBuild.Linux`
+- Captures automatiques : lancer la build avec `-autoshot <dossier> -autoshot-scenes overview,chain,book`
 
 ## Mes règles de crafting
 Voir [`Docs/MesRegles.md`](Docs/MesRegles.md) (à venir).
