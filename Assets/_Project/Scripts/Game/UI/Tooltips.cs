@@ -40,6 +40,7 @@ namespace Nucleaire.Game.UI
             pending = layer.schedule.Execute(() =>
             {
                 var (t, b) = content();
+                if (string.IsNullOrEmpty(t)) return;
                 title.text = t ?? "";
                 body.text = b ?? "";
                 Ui.SetVisible(body, !string.IsNullOrEmpty(b));

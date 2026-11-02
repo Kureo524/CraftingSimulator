@@ -129,7 +129,8 @@ namespace Nucleaire.Game.UI
         {
             var header = Ui.El("glass inspector__header", root);
             var top = Ui.El("row", header);
-            Ui.Swatch(Palette.Muted(e.Def.Color), top, large: true);
+            if (e.Def.Item != null) IconSlot.Create(e.Def.Item, top, classes: "rslot--hero");
+            else Ui.Swatch(Palette.Muted(e.Def.Color), top, large: true);
             var titles = Ui.El("col grow", top);
             Ui.Text(e.Def.DisplayName, "sheet-title", titles);
             Ui.Text(KindLabel(e), "meta", titles);
@@ -406,7 +407,7 @@ namespace Nucleaire.Game.UI
                 if (i < m.Upgrades.Count)
                 {
                     var u = m.Upgrades[i];
-                    Ui.Swatch(Palette.Muted(u.Item.Color), row);
+                    IconSlot.Create(u.Item, row, classes: "rslot--small");
                     Ui.Text(u.DisplayName, "grow", row);
                     Ui.Button("Retirer", () => { ctx.Session.Actions.RemoveUpgrade(m, u); RebuildTab(); }, "btn btn--ghost btn--small", row);
                 }
@@ -446,7 +447,7 @@ namespace Nucleaire.Game.UI
             foreach (var (item, count, upgrade) in available)
             {
                 var row = Ui.El("list-row", inv);
-                Ui.Swatch(Palette.Muted(item.Color), row);
+                IconSlot.Create(item, row, classes: "rslot--small");
                 var col = Ui.El("col grow", row);
                 Ui.Text($"{upgrade.DisplayName} ×{count}", null, col);
                 Ui.Text(item.Description, "meta wrap", col);
@@ -473,19 +474,13 @@ namespace Nucleaire.Game.UI
             var grid = Ui.El("islot-grid", sec);
             foreach (var r in v.BaseResources)
             {
-                var cell = Ui.El("vault-cell", grid);
-                var box = Ui.El("islot", cell);
-                var fill = Ui.El("islot__fill", box);
-                fill.style.backgroundColor = Palette.WithAlpha(Palette.Muted(r.Color), 0.55f);
-                Ui.Text("∞", "number--small islot__count", box);
-                Ui.Text(r.DisplayName, "meta islot__name", cell);
+                var box = IconSlot.Create(r, grid, "∞", "rslot--vault", () => "Clic : +10 dans l'inventaire. Maj + clic : +64.");
                 box.RegisterCallback<ClickEvent>(evt =>
                 {
                     if (!ctx.Require(PlayerPermission.VaultTake)) return;
                     int n = evt.shiftKey ? 64 : 10;
                     ctx.Session.Actions.TakeFromVault(v, r, n);
                 });
-                Tooltips.Register(box, r.DisplayName, "Clic : +10 dans l'inventaire. Maj + clic : +64.");
             }
         }
 

@@ -1,5 +1,8 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
+
+using Nucleaire.Data;
 
 namespace Nucleaire.Game.UI
 {
@@ -16,6 +19,7 @@ namespace Nucleaire.Game.UI
         private readonly InventoryPanel inventory;
         private readonly WorkbenchPanel workbench;
         private readonly OptionsPanel options;
+        private readonly CatalogPanel catalog;
 
         public GameUI(GameContext ctx, UIDocument document, Camera cam, WorldView view)
         {
@@ -36,14 +40,27 @@ namespace Nucleaire.Game.UI
             workbench = new WorkbenchPanel(ctx, root);
             options = new OptionsPanel(ctx, root);
             Book = new RecipeBookPanel(ctx, root);
+            catalog = new CatalogPanel(ctx, root);
+            IconSlot.KeyHint = () => $"{ctx.Input.Display(GameInput.ShowRecipe)} : recette · {ctx.Input.Display(GameInput.ShowUsage)} : usages";
             tutorial = new TutorialPanel(ctx, ctx.Session.Tutorial, root);
         }
 
         public RecipeBookPanel Book { get; }
 
-        /// <summary>Un panneau utilise lui-même certaines touches (ex. R/U dans l'inventaire).</summary>
-        public bool CapturesKeys => inventory.IsOpen || options.IsOpen || ctx.Input.IsRebinding;
-        public bool IsTyping => Book.IsTyping || inventory.IsTyping;
+        /// <summary>Un panneau utilise lui-même certaines touches (R / U sur une icône, inventaire, livre, options).</summary>
+        public bool CapturesKeys => inventory.IsOpen || Book.IsOpen || options.IsOpen || ctx.Input.IsRebinding || HoveredResource() != null;
+        public bool IsTyping => catalog.IsTyping;
+
+        /// <summary>Ressource dont l'icône est sous le curseur (n'importe quel panneau), ou null.</summary>
+        public ResourceDef HoveredResource()
+        {
+            var panel = document.rootVisualElement?.panel;
+            var mouse = Mouse.current;
+            if (panel == null || mouse == null) return null;
+            var pos = mouse.position.ReadValue();
+            var p = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(pos.x, Screen.height - pos.y));
+            return IconSlot.ResourceUnder(panel.Pick(p));
+        }
 
         public void ToggleInventory() => inventory.Toggle();
         public void ToggleWorkbench() => workbench.Toggle();
@@ -65,6 +82,7 @@ namespace Nucleaire.Game.UI
             Book.Close();
             workbench.Close();
             inventory.Close();
+            catalog.SetVisible(false);
             ctx.ContextTarget = null;
         }
 
@@ -83,7 +101,18 @@ namespace Nucleaire.Game.UI
             overlay.Update();
             tutorial.Update();
             contextMenu.Update();
-            inventory.Update(ctx.Input);
+            catalog.SetVisible(inventory.IsOpen || Book.IsOpen);
+
+            // R / U sur n'importe quelle icône survolée (inventaire, catalogue, livre, machine, vault…).
+            if (!IsTyping && !options.IsOpen && !ctx.Input.IsRebinding)
+            {
+                bool recipe = ctx.Input.Pressed(GameInput.ShowRecipe), usage = ctx.Input.Pressed(GameInput.ShowUsage);
+                if (recipe || usage)
+                {
+                    var r = HoveredResource();
+                    if (r != null) ctx.OpenRecipeBook(r, usage ? 1 : 0);
+                }
+            }
         }
     }
 }

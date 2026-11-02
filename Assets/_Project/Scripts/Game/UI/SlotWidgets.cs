@@ -17,21 +17,20 @@ namespace Nucleaire.Game.UI
         {
             var root = Ui.El("islot-wrap", parent);
             var box = Ui.El("islot", root);
-            var swatch = Ui.El("islot__fill", box);
-            var count = Ui.Text("", "number--small islot__count", box);
-            var name = Ui.Text("", "meta islot__name", root);
+            var icon = new ResourceIcon();
+            box.Add(icon);
+            var count = Ui.Text("", "rslot__count", box);
+            count.pickingMode = PickingMode.Ignore;
             if (caption != null) Ui.Text(caption, "meta islot__caption", root);
             box.RegisterCallback<ClickEvent>(_ => { if (!slot.IsEmpty) onClick?.Invoke(slot.Resource); });
-            Tooltips.Register(box, () => slot.IsEmpty
-                ? ("Emplacement d'objet vide", "Dépose un objet depuis l'inventaire (liste plus bas), ou relie une face d'entrée.")
-                : (slot.Resource.DisplayName, $"×{slot.Amount} / {capacity()}\nClic : récupérer dans l'inventaire."));
+            IconSlot.Bind(box, () => slot.IsEmpty ? null : slot.Resource, () => $"×{slot.Amount} / {capacity()} · clic : récupérer",
+                ("Emplacement d'objet vide", "Dépose un objet depuis l'inventaire (liste plus bas), ou relie une face d'entrée."));
             return () =>
             {
                 bool empty = slot.IsEmpty;
                 box.EnableInClassList("islot--empty", empty);
-                swatch.style.backgroundColor = empty ? new StyleColor(Color.clear) : Palette.WithAlpha(Palette.Muted(slot.Resource.Color), 0.55f);
-                count.text = empty ? "" : slot.Amount.ToString();
-                name.text = empty ? "Vide" : slot.Resource.DisplayName;
+                icon.Resource = empty ? null : slot.Resource;
+                count.text = empty || slot.Amount <= 1 ? "" : slot.Amount.ToString();
             };
         }
 
@@ -48,14 +47,12 @@ namespace Nucleaire.Game.UI
                 b.style.backgroundImage = new StyleBackground(Bubbles());
             }
             else Ui.El("tank__surface", fill);
-            var name = Ui.Text("", "meta tank__name", root);
             var amount = Ui.Text("", "mono tank__amount", root);
             Ui.Text(gas ? "gaz" : "liquide", "meta tank__kind", root);
             var dump = Ui.Button("Vider", () => { if (!slot.IsEmpty) onDump?.Invoke(slot.Resource); }, "btn btn--ghost btn--small tank__dump", root);
             Tooltips.Register(dump, "Vider", "Rejette tout le contenu de ce réservoir (il est perdu). Utile pour débloquer une machine.");
-            Tooltips.Register(tank, () => slot.IsEmpty
-                ? (gas ? "Réservoir de gaz vide" : "Cuve de liquide vide", "Se remplit par une face d'entrée reliée à un tube (gaz) ou un tuyau (liquide).")
-                : (slot.Resource.DisplayName, $"{slot.Amount} / {capacity()} mB"));
+            IconSlot.Bind(tank, () => slot.IsEmpty ? null : slot.Resource, () => $"{slot.Amount} / {capacity()} mB",
+                (gas ? "Réservoir de gaz vide" : "Cuve de liquide vide", "Se remplit par une face d'entrée reliée à un tube (gaz) ou un tuyau (liquide)."));
             return () =>
             {
                 bool empty = slot.IsEmpty;
@@ -66,7 +63,6 @@ namespace Nucleaire.Game.UI
                     var c = Palette.Muted(slot.Resource.Color, 0.2f);
                     fill.style.backgroundColor = Palette.WithAlpha(c, gas ? 0.42f : 0.85f);
                 }
-                name.text = empty ? "Vide" : slot.Resource.DisplayName;
                 amount.text = empty ? "" : $"{slot.Amount} mB";
                 dump.SetEnabled(!empty);
             };

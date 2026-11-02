@@ -94,11 +94,11 @@ namespace Nucleaire.Game.UI
         public static VisualElement Chip(ResourceDef r, string amount, Action onClick, VisualElement parent, string state = null)
         {
             var c = El("chip" + (state != null ? " chip--" + state : ""), parent);
-            Swatch(Palette.Muted(r != null ? r.Color : Color.gray), c);
+            if (r != null) c.Add(new ResourceIcon(r) { name = "chip-icon" });
             Text(r != null ? r.DisplayName : "?", null, c);
             if (!string.IsNullOrEmpty(amount)) Text(amount, "meta", c).style.marginLeft = 6;
             if (onClick != null) c.RegisterCallback<ClickEvent>(_ => onClick());
-            if (r != null) Tooltips.Register(c, () => (r.DisplayName, $"{r.Kind.DisplayName()}{(r.IsBaseResource ? " · ressource de base (vault)" : "")}\n{r.Description}"));
+            if (r != null) IconSlot.Bind(c, () => r, () => r.Description);
             return c;
         }
 

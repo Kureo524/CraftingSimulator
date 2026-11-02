@@ -17,15 +17,16 @@
             <ui:VisualElement name="hotbar" class="glass glass--light hotbar" />
         </ui:VisualElement>
         <ui:VisualElement name="context-layer" class="layer-fill" picking-mode="Ignore" />
-        <ui:VisualElement name="inventory-layer" class="modal-layer hidden">
-            <ui:VisualElement name="inventory" class="inventory" />
+        <ui:VisualElement name="inventory-layer" class="modal-layer modal-layer--with-catalog hidden">
+            <ui:VisualElement name="inventory" class="glass glass--light inventory" />
         </ui:VisualElement>
         <ui:VisualElement name="workbench-layer" class="modal-layer hidden">
             <ui:VisualElement name="workbench" class="glass glass--light workbench" />
         </ui:VisualElement>
-        <ui:VisualElement name="book-layer" class="modal-layer hidden">
+        <ui:VisualElement name="book-layer" class="modal-layer modal-layer--with-catalog hidden">
             <ui:VisualElement name="book" class="book" />
         </ui:VisualElement>
+        <ui:VisualElement name="catalog" class="glass glass--light catalog hidden" />
         <ui:VisualElement name="options-layer" class="modal-layer hidden">
             <ui:VisualElement name="options" class="glass glass--light options" />
         </ui:VisualElement>

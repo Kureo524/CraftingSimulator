@@ -12,6 +12,8 @@ namespace Nucleaire.Data
         [SerializeField] private Color color = Color.white;
         [Tooltip("Ressource de base : disponible en quantité illimitée dans le vault.")]
         [SerializeField] private bool isBaseResource;
+        [Tooltip("Forme de l'icône dans l'interface. Auto : déduite de l'identifiant (minerai, poudre, lingot…). Les liquides et gaz ont toujours leur rendu propre.")]
+        [SerializeField] private IconShape iconShape = IconShape.Auto;
 
         /// <summary>Identifiant stable = nom de l'asset.</summary>
         public string Id => name;
@@ -20,6 +22,7 @@ namespace Nucleaire.Data
         public ResourceKind Kind => kind;
         public Color Color => color;
         public bool IsBaseResource => isBaseResource;
+        public IconShape IconShape => iconShape;
 
         public string Format(int amount) => $"{amount}{kind.Unit()} {displayName}";
 

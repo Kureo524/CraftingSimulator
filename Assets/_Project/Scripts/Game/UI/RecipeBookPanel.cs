@@ -10,14 +10,9 @@ namespace Nucleaire.Game.UI
     /// Généré entièrement depuis la RecipeDatabase. Chaque ingrédient est cliquable pour remonter l'arbre.</summary>
     public sealed class RecipeBookPanel
     {
-        private static readonly string[] Filters = { "Tout", "Matières", "Fluides", "Machines", "Améliorations" };
-        private static readonly string[] FicheTabs = { "Obtenir", "Utilisé dans", "Procédés" };
-
         private readonly GameContext ctx;
         private readonly VisualElement layer, book;
-        private readonly VisualElement list, fiche;
-        private readonly TextField search;
-        private readonly SegmentedControl filter;
+        private readonly VisualElement fiche;
         private readonly Stack<ResourceDef> history = new();
         private ResourceDef current;
         private int ficheTab;
@@ -29,27 +24,9 @@ namespace Nucleaire.Game.UI
             book = root.Q("book");
             layer.RegisterCallback<PointerDownEvent>(evt => { if (evt.target == layer) Close(); });
 
-            var left = Ui.El("glass book__left", book);
-            var head = Ui.El("row", left);
-            Ui.Text("Livre de recettes", "sheet-title grow", head);
-            search = new TextField { value = "" };
-            search.AddToClassList("book__search");
-            search.textEdition.placeholder = "Rechercher…";
-            search.RegisterValueChangedCallback(_ => RebuildList());
-            left.Add(search);
-            filter = new SegmentedControl(Filters);
-            filter.AddToClassList("book__filter");
-            filter.Changed += _ => RebuildList();
-            left.Add(filter);
-            var scroll = new ScrollView(ScrollViewMode.Vertical);
-            scroll.AddToClassList("grow");
-            left.Add(scroll);
-            list = scroll.contentContainer;
-
-            var right = Ui.El("book__right", book);
             var rscroll = new ScrollView(ScrollViewMode.Vertical);
             rscroll.AddToClassList("grow");
-            right.Add(rscroll);
+            book.Add(rscroll);
             fiche = rscroll.contentContainer;
 
             ctx.RecipeBookRequested += Open;
@@ -57,8 +34,6 @@ namespace Nucleaire.Game.UI
         }
 
         public bool IsOpen => !layer.ClassListContains("hidden");
-        public bool IsTyping => search.focusController?.focusedElement == search;
-
         public void Open(ResourceDef r, int tab)
         {
             Ui.SetVisible(layer, true);
@@ -66,14 +41,9 @@ namespace Nucleaire.Game.UI
             Navigate(r, pushHistory: current != null && current != r);
             ficheTab = tab;
             RebuildFiche();
-            RebuildList();
         }
 
-        public void Close()
-        {
-            Ui.SetVisible(layer, false);
-            search.Blur();
-        }
+        public void Close() => Ui.SetVisible(layer, false);
 
         private void Navigate(ResourceDef r, bool pushHistory = true)
         {
@@ -82,7 +52,6 @@ namespace Nucleaire.Game.UI
             if (current != r) ficheTab = 0;
             current = r;
             RebuildFiche();
-            RebuildList();
         }
 
         private void Back()
@@ -91,38 +60,6 @@ namespace Nucleaire.Game.UI
             current = history.Pop();
             ficheTab = 0;
             RebuildFiche();
-            RebuildList();
-        }
-
-        // ---------------- Liste ----------------
-
-        private int FilterOf(ResourceDef r)
-        {
-            if (ctx.Db.PlaceableForItem(r) != null) return 3;
-            if (ctx.Db.UpgradeForItem(r) != null) return 4;
-            if (r.Kind is ResourceKind.Fluid or ResourceKind.Gas or ResourceKind.Energy) return 2;
-            return 1;
-        }
-
-        private void RebuildList()
-        {
-            list.Clear();
-            string q = search.value?.Trim().ToLowerInvariant() ?? "";
-            int f = filter.Selected;
-            var items = ctx.Db.Resources
-                .Where(r => r != null && (f == 0 || FilterOf(r) == f))
-                .Where(r => q.Length == 0 || r.DisplayName.ToLowerInvariant().Contains(q))
-                .OrderBy(FilterOf).ThenBy(r => r.DisplayName);
-            foreach (var r in items)
-            {
-                var row = Ui.El("list-row", list);
-                row.EnableInClassList("list-row--selected", r == current);
-                Ui.Swatch(Palette.Muted(r.Color), row);
-                Ui.Text(r.DisplayName, "grow", row);
-                if (r.IsBaseResource) Ui.Text("vault", "meta", row);
-                row.RegisterCallback<ClickEvent>(_ => Navigate(r));
-            }
-            if (list.childCount == 0) Ui.System("Aucun résultat.", list);
         }
 
         // ---------------- Fiche ----------------
@@ -138,7 +75,7 @@ namespace Nucleaire.Game.UI
             var back = Ui.Button("←", Back, "btn btn--ghost btn--icon", top);
             back.SetEnabled(history.Count > 0);
             Tooltips.Register(back, "Retour", "Revenir à la ressource précédente.");
-            Ui.Swatch(Palette.Muted(r.Color), top, large: true);
+            IconSlot.Create(r, top, classes: "rslot--hero");
             var titles = Ui.El("col grow", top);
             Ui.Text(r.DisplayName, "sheet-title", titles);
             var badges = Ui.El("row", titles);
@@ -184,6 +121,16 @@ namespace Nucleaire.Game.UI
             }
         }
 
+        /// <summary>Un ingrédient : icône + quantité dessous. Clic : sa recette. R / U fonctionnent aussi au survol.</summary>
+        private void Ingredient(ResourceDef r, long amount, ResourceDef focus, VisualElement parent)
+        {
+            var cell = Ui.El("recipe-ingredient", parent);
+            var slot = IconSlot.Create(r, cell, r.Kind == ResourceKind.Item ? amount.ToString() : null,
+                r == focus ? "rslot--focus" : null, () => Ui.Amount(r, amount) + " · clic : sa recette");
+            slot.RegisterCallback<ClickEvent>(_ => Navigate(r));
+            Ui.Text(r.Kind == ResourceKind.Item ? "" : Ui.Amount(r, amount), "mono recipe-ingredient__amount", cell);
+        }
+
         private int ProcessCount(MachineDef m) => ctx.Db.AllEntries.Count(e => e.Machine == m && e.Source is RecipeSource.Process or RecipeSource.Reactor);
 
         private void Card(RecipeEntry e, ResourceDef focus)
@@ -196,13 +143,12 @@ namespace Nucleaire.Game.UI
                 _ => e.Machine != null ? e.Machine.DisplayName : "?",
             };
             var machineChip = Ui.El("chip machine-chip", head);
-            Ui.Swatch(Palette.Muted(e.Machine != null ? e.Machine.Color : Color.gray), machineChip);
-            Ui.Text(machineName, "bold", machineChip);
             if (e.Machine?.Item != null)
             {
+                IconSlot.Create(e.Machine.Item, machineChip, classes: "rslot--small", extra: () => "Clic : comment fabriquer cette machine.");
                 machineChip.RegisterCallback<ClickEvent>(_ => Navigate(e.Machine.Item));
-                Tooltips.Register(machineChip, machineName, "Clic : comment fabriquer cette machine.");
             }
+            Ui.Text(machineName, "bold", machineChip);
             Ui.El("spacer", head);
             if (e.Source == RecipeSource.Process)
             {
@@ -211,11 +157,9 @@ namespace Nucleaire.Game.UI
             }
 
             var flow = Ui.El("row recipe-flow", card);
-            foreach (var i in e.Inputs)
-                Ui.Chip(i.Resource, Ui.Amount(i.Resource, i.Amount), () => Navigate(i.Resource), flow, i.Resource == focus ? "ok" : null);
-            if (e.Inputs.Count > 0) Ui.Text("→", "text-3 arrow", flow);
-            foreach (var o in e.Outputs)
-                Ui.Chip(o.Resource, Ui.Amount(o.Resource, o.Amount), () => Navigate(o.Resource), flow, o.Resource == focus ? "ok" : null);
+            foreach (var i in e.Inputs) Ingredient(i.Resource, i.Amount, focus, flow);
+            if (e.Inputs.Count > 0) Ui.Text("→", "text-3 arrow recipe-arrow", flow);
+            foreach (var o in e.Outputs) Ingredient(o.Resource, o.Amount, focus, flow);
 
             if (!string.IsNullOrEmpty(e.Note)) Ui.System(e.Note, card).style.marginTop = 4;
             if (e.Origin is ProcessRecipe minP && minP.MinPowerRatio > 0f)

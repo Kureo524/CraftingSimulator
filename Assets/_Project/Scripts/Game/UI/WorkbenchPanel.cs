@@ -76,7 +76,7 @@ namespace Nucleaire.Game.UI
                 var card = Ui.El("glass card craft-card", list);
                 card.EnableInClassList("craft-card--disabled", !can);
                 var head = Ui.El("row", card);
-                Ui.Swatch(Palette.Muted(c.Result.Resource.Color), head);
+                IconSlot.Create(c.Result.Resource, head, c.Result.Amount > 1 ? c.Result.Amount.ToString() : null, "rslot--small");
                 var title = Ui.Text(c.Result.Resource.DisplayName, "bold grow", head);
                 title.RegisterCallback<ClickEvent>(_ => ctx.OpenRecipeBook(c.Result.Resource));
                 Ui.Text($"×{c.Result.Amount}", "meta", head);
@@ -86,7 +86,11 @@ namespace Nucleaire.Game.UI
                 foreach (var i in c.Ingredients)
                 {
                     int have = ctx.Session.Inventory.Count(i.Resource);
-                    Ui.Chip(i.Resource, $"{have}/{i.Amount}", () => ctx.OpenRecipeBook(i.Resource), flow, have >= i.Amount ? "ok" : "missing");
+                    var cell = Ui.El("recipe-ingredient", flow);
+                    var s = IconSlot.Create(i.Resource, cell, i.Amount.ToString(), have >= i.Amount ? null : "rslot--missing",
+                        () => $"Tu en as {have}, il en faut {i.Amount}.");
+                    s.RegisterCallback<ClickEvent>(_ => ctx.OpenRecipeBook(i.Resource));
+                    Ui.Text($"{have}/{i.Amount}", "mono recipe-ingredient__amount" + (have >= i.Amount ? "" : " recipe-ingredient__amount--missing"), cell);
                 }
 
                 var actions = Ui.El("row craft-actions", card);

@@ -39,7 +39,8 @@ namespace Nucleaire.Game.UI
             if (e == null) return;
 
             var head = Ui.El("row context-menu__head", menu);
-            Ui.Swatch(Palette.Muted(e.Def.Color), head);
+            if (e.Def.Item != null) IconSlot.Create(e.Def.Item, head, classes: "rslot--small");
+            else Ui.Swatch(Palette.Muted(e.Def.Color), head);
             Ui.Text(e.Def.DisplayName, "bold grow", head);
             Ui.Button("×", () => ctx.ContextTarget = null, "btn btn--ghost btn--icon context-menu__close", head);
 

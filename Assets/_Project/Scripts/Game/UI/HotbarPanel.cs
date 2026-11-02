@@ -67,9 +67,8 @@ namespace Nucleaire.Game.UI
                 var slot = Ui.El("slot", scroll);
                 slot.EnableInClassList("slot--active", ctx.BuildItem == r);
                 slot.EnableInClassList("slot--placeable", placeable != null);
-                Ui.Swatch(Palette.Muted(r.Color), slot).AddToClassList("slot__swatch");
-                Ui.Text(count.ToString(), "number--small slot__count", slot);
-                Ui.Text(r.DisplayName, "meta slot__name", slot);
+                slot.Add(new ResourceIcon(r));
+                Ui.Text(count.ToString(), "rslot__count", slot).pickingMode = PickingMode.Ignore;
 
                 slot.RegisterCallback<ClickEvent>(_ =>
                 {
@@ -80,11 +79,10 @@ namespace Nucleaire.Game.UI
                     }
                     else ctx.OpenRecipeBook(r);
                 });
-                Tooltips.Register(slot, () => (r.DisplayName,
-                    (string.IsNullOrEmpty(r.Description) ? "" : r.Description + "\n") +
-                    (placeable != null ? "Clic : poser dans l'atelier." : ctx.Db.UpgradeForItem(r) != null
-                        ? "S'installe depuis le panneau d'une machine. Clic : livre de recettes."
-                        : "Clic : livre de recettes.")));
+                IconSlot.Bind(slot, () => r, () => $"×{count} · " +
+                    (placeable != null ? "clic : poser dans l'atelier" : ctx.Db.UpgradeForItem(r) != null
+                        ? "s'installe depuis le panneau d'une machine"
+                        : "clic : livre de recettes"));
             }
         }
     }

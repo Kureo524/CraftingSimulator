@@ -26,14 +26,15 @@ MonoBehaviour:
   - title: Le livre de recettes
     body: "Ouvre le livre de recettes (touche B, ou le bouton en haut \xE0 gauche).
       Pour chaque ressource, il indique comment l'obtenir et \xE0 quoi elle sert.
-      Clique sur un ingr\xE9dient pour remonter l'arbre."
+      Survole n'importe quelle ic\xF4ne (le nom s'affiche) : R montre sa recette,
+      U ses usages, y compris dans le livre. Le catalogue \xE0 droite liste tout le jeu."
     condition: 1
     resource: {fileID: 0}
     machine: {fileID: 0}
     amount: 1
     unlocks: 1
   - title: Le vault
-    body: "Clique sur le vault (le grand bloc gris) pour ouvrir son panneau, puis clique sur le minerai de fer pour en prendre (Maj + clic : 64). Prends aussi du charbon. Ses ressources de base sont illimit\xE9es."
+    body: "Clique sur le vault (le grand bloc gris) pour ouvrir son panneau, survole les ic\xF4nes pour lire leur nom, puis clique sur le minerai de fer (roche grise piquet\xE9e de brun) pour en prendre (Maj + clic : 64). Prends aussi du charbon. Ses ressources de base sont illimit\xE9es."
     condition: 2
     resource: {fileID: 11400000, guid: c7d4b147f2e7249c5838218055a46da9, type: 2}
     machine: {fileID: 0}
