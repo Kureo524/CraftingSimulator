@@ -44,14 +44,24 @@ namespace Nucleaire.Tests
         }
 
         [Test]
-        public void Corners_MustBeFrames()
+        public void Glass_IsNotAllowedOnEdges_ButPortsAndControllerAre()
         {
             var c = BuildMultiblock<FissionReactor>("fission_reactor", O, new Vector3Int(3, 3, 3), "fuel_assembly", 1);
             World.Remove(O);
             World.Place(S("structural_glass"), O);
             World.Step();
             Assert.IsFalse(c.Structure.Formed);
-            StringAssert.Contains("coins", c.Structure.Problem);
+            StringAssert.Contains("arêtes", c.Structure.Problem);
+
+            World.Remove(O);
+            World.Place(M("multiblock_port"), O); // un port sur un coin : permis
+            World.Step();
+            Assert.IsTrue(c.Structure.Formed, c.Structure.Problem);
+
+            World.Remove(O + new Vector3Int(1, 0, 0)); // milieu d'une arête basse
+            World.Place(S("structural_glass"), O + new Vector3Int(1, 0, 0));
+            World.Step();
+            Assert.IsFalse(c.Structure.Formed, "Le verre sur une arête est refusé");
         }
 
         [Test]

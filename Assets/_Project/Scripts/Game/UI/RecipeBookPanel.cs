@@ -118,7 +118,7 @@ namespace Nucleaire.Game.UI
                     if (machine.Behaviour == MachineBehaviour.Vault) Ui.System("Fournit à l'infini toutes les ressources de base.", fiche);
                     if (machine.Behaviour == MachineBehaviour.Workbench) Ui.System("Permet de fabriquer machines, transmetteurs, composants et améliorations.", fiche);
                     if (machine.IsMultiblockController)
-                        Ui.System("Multi-bloc : boîte creuse de 3×3×3 à 7×7×4. Coins en cadres structurels ; paroi en cadres, verre, ports et ce contrôleur ; composants à l'intérieur. " + machine.Description, fiche);
+                        Ui.System("Multi-bloc : boîte creuse de 3×3×3 à 7×7×4 en cadres structurels ; verre possible sauf sur les arêtes ; ports (au moins un) et contrôleur n'importe où dans la paroi ; composants à l'intérieur. " + machine.Description, fiche);
                     break;
             }
         }

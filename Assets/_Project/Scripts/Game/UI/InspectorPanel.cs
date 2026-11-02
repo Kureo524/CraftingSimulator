@@ -46,6 +46,8 @@ namespace Nucleaire.Game.UI
 
         private void Show(IGridEntity e)
         {
+            // Cliquer un bloc de structure ouvre le contrôleur de sa structure.
+            if (e is StructureBlock block && ControllerOf(block) is { } owner && owner != current) { ctx.Selection = owner; return; }
             current = e;
             root.Clear();
             updaters.Clear();
@@ -77,6 +79,19 @@ namespace Nucleaire.Game.UI
             RebuildTab();
         }
 
+        private Machine ControllerOf(StructureBlock b)
+        {
+            foreach (var m in ctx.World.Machines)
+            {
+                if (m is not IMultiblockController c) continue;
+                c.Structure.Refresh();
+                var p = b.Position;
+                var lo = c.Structure.Min; var hi = c.Structure.Max;
+                if (p.x >= lo.x && p.x <= hi.x && p.y >= lo.y && p.y <= hi.y && p.z >= lo.z && p.z <= hi.z) return m;
+            }
+            return null;
+        }
+
         private static string[] TabsFor(IGridEntity e) => e switch
         {
             FissionReactor => new[] { "Structure", "Pilotage" },
@@ -87,7 +102,8 @@ namespace Nucleaire.Game.UI
             VaultMachine => new[] { "Ressources", "Faces" },
             Machine m when m.MachineDef.UpgradeSlots > 0 => new[] { "État", "Faces", "Améliorations" },
             Machine => new[] { "État", "Faces" },
-            _ => new[] { "Réseau" },
+            TransmitterSegment => new[] { "Réseau" },
+            _ => new[] { "Bloc" },
         };
 
         private string CurrentTab => tabNames.Length == 0 ? "" : tabNames[tabs?.Selected ?? 0];
@@ -119,6 +135,7 @@ namespace Nucleaire.Game.UI
                 case "Ressources": BuildVault((VaultMachine)current); break;
                 case "Trieurs": BuildSorters((Machine)current); break;
                 case "Réseau": BuildNetwork((TransmitterSegment)current); break;
+                case "Bloc": BuildBlock((StructureBlock)current); break;
                 case "Structure": BuildStructure((Machine)current); break;
                 case "Plasma": BuildFusion((FusionReactor)current); break;
                 case "Déphasage": BuildSps((SpsMachine)current); break;
@@ -546,9 +563,18 @@ namespace Nucleaire.Game.UI
 
             var rules = Ui.Section("Comment le construire", content);
             Ui.Text("• Une boîte creuse de 3×3×3 à 7×7×4.", "text-2 wrap", rules);
-            Ui.Text("• Les coins : des cadres structurels. Le reste de la paroi : cadres, verre structurel, ports de structure, et ce contrôleur (un seul).", "text-2 wrap", rules);
+            Ui.Text("• La paroi : des cadres structurels. Le verre (décoratif) peut en remplacer partout sauf sur les arêtes. Les ports (au moins un) et ce contrôleur (un seul) peuvent remplacer n'importe quel cadre.", "text-2 wrap", rules);
             Ui.Text("• L'intérieur : vide, ou les composants ci-dessus. Plus il y en a, plus la machine produit… et plus elle consomme.", "text-2 wrap", rules);
             Ui.Text("• Les ports font entrer et sortir : règle leurs faces (entrée / sortie) comme celles d'une machine. Les cubes lavande dans l'atelier montrent les blocs de paroi qui manquent.", "text-2 wrap", rules);
+        }
+
+        /// <summary>Bloc de structure seul (aucun contrôleur ne l'englobe) : à quoi il sert.</summary>
+        private void BuildBlock(StructureBlock b)
+        {
+            var box = Ui.El("status-window", content);
+            Ui.Text(b.StructureDef.IsWall
+                ? "[Bloc de paroi : il ne fait partie d'aucune structure. Pose un contrôleur dans la paroi pour former un multi-bloc.]"
+                : "[Composant interne : à placer à l'intérieur d'un multi-bloc complet.]", "system", box);
         }
 
         private string Effects(Machine m) => m switch

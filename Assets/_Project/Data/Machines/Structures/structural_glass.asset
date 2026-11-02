@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: structural_glass
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.StructureDef
   displayName: "Verre structurel"
-  description: "Paroi transparente des multi-blocs."
+  description: "Paroi transparente et décorative : remplace un cadre partout sauf sur les arêtes."
   item: {fileID: 11400000, guid: 7015724bcf654605a58e7bef8c4038b0, type: 2}
   color: {r: 0.6000, g: 0.7800, b: 0.9200, a: 1}
   role: 1

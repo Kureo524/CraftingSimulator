@@ -47,6 +47,8 @@ namespace Nucleaire.Tests
         {
             var max = min + size - Vector3Int.one;
             var ctrl = new Vector3Int(min.x + size.x / 2, min.y, min.z + 1);
+            // Au moins un port : par défaut, une entrée au milieu de la face nord.
+            if (ports.Length == 0) ports = new[] { (new Vector3Int(min.x + size.x / 2, max.y, min.z + 1), SideMode.Input, -1) };
             T controller = null;
             int placed = 0;
             for (int z = min.z; z <= max.z; z++)

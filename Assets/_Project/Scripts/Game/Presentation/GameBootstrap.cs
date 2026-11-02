@@ -368,7 +368,7 @@ namespace Nucleaire.Game
                     break;
                 }
                 case "multiblock-ui":
-                    ctx.Selection = w.Machines.First(m => m.MachineDef.Id == "fission_reactor");
+                    ctx.Selection = w.Entities.OfType<StructureBlock>().First(b => b.Role == StructureRole.Frame);
                     yield return null;
                     uiDocument.rootVisualElement.Q("inspector").Q<SegmentedControl>()?.Select(0);
                     yield return new WaitForSecondsRealtime(0.5f);

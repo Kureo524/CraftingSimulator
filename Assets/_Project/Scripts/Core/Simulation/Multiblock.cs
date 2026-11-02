@@ -13,9 +13,10 @@ namespace Nucleaire.Simulation
         Multiblock Structure { get; }
     }
 
-    /// <summary>Forme d'un multi-bloc : une boîte creuse (de 3×3×3 à 7×7×4) dont la paroi est faite de cadres
-    /// (obligatoires aux coins), de verre, de ports et d'un seul contrôleur ; l'intérieur est vide ou contient
-    /// les composants propres au type. La structure se revérifie dès que l'atelier change.</summary>
+    /// <summary>Forme d'un multi-bloc : une boîte creuse (de 3×3×3 à 7×7×4) dont la paroi est faite de cadres structurels.
+    /// Le verre (décoratif) peut remplacer un cadre partout sauf sur les arêtes ; les ports (au moins un) et le contrôleur
+    /// (un seul) peuvent remplacer n'importe quel cadre de la paroi. L'intérieur est vide ou contient les composants du type.
+    /// La structure se revérifie dès que l'atelier change.</summary>
     public sealed class Multiblock
     {
         public const int MinSize = 3, MaxSize = 7, MaxHeight = 4;
@@ -131,8 +132,8 @@ namespace Nucleaire.Simulation
                 {
                     if (e == null) { missing.Add(c); continue; }
                     if (!shell.Contains(c)) { Problem ??= $"{e.Def.DisplayName} n'a pas sa place dans la paroi ({Where(c)})."; continue; }
-                    if (onBorder == 3 && !(e is StructureBlock { Role: StructureRole.Frame }))
-                        Problem ??= $"Les coins doivent être des cadres structurels ({Where(c)}).";
+                    if (onBorder >= 2 && e is StructureBlock { Role: StructureRole.Glass })
+                        Problem ??= $"Le verre ne va pas sur les arêtes : mets-y un cadre structurel ({Where(c)}).";
                     if (e is IMultiblockController && e != controller) Problem ??= "Un seul contrôleur par structure.";
                     if (e is PortMachine port) ports.Add(port);
                 }
@@ -154,6 +155,8 @@ namespace Nucleaire.Simulation
                     MultiblockKind.Sps => "Il faut au moins une bobine supraconductrice à l'intérieur.",
                     _ => "Il faut au moins une cellule d'induction à l'intérieur.",
                 };
+            if (Problem == null && ports.Count == 0)
+                Problem = "Il faut au moins un port de structure dans la paroi (n'importe où) pour faire entrer et sortir.";
             if (Problem == null && Kind == MultiblockKind.Induction && Count(StructureRole.InductionCell) == 0)
                 Problem = "Il faut au moins une cellule d'induction (les fournisseurs ne stockent rien).";
             if (Problem != null) { ports.Clear(); return; }

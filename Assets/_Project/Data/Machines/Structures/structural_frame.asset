@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: structural_frame
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.StructureDef
   displayName: "Cadre structurel"
-  description: "Paroi des multi-blocs. Obligatoire aux coins."
+  description: "Paroi des multi-blocs. Seul bloc permis sur les arêtes, avec les ports et le contrôleur."
   item: {fileID: 11400000, guid: 100a5fef3953485eb758930b1473c5d4, type: 2}
   color: {r: 0.4200, g: 0.4500, b: 0.5200, a: 1}
   role: 0
