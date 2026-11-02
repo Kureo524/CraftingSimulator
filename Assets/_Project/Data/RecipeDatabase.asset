@@ -57,7 +57,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 8c189b21c81ecb98c9e57c07bf47cb14, type: 2}
   - {fileID: 11400000, guid: 0f7ab89b567f814d1ab70261c0bbc1fb, type: 2}
   - {fileID: 11400000, guid: 65c4fcb608203fc3c9c9fbc33bf1c521, type: 2}
-  - {fileID: 11400000, guid: 73fabb7632d1adc34b48f073200fcdd9, type: 2}
   - {fileID: 11400000, guid: c4a6bafc82130acb68d0612ff1b3685f, type: 2}
   - {fileID: 11400000, guid: c1bdde536d066930f899233be9219949, type: 2}
   - {fileID: 11400000, guid: bac0888ecf8d4ed13900dd35ccd70b74, type: 2}
@@ -99,7 +98,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 740e6bc508e777d0c8c0b13ba1dcb5b6, type: 2}
   - {fileID: 11400000, guid: e426c1e68000f5aa1a7377bb4e69b85c, type: 2}
   - {fileID: 11400000, guid: 9591d219ef464f26689f6563d6c51eca, type: 2}
-  - {fileID: 11400000, guid: 9a4f591514fdefd86a0cb54cd09d38ae, type: 2}
   transmitters:
   - {fileID: 11400000, guid: ceca47f6e397c03da89c8543b4cad07e, type: 2}
   - {fileID: 11400000, guid: 0a52572ebba61e66a96da1974faad371, type: 2}
@@ -177,7 +175,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 883b44e8701e61326a58a53779c3e51c, type: 2}
   energy: {fileID: 11400000, guid: 1c39f5ddf14790113bb580a4a3e22ae5, type: 2}
   prePlacedMachines:
-  - {fileID: 11400000, guid: 9a4f591514fdefd86a0cb54cd09d38ae, type: 2}
   - {fileID: 11400000, guid: e426c1e68000f5aa1a7377bb4e69b85c, type: 2}
   startingInventory:
   - resource: {fileID: 11400000, guid: f702c7addb2d11ccb91c130798009fc0, type: 2}

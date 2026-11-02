@@ -11,7 +11,7 @@ namespace Nucleaire.Simulation
     /// C# pur, déterministe, piloté par un composant de présentation (ou par les tests).</summary>
     public sealed class World
     {
-        private readonly Dictionary<Vector2Int, IGridEntity> grid = new();
+        private readonly Dictionary<Vector3Int, IGridEntity> grid = new();
         private readonly List<Machine> machines = new();
         private readonly Dictionary<ResourceDef, long> produced = new();
 
@@ -33,16 +33,18 @@ namespace Nucleaire.Simulation
 
         public event Action<IGridEntity> EntityPlaced;
         public event Action<IGridEntity> EntityRemoved;
+        /// <summary>Une machine a changé de case (ancienne position en second argument).</summary>
+        public event Action<IGridEntity, Vector3Int> EntityMoved;
         public event Action<ResourceDef, int> ResourceProduced;
         public event Action Ticked;
 
         // ---------------- Grille ----------------
 
-        public bool InBounds(Vector2Int p) => p.x >= 0 && p.y >= 0 && p.x < Settings.gridSize.x && p.y < Settings.gridSize.y;
-        public IGridEntity At(Vector2Int p) => grid.TryGetValue(p, out var e) ? e : null;
-        public bool IsFree(Vector2Int p) => InBounds(p) && !grid.ContainsKey(p);
+        public bool InBounds(Vector3Int p) => p.x >= 0 && p.y >= 0 && p.z >= 0 && p.x < Settings.gridSize.x && p.y < Settings.gridSize.y && p.z < Settings.levels;
+        public IGridEntity At(Vector3Int p) => grid.TryGetValue(p, out var e) ? e : null;
+        public bool IsFree(Vector3Int p) => InBounds(p) && !grid.ContainsKey(p);
 
-        public bool CanPlace(PlaceableDef def, Vector2Int p, out string reason)
+        public bool CanPlace(PlaceableDef def, Vector3Int p, out string reason)
         {
             reason = null;
             if (def == null) reason = "Rien à poser.";
@@ -51,7 +53,7 @@ namespace Nucleaire.Simulation
             return reason == null;
         }
 
-        public IGridEntity Place(PlaceableDef def, Vector2Int p)
+        public IGridEntity Place(PlaceableDef def, Vector3Int p)
         {
             if (!CanPlace(def, p, out var reason)) throw new InvalidOperationException(reason);
             IGridEntity entity;
@@ -76,7 +78,30 @@ namespace Nucleaire.Simulation
             return entity;
         }
 
-        public IGridEntity Remove(Vector2Int p)
+        /// <summary>Déplace une machine en conservant son contenu, ses faces et ses améliorations.</summary>
+        public bool CanMove(Vector3Int from, Vector3Int to, out string reason)
+        {
+            reason = null;
+            if (!grid.TryGetValue(from, out var e)) reason = "Rien à déplacer.";
+            else if (e is not Machine) reason = "Seules les machines se déplacent ; démonte les tuyaux.";
+            else if (from == to) reason = "C'est déjà sa place.";
+            else if (!InBounds(to)) reason = "Hors de l'atelier.";
+            else if (grid.ContainsKey(to)) reason = "Case déjà occupée.";
+            return reason == null;
+        }
+
+        public bool Move(Vector3Int from, Vector3Int to)
+        {
+            if (!CanMove(from, to, out _)) return false;
+            var m = (Machine)grid[from];
+            grid.Remove(from);
+            m.Position = to;
+            grid[to] = m;
+            EntityMoved?.Invoke(m, from);
+            return true;
+        }
+
+        public IGridEntity Remove(Vector3Int p)
         {
             if (!grid.TryGetValue(p, out var e)) return null;
             grid.Remove(p);

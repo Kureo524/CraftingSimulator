@@ -111,6 +111,6 @@ namespace Nucleaire.Logistics
             foreach (var net in networks) net.Distribute(world);
         }
 
-        public TransmitterNetwork NetworkAt(Vector2Int pos) => (world.At(pos) as TransmitterSegment)?.Network;
+        public TransmitterNetwork NetworkAt(Vector3Int pos) => (world.At(pos) as TransmitterSegment)?.Network;
     }
 }

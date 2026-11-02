@@ -7,9 +7,9 @@ namespace Nucleaire.Simulation
     /// <summary>Rejette les liquides et gaz reçus. Utile pour se débarrasser d'un sous-produit, mais coûte de l'énergie.</summary>
     public sealed class VentMachine : Machine
     {
-        public VentMachine(MachineDef def, World world, Vector2Int pos) : base(def, world, pos, SideMode.Input)
+        public VentMachine(MachineDef def, World world, Vector3Int pos) : base(def, world, pos, SideMode.Input)
         {
-            Inputs = new ResourceStorage(CapacityFor);
+            Inputs = new ResourceStorage(new[] { ResourceKind.Fluid, ResourceKind.Gas }, CapacityFor);
         }
 
         public override bool ConsumesEnergy => MachineDef.Vent.energyPerTick > 0;

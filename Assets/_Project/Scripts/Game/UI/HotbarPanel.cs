@@ -18,10 +18,16 @@ namespace Nucleaire.Game.UI
         {
             this.ctx = ctx;
             hotbar = root.Q("hotbar");
+            var top = Ui.El("row hotbar__top", hotbar);
+            var inv = Ui.Button("Inventaire", ctx.OpenInventory, "btn btn--small", top);
+            Tooltips.Register(inv, () => ("Inventaire", $"Touche {ctx.Input.Display(GameInput.Inventory)}. Avec le catalogue de tout le jeu."));
+            var wb = Ui.Button("Établi", ctx.OpenWorkbench, "btn btn--small", top);
+            wb.style.marginLeft = 4;
+            Tooltips.Register(wb, () => ("Établi", $"Touche {ctx.Input.Display(GameInput.Workbench)}. Fabrique machines, tuyaux et améliorations."));
             filter = new SegmentedControl(Categories);
             filter.AddToClassList("hotbar__filter");
             filter.Changed += _ => Rebuild();
-            hotbar.Add(filter);
+            top.Add(filter);
             scroll = new ScrollView(ScrollViewMode.Horizontal);
             scroll.AddToClassList("hotbar__scroll");
             hotbar.Add(scroll);

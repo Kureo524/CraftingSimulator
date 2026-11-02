@@ -21,7 +21,7 @@ namespace Nucleaire.Crafting
         public PlayerInventory Inventory { get; }
         public PermissionGate Gate { get; }
 
-        public bool TryPlace(ResourceDef item, Vector2Int pos, out string error)
+        public bool TryPlace(ResourceDef item, Vector3Int pos, out string error)
         {
             if (!Gate.Check(PlayerPermission.Place, out error)) return false;
             var def = world.Db.PlaceableForItem(item);
@@ -35,12 +35,19 @@ namespace Nucleaire.Crafting
 
         /// <summary>Démonte l'élément : il revient dans l'inventaire avec les solides qu'il contenait.
         /// Les liquides et gaz qu'il contenait sont perdus.</summary>
-        public bool TryPickUp(Vector2Int pos, out string error)
+        /// <summary>Déplace une machine (contenu, faces et améliorations conservés).</summary>
+        public bool TryMove(Vector3Int from, Vector3Int to, out string error)
+        {
+            if (!Gate.Check(PlayerPermission.Move, out error)) return false;
+            if (!world.CanMove(from, to, out error)) return false;
+            return world.Move(from, to);
+        }
+
+        public bool TryPickUp(Vector3Int pos, out string error)
         {
             if (!Gate.Check(PlayerPermission.PickUp, out error)) return false;
             var e = world.At(pos);
             if (e == null) { error = "Rien à démonter ici."; return false; }
-            if (world.Db.PrePlacedMachines.Contains(e.Def as MachineDef)) { error = $"{e.Def.DisplayName} est fixe."; return false; }
 
             if (e is Machine m)
                 foreach (var s in m.SalvageableItems()) Inventory.Add(s.Resource, s.Amount);
@@ -64,6 +71,15 @@ namespace Nucleaire.Crafting
             int n = m.Outputs?.Extract(r, amount) ?? 0;
             if (n < amount && m.Inputs != null) n += m.Inputs.Extract(r, amount - n);
             Inventory.Add(r, n);
+            return n;
+        }
+
+        /// <summary>Vide un réservoir de liquide ou de gaz (le contenu est perdu).</summary>
+        public int Dump(Machine m, ResourceDef r)
+        {
+            if (r == null || r.Kind == ResourceKind.Item || !Gate.IsAllowed(PlayerPermission.Take)) return 0;
+            int n = (m.Inputs?.Extract(r, int.MaxValue) ?? 0) + (m.Outputs?.Extract(r, int.MaxValue) ?? 0);
+            if (n > 0) world.Log(EventSeverity.Info, $"{m.MachineDef.DisplayName} : {n} mB de {r.DisplayName.ToLowerInvariant()} rejetés.", m);
             return n;
         }
 

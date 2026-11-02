@@ -22,7 +22,7 @@ namespace Nucleaire.Tests
         public void DuringTutorial_ActionsAreLimited()
         {
             Assert.IsTrue(Session.Tutorial.Active);
-            Assert.IsFalse(Session.Actions.TryPlace(R("item_solar_panel"), new Vector2Int(1, 1), out var err));
+            Assert.IsFalse(Session.Actions.TryPlace(R("item_solar_panel"), new Vector3Int(1, 1, 0), out var err));
             StringAssert.Contains("tutoriel", err);
             var vault = World.FirstMachine<Simulation.VaultMachine>();
             Assert.AreEqual(0, Session.Actions.TakeFromVault(vault, R("iron_ore"), 1));
@@ -40,7 +40,7 @@ namespace Nucleaire.Tests
             Assert.AreEqual(1, Session.Actions.TakeFromVault(vault, R("iron_ore"), 1), "Le vault est débloqué à son étape");
             Assert.IsTrue(t.Check(), "Avoir du minerai valide l'étape du vault");
 
-            Assert.IsTrue(Session.Actions.TryPlace(R("item_solar_panel"), new Vector2Int(1, 1), out _), "Poser est débloqué à l'étape de l'énergie");
+            Assert.IsTrue(Session.Actions.TryPlace(R("item_solar_panel"), new Vector3Int(1, 1, 0), out _), "Poser est débloqué à l'étape de l'énergie");
             Assert.IsTrue(t.Check());
             Assert.IsFalse(Session.Permissions.IsAllowed(PlayerPermission.Craft), "L'établi n'est pas encore présenté");
         }
@@ -51,7 +51,7 @@ namespace Nucleaire.Tests
             Session.Tutorial.Skip();
             Assert.IsFalse(Session.Tutorial.Active);
             Assert.AreEqual(PlayerPermission.All, Session.Permissions.Allowed);
-            Assert.IsTrue(Session.Actions.TryPlace(R("item_solar_panel"), new Vector2Int(1, 1), out _));
+            Assert.IsTrue(Session.Actions.TryPlace(R("item_solar_panel"), new Vector3Int(1, 1, 0), out _));
         }
 
         [Test]

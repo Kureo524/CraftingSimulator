@@ -22,7 +22,6 @@ namespace Nucleaire.Crafting
 
         public IReadOnlyList<CraftingRecipe> Recipes => world.Db.CraftingRecipes;
 
-        public bool HasWorkbench => world.Machines.Any(m => m is WorkbenchMachine);
 
         public IEnumerable<ResourceStack> Missing(CraftingRecipe r) =>
             r.Ingredients.Where(s => s.IsValid).GroupBy(s => s.Resource)
@@ -34,7 +33,6 @@ namespace Nucleaire.Crafting
             reason = null;
             if (r == null) reason = "Recette inconnue.";
             else if (!gate.Check(PlayerPermission.Craft, out var locked)) reason = locked;
-            else if (!HasWorkbench) reason = "Il faut un établi dans l'atelier.";
             else
             {
                 var missing = Missing(r).ToList();

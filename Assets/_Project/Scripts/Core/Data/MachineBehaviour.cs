@@ -7,7 +7,7 @@ namespace Nucleaire.Data
         Processor,
         /// <summary>Stock illimité des ressources de base, sorties filtrées.</summary>
         Vault,
-        /// <summary>Craft manuel des objets (machines, transmetteurs, améliorations).</summary>
+        /// <summary>Obsolète : l'établi est désormais un panneau. Conservé pour la numérotation des assets.</summary>
         Workbench,
         /// <summary>Stocke de l'énergie.</summary>
         Battery,

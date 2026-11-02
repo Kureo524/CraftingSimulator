@@ -12,7 +12,6 @@ namespace Nucleaire.Tests
         public void Session_StartsWithFixedMachinesAndKit()
         {
             Assert.IsNotNull(World.FirstMachine<VaultMachine>());
-            Assert.IsNotNull(World.FirstMachine<WorkbenchMachine>());
             foreach (var s in Db.StartingInventory) Assert.AreEqual(s.Amount, Session.Inventory.Count(s.Resource));
         }
 
@@ -34,30 +33,71 @@ namespace Nucleaire.Tests
         public void Place_ConsumesItem_PickUp_ReturnsItemAndContents()
         {
             var item = R("item_crusher");
-            Assert.IsTrue(Session.Actions.TryPlace(item, new Vector2Int(1, 1), out _));
+            Assert.IsTrue(Session.Actions.TryPlace(item, new Vector3Int(1, 1, 0), out _));
             Assert.AreEqual(0, Session.Inventory.Count(item));
-            Assert.IsFalse(Session.Actions.TryPlace(item, new Vector2Int(2, 1), out var err));
+            Assert.IsFalse(Session.Actions.TryPlace(item, new Vector3Int(2, 1, 0), out var err));
             Assert.IsNotNull(err);
 
-            var crusher = (Machine)World.At(new Vector2Int(1, 1));
+            var crusher = (Machine)World.At(new Vector3Int(1, 1, 0));
             crusher.InsertManual(R("iron_ore"), 3);
-            Assert.IsTrue(Session.Actions.TryPickUp(new Vector2Int(1, 1), out _));
+            Assert.IsTrue(Session.Actions.TryPickUp(new Vector3Int(1, 1, 0), out _));
             Assert.AreEqual(1, Session.Inventory.Count(item));
             Assert.AreEqual(3, Session.Inventory.Count(R("iron_ore")));
-            Assert.IsNull(World.At(new Vector2Int(1, 1)));
+            Assert.IsNull(World.At(new Vector3Int(1, 1, 0)));
         }
 
         [Test]
-        public void FixedMachines_CannotBePickedUp()
+        public void Vault_CanBeMovedAndKeepsItsSides()
         {
             var vault = World.FirstMachine<VaultMachine>();
-            Assert.IsFalse(Session.Actions.TryPickUp(vault.Position, out _));
+            vault.Sides.Set(Direction.East, SideMode.Output, R("iron_ore"));
+            var target = vault.Position + new Vector3Int(3, 0, 0);
+            Assert.IsTrue(Session.Actions.TryMove(vault.Position, target, out var err), err);
+            Assert.AreSame(vault, World.At(target));
+            Assert.AreEqual(R("iron_ore"), vault.Sides[Direction.East].Filter);
+        }
+
+        [Test]
+        public void Move_ToOccupiedOrOutOfBounds_IsRefused()
+        {
+            var furnace = Place<ProcessorMachine>("electric_furnace", 1, 1);
+            Place<ProcessorMachine>("crusher", 2, 1);
+            Assert.IsFalse(Session.Actions.TryMove(furnace.Position, new Vector3Int(2, 1, 0), out _));
+            Assert.IsFalse(Session.Actions.TryMove(furnace.Position, new Vector3Int(1, 1, Settings.levels), out _));
+            Assert.IsTrue(Session.Actions.TryMove(furnace.Position, new Vector3Int(1, 1, 1), out _), "On peut empiler en hauteur");
+        }
+
+        [Test]
+        public void VerticalSides_TransferBetweenLevels()
+        {
+            var crusher = Place<ProcessorMachine>("crusher", 1, 1);
+            var furnace = (ProcessorMachine)World.Place(M("electric_furnace"), new Vector3Int(1, 1, 1));
+            foreach (var d in DirectionExtensions.All) crusher.Sides.SetMode(d, SideMode.None);
+            crusher.Sides.SetMode(Direction.Up, SideMode.Output);
+            Power(crusher, 1000);
+            Power(furnace, 2000);
+            crusher.InsertManual(R("iron_ore"), 1);
+            World.Step(70);
+            Assert.AreEqual(2, furnace.Outputs.Amount(R("iron_ingot")), "Le broyeur pousse vers le four au-dessus de lui");
+        }
+
+        [Test]
+        public void Slots_OneResourcePerSlot_LikeAFurnace()
+        {
+            var furnace = Place<ProcessorMachine>("electric_furnace", 1, 1);
+            Assert.AreEqual(2, furnace.Inputs.Slots.Count, "Le four a deux emplacements d'objet (acier : fer + charbon)");
+            Assert.AreEqual(10, furnace.InsertManual(R("iron_ore"), 10));
+            Assert.AreEqual(5, furnace.InsertManual(R("sand"), 5));
+            Assert.AreEqual(0, furnace.InsertManual(R("coal"), 1), "Plus d'emplacement libre pour un troisième objet");
+            var electrolyser = Place<ProcessorMachine>("electrolyser", 3, 1);
+            Assert.AreEqual(ResourceKind.Fluid, electrolyser.Inputs.Slots.Single().Kind);
+            Assert.AreEqual(2, electrolyser.Outputs.Slots.Count(s => s.Kind == ResourceKind.Gas));
         }
 
         [Test]
         public void Place_OutOfBoundsOrOccupied_IsRefused()
         {
-            Assert.IsFalse(Session.Actions.TryPlace(R("item_cable"), new Vector2Int(-1, 0), out _));
+            Assert.IsFalse(Session.Actions.TryPlace(R("item_cable"), new Vector3Int(-1, 0, 0), out _));
             var vault = World.FirstMachine<VaultMachine>();
             Assert.IsFalse(Session.Actions.TryPlace(R("item_cable"), vault.Position, out _));
             Assert.AreEqual(16, Session.Inventory.Count(R("item_cable")));

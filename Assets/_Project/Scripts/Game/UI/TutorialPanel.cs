@@ -23,7 +23,7 @@ namespace Nucleaire.Game.UI
             this.tracker = tracker;
             panel = root.Q("tutorial");
             tracker.Advanced += () => { confirmSkip = false; Rebuild(); };
-            ctx.RecipeBookRequested += _ => tracker.NotifyRecipeBookOpened();
+            ctx.RecipeBookRequested += (_, _) => tracker.NotifyRecipeBookOpened();
             Rebuild();
         }
 

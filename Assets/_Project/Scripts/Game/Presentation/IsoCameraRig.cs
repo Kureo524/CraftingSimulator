@@ -4,8 +4,8 @@ using UnityEngine.InputSystem;
 
 namespace Nucleaire.Game
 {
-    /// <summary>Caméra isométrique orthographique : déplacement (ZQSD/WASD ou clic molette), zoom (molette),
-    /// rotation par quarts de tour (A/E sur AZERTY, Q/E sur QWERTY).</summary>
+    /// <summary>Caméra isométrique orthographique : déplacement (raccourcis ou clic molette), zoom (molette),
+    /// rotation par quarts de tour (R par défaut).</summary>
     public sealed class IsoCameraRig : MonoBehaviour
     {
         [SerializeField] private float pitch = 32f;
@@ -21,6 +21,13 @@ namespace Nucleaire.Game
         private Vector2 bounds;
 
         public Camera Camera { get; private set; }
+        public GameInput Input { get; set; }
+        /// <summary>Faux quand un panneau capture les touches (ex. inventaire : R = voir la recette).</summary>
+        public System.Func<bool> RotationAllowed { get; set; } = () => true;
+        public float Zoom => smoothZoom;
+        public Vector3 Focus3 => smoothTarget;
+        /// <summary>Direction horizontale de la caméra vers la scène.</summary>
+        public Vector3 HorizontalForward => Quaternion.Euler(0, smoothYaw, 0) * Vector3.forward;
         /// <summary>Indique si le pointeur est au-dessus de l'interface (fourni par l'UI).</summary>
         public Func<bool> PointerOverUI { get; set; } = () => false;
         /// <summary>Quart de tour actuel (0..3) : sert à orienter la boussole de l'UI.</summary>
@@ -50,21 +57,22 @@ namespace Nucleaire.Game
 
         private void Update()
         {
-            var kb = Keyboard.current;
             var mouse = Mouse.current;
             float dt = Time.unscaledDeltaTime;
 
-            if (kb != null && !IsTyping())
+            if (Input != null)
             {
                 Vector2 move = Vector2.zero;
-                if (kb.wKey.isPressed || kb.upArrowKey.isPressed) move.y += 1;
-                if (kb.sKey.isPressed || kb.downArrowKey.isPressed) move.y -= 1;
-                if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) move.x += 1;
-                if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) move.x -= 1;
+                if (Input.Held(GameInput.CameraForward)) move.y += 1;
+                if (Input.Held(GameInput.CameraBack)) move.y -= 1;
+                if (Input.Held(GameInput.CameraRight)) move.x += 1;
+                if (Input.Held(GameInput.CameraLeft)) move.x -= 1;
                 if (move != Vector2.zero) Pan(move.normalized * (panSpeed * zoom * 2f * dt));
-
-                if (kb.qKey.wasPressedThisFrame) Rotate(-1);
-                if (kb.eKey.wasPressedThisFrame) Rotate(1);
+                if (RotationAllowed() && Input.Pressed(GameInput.RotateCamera))
+                {
+                    bool reverse = Keyboard.current != null && Keyboard.current.shiftKey.isPressed;
+                    Rotate(reverse ? -1 : 1);
+                }
             }
 
             if (mouse != null)
@@ -102,6 +110,9 @@ namespace Nucleaire.Game
 
         public void Focus(Vector3 worldPoint) => target = new Vector3(worldPoint.x, 0f, worldPoint.z);
 
+        /// <summary>Utilisé par les captures automatiques.</summary>
+        public void SetZoomForTests(float z) => zoom = Mathf.Clamp(z, minZoom, maxZoom);
+
         private void Apply(bool instant)
         {
             float k = instant ? 1f : 1f - Mathf.Exp(-smoothing * Time.unscaledDeltaTime);
@@ -116,15 +127,6 @@ namespace Nucleaire.Game
             Camera.orthographicSize = smoothZoom;
         }
 
-        public bool ScreenToCell(Vector2 screen, out Vector2Int cell, out Vector3 point)
-        {
-            cell = default;
-            if (!GridMath.RayToGround(Camera.ScreenPointToRay(screen), out point)) return false;
-            cell = GridMath.WorldToCell(point);
-            return true;
-        }
 
-        /// <summary>Vrai si un champ texte de l'UI a le focus (on ne déplace pas la caméra en tapant).</summary>
-        public Func<bool> IsTyping { get; set; } = () => false;
     }
 }

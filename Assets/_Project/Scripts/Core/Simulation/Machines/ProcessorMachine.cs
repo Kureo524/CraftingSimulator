@@ -14,13 +14,15 @@ namespace Nucleaire.Simulation
         private ProcessRecipe current;
         private float progressTicks;
 
-        public ProcessorMachine(MachineDef def, World world, Vector2Int pos)
+        public ProcessorMachine(MachineDef def, World world, Vector3Int pos)
             : base(def, world, pos, world.Db.ProcessesFor(def).Any(p => p.Inputs.Count > 0) ? SideMode.Input : SideMode.Output)
         {
             recipes = world.Db.ProcessesFor(def);
             var energy = world.Db.Energy;
-            Inputs = new ResourceStorage(CapacityFor, recipes.SelectMany(r => r.Inputs).Select(s => s.Resource).Where(r => r != null));
-            Outputs = new ResourceStorage(CapacityFor, recipes.SelectMany(r => r.Outputs).Select(s => s.Resource).Where(r => r != null && r != energy));
+            Inputs = new ResourceStorage(ResourceStorage.SlotsFor(recipes.Select(r => r.Inputs)), CapacityFor,
+                recipes.SelectMany(r => r.Inputs).Select(s => s.Resource).Where(r => r != null));
+            Outputs = new ResourceStorage(ResourceStorage.SlotsFor(recipes.Select(r => r.Outputs)), CapacityFor,
+                recipes.SelectMany(r => r.Outputs).Select(s => s.Resource).Where(r => r != null && r != energy));
             ConsumesEnergyFlag = recipes.Any(r => r.EnergyPerTick > 0);
             ProducesEnergyFlag = recipes.Any(r => r.Outputs.Any(o => o.Resource == energy));
         }

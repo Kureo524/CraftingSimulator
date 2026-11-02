@@ -19,11 +19,11 @@ namespace Nucleaire
             Workbench = new WorkbenchService(World, Inventory, Permissions);
             Objectives = new ObjectiveTracker(World);
 
-            // Machines fixes posées côte à côte au centre de l'atelier.
-            var center = settings.gridSize / 2;
+            // Machines de départ posées côte à côte au centre de l'atelier (déplaçables ensuite).
+            var center = (Vector3Int)(settings.gridSize / 2);
             var placed = db.PrePlacedMachines.Where(m => m != null).ToList();
             for (int i = 0; i < placed.Count; i++)
-                World.Place(placed[i], center + new Vector2Int(i * 2 - placed.Count + 1, -2));
+                World.Place(placed[i], center + new Vector3Int(i * 2 - placed.Count + 1, -2, 0));
 
             foreach (var s in db.StartingInventory.Where(s => s.IsValid)) Inventory.Add(s.Resource, s.Amount);
 

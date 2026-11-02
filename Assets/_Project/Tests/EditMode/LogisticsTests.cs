@@ -50,8 +50,8 @@ namespace Nucleaire.Tests
             var vault = World.FirstMachine<VaultMachine>();
             var p = vault.Position;
             vault.Sides.Set(Direction.North, SideMode.Output, R("iron_ore"));
-            World.Place(T("conveyor"), p + Vector2Int.up);
-            var crusher = (ProcessorMachine)World.Place(M("crusher"), p + Vector2Int.up * 2);
+            World.Place(T("conveyor"), p + new Vector3Int(0, 1, 0));
+            var crusher = (ProcessorMachine)World.Place(M("crusher"), p + new Vector3Int(0, 2, 0));
             World.Step(5);
             Assert.Greater(crusher.Inputs.Amount(R("iron_ore")), 0);
             Assert.AreEqual(0, crusher.Inputs.Amount(R("coal")));
@@ -63,9 +63,9 @@ namespace Nucleaire.Tests
             var vault = World.FirstMachine<VaultMachine>();
             var p = vault.Position;
             vault.Sides.Set(Direction.North, SideMode.Output);
-            World.Place(T("conveyor"), p + Vector2Int.up);
+            World.Place(T("conveyor"), p + new Vector3Int(0, 1, 0));
             World.Step(5);
-            Assert.AreEqual(0, World.Logistics.NetworkAt(p + Vector2Int.up).Stored);
+            Assert.AreEqual(0, World.Logistics.NetworkAt(p + new Vector3Int(0, 1, 0)).Stored);
         }
 
         [Test]
@@ -73,25 +73,25 @@ namespace Nucleaire.Tests
         {
             Line("pipe", 1, 3, 1);
             Assert.AreEqual(1, World.Logistics.Networks.Count);
-            var net = World.Logistics.NetworkAt(new Vector2Int(1, 1));
+            var net = World.Logistics.NetworkAt(new Vector3Int(1, 1, 0));
             Assert.AreEqual(3, net.Segments.Count);
             net.Insert(R("water"), 300);
 
-            World.Remove(new Vector2Int(2, 1));
+            World.Remove(new Vector3Int(2, 1, 0));
             Assert.AreEqual(2, World.Logistics.Networks.Count);
-            Assert.AreEqual(100, World.Logistics.NetworkAt(new Vector2Int(1, 1)).Stored);
-            Assert.AreEqual(100, World.Logistics.NetworkAt(new Vector2Int(3, 1)).Stored);
+            Assert.AreEqual(100, World.Logistics.NetworkAt(new Vector3Int(1, 1, 0)).Stored);
+            Assert.AreEqual(100, World.Logistics.NetworkAt(new Vector3Int(3, 1, 0)).Stored);
 
-            World.Place(T("pipe"), new Vector2Int(2, 1));
+            World.Place(T("pipe"), new Vector3Int(2, 1, 0));
             Assert.AreEqual(1, World.Logistics.Networks.Count);
-            Assert.AreEqual(200, World.Logistics.NetworkAt(new Vector2Int(2, 1)).Stored);
+            Assert.AreEqual(200, World.Logistics.NetworkAt(new Vector3Int(2, 1, 0)).Stored);
         }
 
         [Test]
         public void DifferentTransmitters_DoNotConnect()
         {
-            World.Place(T("pipe"), new Vector2Int(1, 1));
-            World.Place(T("pressurized_tube"), new Vector2Int(2, 1));
+            World.Place(T("pipe"), new Vector3Int(1, 1, 0));
+            World.Place(T("pressurized_tube"), new Vector3Int(2, 1, 0));
             Assert.AreEqual(2, World.Logistics.Networks.Count);
         }
 
@@ -99,7 +99,7 @@ namespace Nucleaire.Tests
         public void FluidNetwork_CarriesOneFluidAtATime()
         {
             Line("pressurized_tube", 1, 2, 1);
-            var net = World.Logistics.NetworkAt(new Vector2Int(1, 1));
+            var net = World.Logistics.NetworkAt(new Vector3Int(1, 1, 0));
             Assert.Greater(net.Insert(R("hydrogen"), 100), 0);
             Assert.AreEqual(0, net.Insert(R("oxygen"), 100));
             Assert.AreEqual(0, net.Insert(R("water"), 100), "Un tube à gaz ne transporte pas de liquide");
@@ -109,7 +109,7 @@ namespace Nucleaire.Tests
         public void ItemNetwork_AllowsMixing()
         {
             Line("conveyor", 1, 3, 1);
-            var net = World.Logistics.NetworkAt(new Vector2Int(1, 1));
+            var net = World.Logistics.NetworkAt(new Vector3Int(1, 1, 0));
             Assert.AreEqual(1, net.Insert(R("iron_ore"), 1));
             Assert.AreEqual(1, net.Insert(R("coal"), 1));
         }
@@ -119,7 +119,7 @@ namespace Nucleaire.Tests
         {
             var furnace = Place<ProcessorMachine>("electric_furnace", 4, 1);
             Line("conveyor", 1, 3, 1);
-            var net = World.Logistics.NetworkAt(new Vector2Int(3, 1));
+            var net = World.Logistics.NetworkAt(new Vector3Int(3, 1, 0));
             net.Insert(R("sand"), 4);
             World.Step(1);
             Assert.AreEqual(4 - T("conveyor").ThroughputPerTick, net.Stored, "Le réseau ne livre que son débit par tick");

@@ -16,6 +16,7 @@ namespace Nucleaire.Game.UI
         private readonly Label clock, modeHint;
         private readonly List<(ObjectiveDef def, VisualElement fill, Label amount, VisualElement badge)> rows = new();
         private readonly VisualElement compassNeedle;
+        private readonly Label cutawayLabel;
         private SegmentedControl speed;
 
         public HudPanel(GameContext ctx, VisualElement root)
@@ -29,6 +30,8 @@ namespace Nucleaire.Game.UI
             BuildObjectives();
             var topRight = root.Q("top-right");
             clock = BuildControls(topRight, out compassNeedle);
+            cutawayLabel = root.Q<Label>("cutaway-hint");
+            cutawayLabel.text = "[Vue en coupe : les colonnes devant le point visé sont masquées. Dézoome pour tout voir.]";
 
             ctx.World.Events.Added += AddLogLine;
             foreach (var e in ctx.World.Events.Entries) AddLogLine(e);
@@ -138,8 +141,9 @@ namespace Nucleaire.Game.UI
         private Label BuildControls(VisualElement parent, out VisualElement needle)
         {
             var compass = Ui.El("glass glass--light compass", parent);
-            needle = Ui.Text("N", "compass__label", compass);
-            Tooltips.Register(compass, "Boussole", "Les faces des machines sont orientées Nord/Est/Sud/Ouest. Tourne la caméra avec Q/E (A/E en AZERTY).");
+            needle = compass;
+            foreach (var l in new[] { "N", "E", "S", "W" }) Ui.Text(l, "compass__label" + (l == "N" ? " compass__label--north" : ""), compass).name = "compass-" + l;
+            Tooltips.Register(compass, () => ("Boussole", $"Les faces des machines sont orientées Nord/Est/Sud/Ouest (+ Haut/Bas). Tourne la caméra avec {ctx.Input.Display(GameInput.RotateCamera)}."));
 
             speed = new SegmentedControl(new[] { "Pause", "×1", "×2", "×4" }, ctx.Runner.SpeedIndex);
             speed.Changed += i =>
@@ -197,13 +201,19 @@ namespace Nucleaire.Game.UI
 
         // ---------------- Mise à jour ----------------
 
-        public void Update(float cameraYaw)
+        public void Update(float cameraYaw, bool cutaway)
         {
+            Ui.SetVisible(cutawayLabel, cutaway);
             clock.text = $"{Ui.Seconds(ctx.World.CurrentTick, ctx.World.Settings.ticksPerSecond)}  ·  tick {ctx.World.CurrentTick}";
-            // Le « N » se place sur le bord de la boussole, dans la direction du nord à l'écran.
-            float a = -cameraYaw * Mathf.Deg2Rad;
-            compassNeedle.style.left = 19f - 7f + Mathf.Sin(a) * 11f;
-            compassNeedle.style.top = 19f - 8f - Mathf.Cos(a) * 11f;
+            // Les lettres se placent sur le bord de la boussole, dans la direction réelle à l'écran.
+            string[] letters = { "N", "E", "S", "W" };
+            for (int i = 0; i < 4; i++)
+            {
+                float a = (i * 90f - cameraYaw) * Mathf.Deg2Rad;
+                var l = compassNeedle.Q<Label>("compass-" + letters[i]);
+                l.style.left = 23f - 7f + Mathf.Sin(a) * 15f;
+                l.style.top = 23f - 8f - Mathf.Cos(a) * 15f;
+            }
             if (Time.frameCount % 15 == 0) { RefreshObjectives(); RefreshModeHint(); }
         }
     }

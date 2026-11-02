@@ -7,7 +7,7 @@ namespace Nucleaire.Simulation
     public interface IGridEntity
     {
         PlaceableDef Def { get; }
-        Vector2Int Position { get; }
+        Vector3Int Position { get; }
     }
 
     /// <summary>Peut recevoir des ressources par une de ses faces.</summary>

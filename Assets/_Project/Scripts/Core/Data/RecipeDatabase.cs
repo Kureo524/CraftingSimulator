@@ -97,7 +97,6 @@ namespace Nucleaire.Data
             placeableByItem = new Dictionary<ResourceDef, PlaceableDef>();
             upgradeByItem = new Dictionary<ResourceDef, UpgradeDef>();
 
-            MachineDef workbench = machines.FirstOrDefault(m => m != null && m.Behaviour == MachineBehaviour.Workbench);
 
             foreach (var p in processes.Where(p => p != null))
             {
@@ -110,7 +109,7 @@ namespace Nucleaire.Data
             }
 
             foreach (var c in craftingRecipes.Where(c => c != null))
-                entries.Add(new RecipeEntry(RecipeSource.Workbench, workbench, c.Ingredients, new[] { c.Result }, 0, 0, "Craft manuel", c));
+                entries.Add(new RecipeEntry(RecipeSource.Workbench, null, c.Ingredients, new[] { c.Result }, 0, 0, "Craft manuel", c));
 
             foreach (var m in machines.Where(m => m != null))
             {

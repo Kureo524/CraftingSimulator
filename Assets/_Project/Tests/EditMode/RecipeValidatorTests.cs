@@ -46,8 +46,7 @@ namespace Nucleaire.Tests
             energy = Res("energy", ResourceKind.Energy);
             ore = Res("ore", ResourceKind.Item, isBase: true);
             ingot = Res("ingot");
-            var wbItem = Res("item_wb"); var vaultItem = Res("item_vault"); var furnaceItem = Res("item_furnace"); var solarItem = Res("item_solar");
-            var wb = Machine("wb", MachineBehaviour.Workbench, wbItem);
+            var vaultItem = Res("item_vault"); var furnaceItem = Res("item_furnace"); var solarItem = Res("item_solar");
             var vault = Machine("vault", MachineBehaviour.Vault, vaultItem);
             furnace = Machine("furnace", MachineBehaviour.Processor, furnaceItem);
             var solar = Machine("solar", MachineBehaviour.Processor, solarItem);
@@ -58,8 +57,8 @@ namespace Nucleaire.Tests
             smelt.EditorInit("Fonte", furnace, new List<ResourceStack> { new(ore, 1) }, new List<ResourceStack> { new(ingot, 1) }, 10, 5);
 
             processes = new List<ProcessRecipe> { solarGen, smelt };
-            machines = new List<MachineDef> { wb, vault, furnace, solar };
-            resources = new List<ResourceDef> { energy, ore, ingot, wbItem, vaultItem, furnaceItem, solarItem };
+            machines = new List<MachineDef> { vault, furnace, solar };
+            resources = new List<ResourceDef> { energy, ore, ingot, vaultItem, furnaceItem, solarItem };
 
             var obj = New<ObjectiveDef>("obj");
             obj.EditorInit("Lingot", "", new ResourceStack(ingot, 1), 1, "");
@@ -67,7 +66,7 @@ namespace Nucleaire.Tests
             var db = New<RecipeDatabase>("db");
             db.EditorSetContent(resources, machines, new List<TransmitterDef>(), processes, new List<CraftingRecipe>(),
                 new List<UpgradeDef>(), new List<ObjectiveDef> { obj });
-            db.EditorSetGame(energy, new List<MachineDef> { wb, vault },
+            db.EditorSetGame(energy, new List<MachineDef> { vault },
                 new List<ResourceStack> { new(furnaceItem, 1), new(solarItem, 1) });
             return db;
         }
@@ -86,7 +85,7 @@ namespace Nucleaire.Tests
         {
             var db = MiniDatabase(out _, out _, out _, out var energy, out _, out var machines, out _);
             // Plus de four dans l'inventaire de départ et aucune recette pour en fabriquer un.
-            db.EditorSetGame(energy, new List<MachineDef> { machines[0], machines[1] }, new List<ResourceStack>());
+            db.EditorSetGame(energy, new List<MachineDef> { machines[0] }, new List<ResourceStack>());
             var report = RecipeDatabaseValidator.Validate(db);
             Assert.IsFalse(report.IsValid);
             StringAssert.Contains("inatteignable", report.ToString());
@@ -96,8 +95,8 @@ namespace Nucleaire.Tests
         public void NoEnergySource_BlocksPoweredProcess()
         {
             var db = MiniDatabase(out _, out var ingot, out _, out var energy, out _, out var machines, out var resources);
-            var furnaceItem = resources[5];
-            db.EditorSetGame(energy, new List<MachineDef> { machines[0], machines[1] }, new List<ResourceStack> { new(furnaceItem, 1) });
+            var furnaceItem = resources[4];
+            db.EditorSetGame(energy, new List<MachineDef> { machines[0] }, new List<ResourceStack> { new(furnaceItem, 1) });
             var report = RecipeDatabaseValidator.Validate(db);
             Assert.IsFalse(report.Reachable.Contains(ingot));
         }

@@ -12,7 +12,7 @@ namespace Nucleaire.Simulation
         private readonly List<UpgradeDef> upgrades = new();
         private MachineStatus status = MachineStatus.Idle;
 
-        protected Machine(MachineDef def, World world, Vector2Int position, SideMode defaultSideMode)
+        protected Machine(MachineDef def, World world, Vector3Int position, SideMode defaultSideMode)
         {
             MachineDef = def;
             World = world;
@@ -23,7 +23,7 @@ namespace Nucleaire.Simulation
         public MachineDef MachineDef { get; }
         public PlaceableDef Def => MachineDef;
         public World World { get; }
-        public Vector2Int Position { get; }
+        public Vector3Int Position { get; internal set; }
         public SideConfig Sides { get; }
 
         public ResourceStorage Inputs { get; protected set; }

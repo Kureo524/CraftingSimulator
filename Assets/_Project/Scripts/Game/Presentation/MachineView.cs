@@ -11,7 +11,8 @@ namespace Nucleaire.Game
         private const float BodyHeight = 0.55f;
 
         private Machine machine;
-        private readonly Transform[] sidePlates = new Transform[4];
+        private readonly Transform[] sidePlates = new Transform[6];
+        private float topY = BodyHeight;
         private Transform accent, rotor;
         private Renderer accentRenderer;
         private Color accentColor;
@@ -25,17 +26,24 @@ namespace Nucleaire.Game
             transform.localPosition = GridMath.CellCenter(m.Position);
             accentColor = Palette.Muted(m.MachineDef.Color);
             BuildShape(m.MachineDef);
+            topY = ComputeTop();
 
-            for (int i = 0; i < 4; i++)
+            foreach (var d in DirectionExtensions.Horizontal)
             {
-                var d = (Direction)i;
                 var dir = GridMath.DirectionVector(d);
-                var plate = Shapes.Box(transform, dir * 0.43f + Vector3.up * 0.26f,
-                    Vector3.one, Palette.SideInput, "Side " + d);
+                var plate = Shapes.Box(transform, dir * 0.43f + Vector3.up * 0.26f, Vector3.one, Palette.SideInput, "Side " + d);
                 plate.localRotation = Quaternion.LookRotation(dir);
                 plate.localScale = new Vector3(0.34f, 0.2f, 0.04f);
-                sidePlates[i] = plate;
+                sidePlates[(int)d] = plate;
             }
+            // Haut : petite plaque sur le dessus. Bas : liseré coloré à la base.
+            sidePlates[(int)Direction.Up] = Shapes.Box(transform, new Vector3(0.28f, topY + 0.015f, 0.28f), new Vector3(0.2f, 0.03f, 0.2f), Palette.SideInput, "Side Up");
+            sidePlates[(int)Direction.Down] = Shapes.Box(transform, new Vector3(0, 0.012f, 0), new Vector3(0.94f, 0.024f, 0.94f), Palette.SideInput, "Side Down");
+
+            var col = gameObject.AddComponent<BoxCollider>();
+            col.center = new Vector3(0, 0.5f, 0);
+            col.size = new Vector3(0.94f, 1f, 0.94f);
+            gameObject.AddComponent<EntityRef>().Entity = m;
             m.Sides.Changed += RefreshSides;
             RefreshSides();
         }
@@ -93,7 +101,7 @@ namespace Nucleaire.Game
 
         private void RefreshSides()
         {
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 6; i++)
             {
                 var s = machine.Sides[(Direction)i];
                 bool visible = s.Mode != SideMode.None;
@@ -101,6 +109,16 @@ namespace Nucleaire.Game
                 if (visible) Shapes.SetColor(sidePlates[i], s.Mode == SideMode.Input ? Palette.SideInput : Palette.SideOutput);
             }
         }
+
+        private float ComputeTop()
+        {
+            float top = 0f;
+            foreach (var r in GetComponentsInChildren<Renderer>()) top = Mathf.Max(top, r.bounds.max.y - transform.position.y);
+            return top;
+        }
+
+        /// <summary>Repositionne la vue après un déplacement de la machine.</summary>
+        public void SyncPosition() => transform.localPosition = GridMath.CellCenter(machine.Position);
 
         private void Update()
         {

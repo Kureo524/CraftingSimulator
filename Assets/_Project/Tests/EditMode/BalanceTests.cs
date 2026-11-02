@@ -26,7 +26,7 @@ namespace Nucleaire.Tests
             private Machine For(MachineDef def)
             {
                 if (machines.TryGetValue(def, out var m)) return m;
-                m = (Machine)t.World.Place(def, new Vector2Int(nextX, 1));
+                m = (Machine)t.World.Place(def, new Vector3Int(nextX, 1, 0));
                 nextX += 2; // une case libre entre deux machines : aucun échange automatique
                 foreach (var d in DirectionExtensions.All) m.Sides.SetMode(d, SideMode.None);
                 return machines[def] = m;

@@ -11,11 +11,11 @@ namespace Nucleaire.Simulation
     {
         private readonly ReactorSettings s;
 
-        public ReactorMachine(MachineDef def, World world, Vector2Int pos) : base(def, world, pos, SideMode.Input)
+        public ReactorMachine(MachineDef def, World world, Vector3Int pos) : base(def, world, pos, SideMode.Input)
         {
             s = def.Reactor;
-            Inputs = new ResourceStorage(CapacityFor, new[] { s.fuel, s.coolant });
-            Outputs = new ResourceStorage(CapacityFor, new[] { s.waste, s.heatedCoolant });
+            Inputs = new ResourceStorage(new[] { s.fuel.Kind, s.coolant.Kind }, CapacityFor, new[] { s.fuel, s.coolant });
+            Outputs = new ResourceStorage(new[] { s.waste.Kind, s.heatedCoolant.Kind }, CapacityFor, new[] { s.waste, s.heatedCoolant });
             Heat = s.ambientHeat;
         }
 

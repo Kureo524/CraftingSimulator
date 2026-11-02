@@ -59,13 +59,13 @@ namespace Nucleaire.Game.UI
         public bool IsOpen => !layer.ClassListContains("hidden");
         public bool IsTyping => search.focusController?.focusedElement == search;
 
-        public void Toggle() { if (IsOpen) Close(); else Open(current); }
-
-        public void Open(ResourceDef r)
+        public void Open(ResourceDef r, int tab)
         {
             Ui.SetVisible(layer, true);
             if (r == null) r = current ?? ctx.Session.Objectives.Current?.Target.Resource ?? ctx.Db.Resources.FirstOrDefault();
             Navigate(r, pushHistory: current != null && current != r);
+            ficheTab = tab;
+            RebuildFiche();
             RebuildList();
         }
 

@@ -9,7 +9,9 @@ using UnityEngine.UIElements;
 
 namespace Nucleaire.Game.UI
 {
-    /// <summary>Panneau latéral de l'élément sélectionné : état, faces, améliorations, vault, établi, réseau.</summary>
+    /// <summary>Panneau de l'élément sélectionné. Une machine affiche ses emplacements comme un four :
+    /// entrées → progression → sorties, chaque type de contenu avec sa propre représentation.
+    /// Les problèmes de la machine s'affichent ici (et non dans le monde).</summary>
     public sealed class InspectorPanel
     {
         private readonly GameContext ctx;
@@ -21,7 +23,6 @@ namespace Nucleaire.Game.UI
         private ScrollView scrollView;
         private SegmentedControl tabs;
         private string[] tabNames = Array.Empty<string>();
-        private int workbenchCategory;
         private float nextUpdate;
 
         public InspectorPanel(GameContext ctx, VisualElement root)
@@ -29,7 +30,8 @@ namespace Nucleaire.Game.UI
             this.ctx = ctx;
             this.root = root;
             ctx.SelectionChanged += Show;
-            ctx.Session.Inventory.Changed += () => { if (current != null && UsesInventory()) RebuildTab(); };
+            ctx.Session.Inventory.Changed += () => { if (current != null && CurrentTab is "État" or "Améliorations") RebuildTab(); };
+            ctx.World.EntityMoved += (e, _) => { if (e == current) Show(current); };
             Show(null);
         }
 
@@ -68,7 +70,6 @@ namespace Nucleaire.Game.UI
         {
             ReactorMachine => new[] { "Pilotage", "Faces", "Améliorations" },
             VaultMachine => new[] { "Ressources", "Faces" },
-            WorkbenchMachine => new[] { "Fabriquer" },
             BatteryMachine => new[] { "État", "Faces" },
             Machine m when m.MachineDef.UpgradeSlots > 0 => new[] { "État", "Faces", "Améliorations" },
             Machine => new[] { "État", "Faces" },
@@ -76,8 +77,6 @@ namespace Nucleaire.Game.UI
         };
 
         private string CurrentTab => tabNames.Length == 0 ? "" : tabNames[tabs?.Selected ?? 0];
-
-        private bool UsesInventory() => CurrentTab is "État" or "Améliorations" or "Fabriquer" or "Ressources";
 
         private void RebuildTab()
         {
@@ -89,7 +88,6 @@ namespace Nucleaire.Game.UI
             {
                 "Faces" => PlayerPermission.Sides,
                 "Améliorations" => PlayerPermission.Upgrades,
-                "Fabriquer" => PlayerPermission.Craft,
                 _ => PlayerPermission.None,
             };
             if (locked != PlayerPermission.None && !ctx.IsAllowed(locked))
@@ -105,7 +103,6 @@ namespace Nucleaire.Game.UI
                 case "Faces": BuildSides((Machine)current); break;
                 case "Améliorations": BuildUpgrades((Machine)current); break;
                 case "Ressources": BuildVault((VaultMachine)current); break;
-                case "Fabriquer": BuildWorkbench(); break;
                 case "Réseau": BuildNetwork((TransmitterSegment)current); break;
             }
             RunUpdaters();
@@ -116,7 +113,7 @@ namespace Nucleaire.Game.UI
         public void Update()
         {
             if (current == null || Time.unscaledTime < nextUpdate) return;
-            nextUpdate = Time.unscaledTime + 0.15f;
+            nextUpdate = Time.unscaledTime + 0.12f;
             RunUpdaters();
         }
 
@@ -137,99 +134,93 @@ namespace Nucleaire.Game.UI
             Ui.Text(e.Def.DisplayName, "sheet-title", titles);
             Ui.Text(KindLabel(e), "meta", titles);
             Ui.Button("×", () => ctx.Selection = null, "btn btn--ghost btn--icon", top);
-
             if (!string.IsNullOrEmpty(e.Def.Description)) Ui.Text(e.Def.Description, "text-2 wrap inspector__desc", header);
 
-            if (e is Machine m && m is not VaultMachine && m is not WorkbenchMachine)
+            if (e is Machine m && m is not VaultMachine)
             {
                 var bar = Ui.El("row inspector__actions", header);
                 var badge = Ui.Badge("", null, bar);
                 Ui.El("spacer", bar);
                 var toggle = Ui.Button("", () => { if (ctx.Require(PlayerPermission.MachineControl)) m.SetEnabled(!m.Enabled); }, "btn btn--small", bar);
-                var pick = Ui.Button("Démonter", () => PickUp(e), "btn btn--danger btn--small", bar);
-                Tooltips.Register(pick, "Démonter", "La machine, ses solides et ses améliorations reviennent dans l'inventaire. Les liquides et gaz sont perdus. (Clic droit dans l'atelier.)");
                 headerUpdaters.Add(() =>
                 {
                     Ui.SetBadge(badge, m.Status.DisplayName(), Ui.StatusState(m.Status));
                     toggle.text = m.Enabled ? "Arrêter" : "Démarrer";
                 });
             }
-            else if (e is TransmitterSegment)
-            {
-                var bar = Ui.El("row inspector__actions", header);
-                Ui.El("spacer", bar);
-                Ui.Button("Démonter", () => PickUp(e), "btn btn--danger btn--small", bar);
-            }
         }
 
-        private string KindLabel(IGridEntity e) => e switch
+        private static string KindLabel(IGridEntity e)
         {
-            TransmitterSegment s => $"Transmetteur · {s.TransmitterDef.Carries.DisplayName()} · case {e.Position.x},{e.Position.y}",
-            _ => $"Machine · case {e.Position.x},{e.Position.y}",
-        };
-
-        private void PickUp(IGridEntity e)
-        {
-            if (ctx.Session.Actions.TryPickUp(e.Position, out var err)) ctx.Notify($"{e.Def.DisplayName} démonté.", EventSeverity.Info);
-            else ctx.Notify(err);
+            var p = $"case {e.Position.x},{e.Position.y} · étage {e.Position.z + 1}";
+            return e is TransmitterSegment s ? $"Transmetteur · {s.TransmitterDef.Carries.DisplayName()} · {p}" : $"Machine · {p}";
         }
 
-        // ---------------- État (machines à procédés, batterie, évent) ----------------
+        // ---------------- État ----------------
 
         private void BuildState(Machine m)
         {
             StatusBox(m);
+            var sec = Ui.Section(null, content);
+            var layout = Ui.El("row machine-layout", sec);
+
+            if (m.ConsumesEnergy || m.ProducesEnergy) updaters.Add(SlotWidgets.EnergyBar(layout, m));
+
+            var inputs = Ui.El("machine-col", layout);
+            Ui.Text("Entrées", "meta machine-col__title", inputs);
+            AddSlots(m, m.Inputs, Ui.El("machine-slots", inputs));
+            if (m.Inputs == null || m.Inputs.Slots.Count == 0) Ui.Text("—", "text-3", inputs);
+
+            var mid = Ui.El("machine-progress", layout);
+            Ui.Text("→", "machine-progress__arrow", mid);
+            Ui.Gauge(mid, out var fill);
+            var pct = Ui.Text("", "meta", mid);
+            updaters.Add(() =>
+            {
+                Ui.SetGauge(fill, m.Progress, m.Status == MachineStatus.Working ? null : "warning");
+                pct.text = m.Progress > 0 ? $"{m.Progress * 100f:0} %" : "";
+            });
+
+            var outputs = Ui.El("machine-col", layout);
+            Ui.Text("Sorties", "meta machine-col__title", outputs);
+            AddSlots(m, m.Outputs, Ui.El("machine-slots", outputs));
+            if ((m.Outputs == null || m.Outputs.Slots.Count == 0) && m.ProducesEnergy) Ui.Text("Énergie", "text-3", outputs);
 
             if (m is ProcessorMachine p)
             {
-                var sec = Ui.Section("Procédé", content);
-                var name = Ui.Text("", "bold", sec);
-                Ui.Gauge(sec, out var fill, thick: true);
-                var meta = Ui.Text("", "meta", sec);
+                var info = Ui.Text("", "meta", sec);
+                info.style.marginTop = 8;
                 updaters.Add(() =>
                 {
                     var r = p.CurrentRecipe;
-                    name.text = r != null ? r.DisplayName : "Aucun procédé en cours";
-                    Ui.SetGauge(fill, p.Progress);
-                    var shown = r ?? p.LockedRecipe;
-                    meta.text = shown == null ? "" :
-                        $"{shown.DurationTicks / (float)ctx.World.Settings.ticksPerSecond / p.SpeedMultiplier:0.#} s · {p.EnergyCostPerTick(shown)} J/tick · vitesse ×{p.SpeedMultiplier:0.##}";
-                });
-
-                if (p.Recipes.Count > 1)
-                {
-                    var choices = new List<string> { "Automatique" };
-                    choices.AddRange(p.Recipes.Select(r => r.DisplayName));
-                    var dd = new DropdownField("Procédé", choices, p.LockedRecipe == null ? 0 : p.Recipes.ToList().IndexOf(p.LockedRecipe) + 1);
-                    dd.AddToClassList("inspector__field");
-                    dd.RegisterValueChangedCallback(evt =>
-                    {
-                        if (!ctx.Require(PlayerPermission.MachineControl)) { dd.SetValueWithoutNotify(evt.previousValue); return; }
-                        int i = choices.IndexOf(evt.newValue);
-                        p.LockRecipe(i <= 0 ? null : p.Recipes[i - 1]);
-                    });
-                    sec.Add(dd);
-                    Tooltips.Register(dd, "Choix du procédé", "En automatique, la machine lance le premier procédé dont elle a tous les ingrédients. Impose un procédé pour éviter qu'elle consomme le mauvais ingrédient.");
-                }
-            }
-
-            if (m.ConsumesEnergy || m.ProducesEnergy)
-            {
-                var sec = Ui.Section("Énergie", content);
-                Ui.Gauge(sec, out var fill);
-                var label = Ui.Text("", "meta", sec);
-                updaters.Add(() =>
-                {
-                    Ui.SetGauge(fill, m.EnergyCapacity == 0 ? 0 : (float)m.Energy / m.EnergyCapacity, m.Energy == 0 && m.ConsumesEnergy ? "danger" : null);
-                    label.text = $"{Ui.Energy(m.Energy)} / {Ui.Energy(m.EnergyCapacity)}";
+                    info.text = r == null ? "La machine démarre dès qu'elle a les bons ingrédients."
+                        : $"En cours · {p.EnergyCostPerTick(r)} J/tick · vitesse ×{p.SpeedMultiplier:0.##}";
                 });
             }
-
-            if (m.Inputs != null) StorageSection("Entrées", m, m.Inputs, takeable: true);
             DepositSection(m);
-            if (m.Outputs != null) StorageSection("Sorties", m, m.Outputs, takeable: true);
-            if (m is ProcessorMachine proc) RecipesSection(proc);
         }
+
+        private void AddSlots(Machine m, ResourceStorage storage, VisualElement parent)
+        {
+            if (storage == null) return;
+            foreach (var slot in storage.Slots)
+            {
+                var s = slot;
+                if (s.Kind == ResourceKind.Item)
+                    updaters.Add(SlotWidgets.ItemSlot(parent, s, () => storage.Capacity(s.Resource ?? FirstOfKind(ResourceKind.Item)), r =>
+                    {
+                        if (!ctx.Require(PlayerPermission.Take)) return;
+                        ctx.Session.Actions.Take(m, r, int.MaxValue);
+                    }));
+                else
+                    updaters.Add(SlotWidgets.Tank(parent, s, () => storage.Capacity(s.Resource ?? FirstOfKind(s.Kind)), r =>
+                    {
+                        if (ctx.Require(PlayerPermission.Take)) ctx.Session.Actions.Dump(m, r);
+                    }));
+            }
+        }
+
+        private ResourceDef FirstOfKind(ResourceKind k) => ctx.Db.Resources.FirstOrDefault(r => r.Kind == k);
 
         private void StatusBox(Machine m)
         {
@@ -244,50 +235,11 @@ namespace Nucleaire.Game.UI
             });
         }
 
-        private void StorageSection(string title, Machine m, ResourceStorage storage, bool takeable)
-        {
-            var resources = (storage.Allowed ?? storage.Contents.Select(kv => kv.Key).ToList()).Where(r => r != null)
-                .OrderByDescending(r => storage.Amount(r) > 0).ThenBy(r => r.DisplayName).ToList();
-            if (resources.Count == 0 && storage.Allowed != null) return;
-            var sec = Ui.Section(title, content);
-            if (resources.Count == 0) { Ui.System("Vide.", sec); return; }
-            foreach (var r in resources)
-            {
-                var row = Ui.El("list-row", sec);
-                Ui.Swatch(Palette.Muted(r.Color), row);
-                var col = Ui.El("col grow", row);
-                var name = Ui.Text(r.DisplayName, null, col);
-                Ui.Gauge(col, out var fill).AddToClassList("gauge--inline");
-                var amount = Ui.Text("", "mono", row);
-                amount.style.marginLeft = 8;
-                if (takeable && r.Kind == ResourceKind.Item)
-                {
-                    var take = Ui.Button("Prendre", () =>
-                    {
-                        if (!ctx.Require(PlayerPermission.Take)) return;
-                        int n = ctx.Session.Actions.Take(m, r, int.MaxValue);
-                        if (n == 0) ctx.Notify($"Aucun {r.DisplayName.ToLowerInvariant()} à prendre.", EventSeverity.Info);
-                    }, "btn btn--ghost btn--small", row);
-                    take.style.marginLeft = 6;
-                }
-                name.RegisterCallback<ClickEvent>(_ => ctx.OpenRecipeBook(r));
-                updaters.Add(() =>
-                {
-                    int a = storage.Amount(r), cap = storage.Capacity(r);
-                    amount.text = $"{Ui.Amount(r, a)}";
-                    Ui.SetGauge(fill, cap == 0 ? 0 : (float)a / cap, a >= cap && cap > 0 ? "warning" : null);
-                });
-            }
-        }
-
         private void DepositSection(Machine m)
         {
-            if (m.Inputs == null) return;
-            var accepted = ctx.Session.Inventory.Items.Where(kv => m.Inputs.Accepts(kv.Key)).ToList();
-            bool anyItemInput = m.Inputs.Allowed == null || m.Inputs.Allowed.Any(r => r.Kind == ResourceKind.Item);
-            if (!anyItemInput) return;
-
+            if (m.Inputs == null || !m.Inputs.Slots.Any(s => s.Kind == ResourceKind.Item)) return;
             var sec = Ui.Section("Déposer depuis l'inventaire", content);
+            var accepted = ctx.Session.Inventory.Items.Where(kv => m.Inputs.Accepts(kv.Key)).ToList();
             if (accepted.Count == 0)
             {
                 Ui.System("Aucun objet de ton inventaire n'entre dans cette machine.", sec);
@@ -297,32 +249,18 @@ namespace Nucleaire.Game.UI
             {
                 var row = Ui.El("list-row", sec);
                 Ui.Swatch(Palette.Muted(r.Color), row);
-                Ui.Text($"{r.DisplayName}", "grow", row);
+                Ui.Text(r.DisplayName, "grow", row);
                 Ui.Text($"×{count}", "meta", row).style.marginRight = 6;
                 foreach (var (label, n) in new[] { ("+1", 1), ("+10", 10), ("Tout", int.MaxValue) })
                 {
                     var b = Ui.Button(label, () =>
                     {
                         if (!ctx.Require(PlayerPermission.Deposit)) return;
-                        int moved = ctx.Session.Actions.Deposit(m, r, n);
-                        if (moved == 0) ctx.Notify($"{m.MachineDef.DisplayName} : plus de place pour {r.DisplayName.ToLowerInvariant()}.");
+                        if (ctx.Session.Actions.Deposit(m, r, n) == 0)
+                            ctx.Notify($"{m.MachineDef.DisplayName} : pas d'emplacement libre pour {r.DisplayName.ToLowerInvariant()}.");
                     }, "btn btn--small", row);
                     b.style.marginLeft = 4;
                 }
-            }
-        }
-
-        private void RecipesSection(ProcessorMachine p)
-        {
-            var sec = Ui.Section("Ce que fait cette machine", content);
-            foreach (var r in p.Recipes)
-            {
-                var card = Ui.El("recipe-line", sec);
-                Ui.Text(r.DisplayName, "bold", card);
-                var flow = Ui.El("row recipe-flow", card);
-                foreach (var i in r.Inputs) Ui.Chip(i.Resource, Ui.Amount(i.Resource, i.Amount), () => ctx.OpenRecipeBook(i.Resource), flow);
-                if (r.Inputs.Count > 0) Ui.Text("→", "text-3 arrow", flow);
-                foreach (var o in r.Outputs) Ui.Chip(o.Resource, Ui.Amount(o.Resource, o.Amount), () => ctx.OpenRecipeBook(o.Resource), flow);
             }
         }
 
@@ -333,12 +271,23 @@ namespace Nucleaire.Game.UI
             StatusBox(r);
             var s = r.Settings;
 
+            var tanks = Ui.Section(null, content);
+            var layout = Ui.El("row machine-layout", tanks);
+            var inputs = Ui.El("machine-col", layout);
+            Ui.Text("Entrées", "meta machine-col__title", inputs);
+            AddSlots(r, r.Inputs, Ui.El("machine-slots", inputs));
+            var mid = Ui.El("machine-progress", layout);
+            Ui.Text("→", "machine-progress__arrow", mid);
+            var outputs = Ui.El("machine-col", layout);
+            Ui.Text("Sorties", "meta machine-col__title", outputs);
+            AddSlots(r, r.Outputs, Ui.El("machine-slots", outputs));
+
             var burn = Ui.Section("Vitesse de combustion", content,
                 "Plus elle est haute, plus le réacteur produit de déchets et de vapeur… et plus il lui faut d'eau.");
             var slider = new SliderInt(0, s.maxBurnRate) { value = r.BurnRate };
             slider.AddToClassList("inspector__slider");
+            burn.Add(slider);
             var value = Ui.Text("", "number--small", burn);
-            burn.Insert(burn.IndexOf(value), slider);
             var need = Ui.Text("", "meta", burn);
             slider.RegisterValueChangedCallback(evt =>
             {
@@ -374,9 +323,6 @@ namespace Nucleaire.Game.UI
                 Ui.SetVisible(restart, r.IsScrammed);
                 restart.SetEnabled(r.CanRestart);
             });
-
-            StorageSection("Entrées", r, r.Inputs, takeable: false);
-            StorageSection("Sorties", r, r.Outputs, takeable: false);
         }
 
         // ---------------- Faces ----------------
@@ -386,29 +332,34 @@ namespace Nucleaire.Game.UI
             var help = Ui.Section(null, content);
             Ui.Text("Faces de la machine", "section-title", help);
             Ui.Text("Entrée : reçoit depuis un tuyau ou une machine voisine. Sortie : pousse les produits vers le voisin. " +
-                    "Sur la machine, les plaques bleues sont des entrées, les plaques lavande des sorties.", "text-3 wrap", help);
+                    "Haut et Bas relient les étages. Sur la machine : plaques bleues = entrées, lavande = sorties.", "text-3 wrap", help);
 
             var cross = Ui.El("sides-cross", content);
             var rows = new[] { Ui.El("row sides-row", cross), Ui.El("row sides-row", cross), Ui.El("row sides-row", cross) };
             Ui.El("sides-cell sides-cell--empty", rows[0]);
             SideCell(m, Direction.North, rows[0]);
-            Ui.El("sides-cell sides-cell--empty", rows[0]);
+            SideCell(m, Direction.Up, rows[0]);
             SideCell(m, Direction.West, rows[1]);
             var center = Ui.El("sides-cell sides-center", rows[1]);
             Ui.Swatch(Palette.Muted(m.MachineDef.Color), center, large: true);
             SideCell(m, Direction.East, rows[1]);
             Ui.El("sides-cell sides-cell--empty", rows[2]);
             SideCell(m, Direction.South, rows[2]);
-            Ui.El("sides-cell sides-cell--empty", rows[2]);
+            SideCell(m, Direction.Down, rows[2]);
         }
 
         private void SideCell(Machine m, Direction d, VisualElement parent)
         {
             var setting = m.Sides[d];
-            var cell = Ui.El("sides-cell glass", parent);
+            var cell = Ui.El("sides-cell glass" + (d.IsVertical() ? " sides-cell--vertical" : ""), parent);
             Ui.Text(d.DisplayName(), "meta", cell);
             string label = setting.Mode switch { SideMode.Input => "Entrée", SideMode.Output => "Sortie", _ => "Fermée" };
-            var mode = Ui.Button(label, () => { m.Sides.Cycle(d); RebuildTab(); }, "btn btn--small side-mode side-mode--" + setting.Mode.ToString().ToLowerInvariant(), cell);
+            var mode = Ui.Button(label, () =>
+            {
+                if (!ctx.Require(PlayerPermission.Sides)) return;
+                m.Sides.Cycle(d);
+                RebuildTab();
+            }, "btn btn--small side-mode side-mode--" + setting.Mode.ToString().ToLowerInvariant(), cell);
             Tooltips.Register(mode, $"Face {d.DisplayName()}", "Clic : Fermée → Entrée → Sortie.");
 
             var neighbour = ctx.World.At(m.Position + d.Offset());
@@ -424,12 +375,11 @@ namespace Nucleaire.Game.UI
             dd.AddToClassList("side-filter");
             dd.RegisterValueChangedCallback(evt =>
             {
+                if (!ctx.Require(PlayerPermission.Sides)) { dd.SetValueWithoutNotify(evt.previousValue); return; }
                 int i = names.IndexOf(evt.newValue);
                 m.Sides.SetFilter(d, i <= 0 ? null : options[i - 1]);
             });
             cell.Add(dd);
-            if (vault && setting.Mode == SideMode.Output && setting.Filter == null)
-                Ui.Text("Choisis la ressource à sortir", "meta side-warning", cell);
         }
 
         private List<ResourceDef> FilterOptions(Machine m, SideMode mode)
@@ -520,72 +470,22 @@ namespace Nucleaire.Game.UI
             Ui.Text("[Ressources de base illimitées. Pour automatiser, ouvre l'onglet Faces : mets une face en sortie et choisis la ressource.]", "system", info);
 
             var sec = Ui.Section("Prendre", content);
+            var grid = Ui.El("islot-grid", sec);
             foreach (var r in v.BaseResources)
             {
-                var row = Ui.El("list-row", sec);
-                Ui.Swatch(Palette.Muted(r.Color), row);
-                var name = Ui.Text(r.DisplayName, "grow", row);
-                name.RegisterCallback<ClickEvent>(_ => ctx.OpenRecipeBook(r));
-                var have = Ui.Text($"×{ctx.Session.Inventory.Count(r)}", "meta", row);
-                have.style.marginRight = 6;
-                foreach (var n in new[] { 1, 10, 64 })
+                var cell = Ui.El("vault-cell", grid);
+                var box = Ui.El("islot", cell);
+                var fill = Ui.El("islot__fill", box);
+                fill.style.backgroundColor = Palette.WithAlpha(Palette.Muted(r.Color), 0.55f);
+                Ui.Text("∞", "number--small islot__count", box);
+                Ui.Text(r.DisplayName, "meta islot__name", cell);
+                box.RegisterCallback<ClickEvent>(evt =>
                 {
-                    var b = Ui.Button($"+{n}", () => { if (ctx.Require(PlayerPermission.VaultTake)) ctx.Session.Actions.TakeFromVault(v, r, n); }, "btn btn--small", row);
-                    b.style.marginLeft = 4;
-                }
-            }
-        }
-
-        // ---------------- Établi ----------------
-
-        private static readonly string[] WorkbenchCategories = { "Machines", "Transport", "Composants", "Améliorations" };
-
-        private int CraftCategory(CraftingRecipe c)
-        {
-            var r = c.Result.Resource;
-            var p = ctx.Db.PlaceableForItem(r);
-            if (p is MachineDef) return 0;
-            if (p is TransmitterDef) return 1;
-            if (ctx.Db.UpgradeForItem(r) != null) return 3;
-            return 2;
-        }
-
-        private void BuildWorkbench()
-        {
-            var seg = new SegmentedControl(WorkbenchCategories, workbenchCategory);
-            seg.AddToClassList("inspector__subtabs");
-            seg.Changed += i => { workbenchCategory = i; RebuildTab(); };
-            content.Add(seg);
-
-            var wb = ctx.Session.Workbench;
-            var recipes = wb.Recipes.Where(c => CraftCategory(c) == workbenchCategory)
-                .OrderByDescending(c => wb.CanCraft(c, out _)).ThenBy(c => c.Result.Resource.DisplayName).ToList();
-
-            foreach (var c in recipes)
-            {
-                bool can = wb.CanCraft(c, out _);
-                var card = Ui.El("glass card craft-card", content);
-                card.EnableInClassList("craft-card--disabled", !can);
-                var head = Ui.El("row", card);
-                Ui.Swatch(Palette.Muted(c.Result.Resource.Color), head);
-                var title = Ui.Text(c.Result.Resource.DisplayName, "bold grow", head);
-                title.RegisterCallback<ClickEvent>(_ => ctx.OpenRecipeBook(c.Result.Resource));
-                Ui.Text($"×{c.Result.Amount}", "meta", head);
-
-                var flow = Ui.El("row recipe-flow", card);
-                foreach (var i in c.Ingredients)
-                {
-                    int have = ctx.Session.Inventory.Count(i.Resource);
-                    Ui.Chip(i.Resource, $"{have}/{i.Amount}", () => ctx.OpenRecipeBook(i.Resource), flow, have >= i.Amount ? "ok" : "missing");
-                }
-
-                var actions = Ui.El("row craft-actions", card);
-                Ui.El("spacer", actions);
-                var one = Ui.Button("Fabriquer", () => wb.Craft(c), can ? "btn btn--primary btn--small" : "btn btn--small", actions);
-                one.SetEnabled(can);
-                var five = Ui.Button("×5", () => wb.Craft(c, 5), "btn btn--small", actions);
-                five.style.marginLeft = 4;
-                five.SetEnabled(can);
+                    if (!ctx.Require(PlayerPermission.VaultTake)) return;
+                    int n = evt.shiftKey ? 64 : 10;
+                    ctx.Session.Actions.TakeFromVault(v, r, n);
+                });
+                Tooltips.Register(box, r.DisplayName, "Clic : +10 dans l'inventaire. Maj + clic : +64.");
             }
         }
 
@@ -611,7 +511,7 @@ namespace Nucleaire.Game.UI
                 foreach (var (r, a) in net.Contents) Ui.Chip(r, Ui.Amount(r, a), () => ctx.OpenRecipeBook(r), list);
             });
             var help = Ui.El("status-window", content);
-            Ui.Text("[Un réseau reçoit ce que les faces de sortie voisines lui poussent, et le distribue aux faces d'entrée voisines. " +
+            Ui.Text("[Un réseau reçoit ce que les faces de sortie voisines lui poussent, et le distribue aux faces d'entrée voisines, y compris au-dessus et en dessous. " +
                     (s.TransmitterDef.Carries == ResourceKind.Item ? "Les convoyeurs acceptent plusieurs solides à la fois.]" : "Un seul liquide ou gaz à la fois par réseau.]"),
                 "system", help);
         }

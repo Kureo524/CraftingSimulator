@@ -1,22 +1,24 @@
 using System;
+using Nucleaire.Data;
 using Nucleaire.Simulation;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Nucleaire.Game
 {
-    /// <summary>Interaction souris avec l'atelier.
-    /// Mode sélection : clic gauche = inspecter, clic droit = démonter.
-    /// Mode pose (objet choisi dans l'inventaire) : clic gauche = poser (glisser pour les tuyaux), clic droit / Échap = annuler.</summary>
+    /// <summary>Interaction souris avec l'atelier, par rayon sur les objets (pas sur la case au sol).
+    /// Sélection : clic gauche sur une machine. Clic droit : menu contextuel (déplacer, supprimer).
+    /// Pose : l'objet se place contre la face visée (au-dessus d'une machine pour construire en hauteur).</summary>
     public sealed class BuildController : MonoBehaviour
     {
         private GameContext ctx;
         private IsoCameraRig rig;
         private WorldView view;
-        private Vector2Int? lastPlaced;
+        private Vector3Int? lastPlaced;
 
         public Func<bool> PointerOverUI { get; set; } = () => false;
-        public Vector2Int? HoveredCell { get; private set; }
+        public IGridEntity HoveredEntity { get; private set; }
+        public Vector3Int? TargetCell { get; private set; }
 
         public void Init(GameContext context, IsoCameraRig cameraRig, WorldView worldView)
         {
@@ -30,55 +32,84 @@ namespace Nucleaire.Game
             var mouse = Mouse.current;
             if (mouse == null || ctx == null) return;
 
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame && ctx.BuildItem != null)
-                ctx.BuildItem = null;
-
             bool overUI = PointerOverUI();
-            HoveredCell = null;
-            if (!overUI && rig.ScreenToCell(mouse.position.ReadValue(), out var cell, out _) && ctx.World.InBounds(cell))
-                HoveredCell = cell;
+            HoveredEntity = null;
+            TargetCell = null;
+            if (!overUI) Pick(mouse.position.ReadValue());
 
-            bool building = ctx.BuildItem != null;
+            bool placing = ctx.BuildItem != null || ctx.MovingMachine != null;
             bool valid = false;
-            if (HoveredCell is { } c && building)
+            if (placing && TargetCell is { } t)
             {
-                var def = ctx.Db.PlaceableForItem(ctx.BuildItem);
-                valid = ctx.World.CanPlace(def, c, out _) && ctx.Session.Inventory.Count(ctx.BuildItem) > 0;
+                if (ctx.MovingMachine != null) valid = ctx.World.CanMove(ctx.MovingMachine.Position, t, out _);
+                else valid = ctx.World.CanPlace(ctx.Db.PlaceableForItem(ctx.BuildItem), t, out _) && ctx.Session.Inventory.Count(ctx.BuildItem) > 0;
             }
-            view.SetHover(HoveredCell, valid, building);
+            view.SetGhost(placing ? TargetCell : null, valid);
+            view.SetHoverEntity(placing ? null : HoveredEntity);
 
             if (!mouse.leftButton.isPressed) lastPlaced = null;
-            if (overUI || HoveredCell is not { } target) return;
+            if (overUI) return;
 
-            if (building)
+            bool left = mouse.leftButton.wasPressedThisFrame, right = mouse.rightButton.wasPressedThisFrame;
+
+            // Un clic dans le monde ferme d'abord le menu contextuel.
+            if (ctx.ContextTarget != null && (left || right)) { ctx.ContextTarget = null; return; }
+
+            if (ctx.MovingMachine != null)
             {
-                // Clic, ou glisser pour poser une ligne de transmetteurs.
-                bool isTransmitter = ctx.Db.PlaceableForItem(ctx.BuildItem) is Data.TransmitterDef;
-                bool click = mouse.leftButton.wasPressedThisFrame || (isTransmitter && mouse.leftButton.isPressed && lastPlaced != target);
-                if (click && ctx.World.IsFree(target))
+                if (right) { ctx.MovingMachine = null; return; }
+                if (left && TargetCell is { } to)
                 {
-                    if (ctx.Session.Actions.TryPlace(ctx.BuildItem, target, out var error)) lastPlaced = target;
-                    else ctx.Notify(error);
-                    if (ctx.Session.Inventory.Count(ctx.BuildItem) == 0) ctx.BuildItem = null;
+                    var m = ctx.MovingMachine;
+                    if (ctx.Session.Actions.TryMove(m.Position, to, out var err)) { ctx.MovingMachine = null; ctx.Selection = m; }
+                    else ctx.Notify(err);
                 }
-                else if (mouse.leftButton.wasPressedThisFrame && !ctx.World.IsFree(target))
-                    ctx.Notify("Case déjà occupée.");
-                if (mouse.rightButton.wasPressedThisFrame) ctx.BuildItem = null;
                 return;
             }
 
-            if (mouse.leftButton.wasPressedThisFrame)
+            if (ctx.BuildItem != null)
             {
-                var clicked = ctx.World.At(target);
-                if (clicked == null) ctx.Selection = null;
-                else if (ctx.Require(Data.PlayerPermission.Inspect)) ctx.Selection = clicked;
+                if (right) { ctx.BuildItem = null; return; }
+                if (TargetCell is not { } target) return;
+                bool isTransmitter = ctx.Db.PlaceableForItem(ctx.BuildItem) is TransmitterDef;
+                bool click = left || (isTransmitter && mouse.leftButton.isPressed && lastPlaced != target && lastPlaced != null);
+                if (!click) return;
+                if (ctx.Session.Actions.TryPlace(ctx.BuildItem, target, out var error)) lastPlaced = target;
+                else if (left) ctx.Notify(error);
+                if (ctx.Session.Inventory.Count(ctx.BuildItem) == 0) ctx.BuildItem = null;
+                return;
             }
 
-            if (mouse.rightButton.wasPressedThisFrame && ctx.World.At(target) is { } entity)
+            if (left)
             {
-                if (ctx.Session.Actions.TryPickUp(target, out var error))
-                    ctx.Notify($"{entity.Def.DisplayName} démonté et rangé dans l'inventaire.", EventSeverity.Info);
-                else ctx.Notify(error);
+                if (HoveredEntity == null) ctx.Selection = null;
+                else if (ctx.Require(PlayerPermission.Inspect)) ctx.Selection = HoveredEntity;
+            }
+            if (right && HoveredEntity != null) ctx.ContextTarget = HoveredEntity;
+        }
+
+        /// <summary>Rayon depuis la souris : entité touchée, et case de pose contre la face touchée.</summary>
+        private void Pick(Vector2 screen)
+        {
+            var ray = rig.Camera.ScreenPointToRay(screen);
+            if (!Physics.Raycast(ray, out var hit, 500f)) return;
+
+            var entityRef = hit.collider.GetComponentInParent<EntityRef>();
+            if (entityRef != null)
+            {
+                HoveredEntity = entityRef.Entity;
+                if (GridMath.NormalToDirection(hit.normal, out var face))
+                {
+                    var cell = HoveredEntity.Position + face.Offset();
+                    if (ctx.World.InBounds(cell)) TargetCell = cell;
+                }
+                return;
+            }
+            if (hit.collider.GetComponent<FloorMarker>() != null)
+            {
+                var cell = GridMath.WorldToCell(hit.point + Vector3.up * 0.01f);
+                cell.z = 0;
+                if (ctx.World.InBounds(cell)) TargetCell = cell;
             }
         }
     }

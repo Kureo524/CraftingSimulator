@@ -19,6 +19,7 @@ namespace Nucleaire.Data
         PickUp = 1 << 9,          // démonter
         MachineControl = 1 << 10, // arrêter/démarrer, choisir le procédé, piloter le réacteur
         SimulationSpeed = 1 << 11,// pause / accélération
+        Move = 1 << 12,           // déplacer une machine
         All = ~0,
     }
 
@@ -38,6 +39,7 @@ namespace Nucleaire.Data
             PlayerPermission.PickUp => "démonter",
             PlayerPermission.MachineControl => "piloter les machines",
             PlayerPermission.SimulationSpeed => "changer la vitesse",
+            PlayerPermission.Move => "déplacer les machines",
             _ => p.ToString(),
         };
     }

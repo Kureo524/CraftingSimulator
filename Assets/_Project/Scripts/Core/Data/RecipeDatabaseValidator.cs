@@ -40,7 +40,6 @@ namespace Nucleaire.Data
         private static void CheckStructure(RecipeDatabase db, Report report)
         {
             if (db.Energy == null) report.Errors.Add("Ressource « énergie » non définie.");
-            if (!db.Machines.Any(m => m != null && m.Behaviour == MachineBehaviour.Workbench)) report.Errors.Add("Aucun établi défini.");
             if (!db.Machines.Any(m => m != null && m.Behaviour == MachineBehaviour.Vault)) report.Errors.Add("Aucun vault défini.");
 
             var ids = new HashSet<string>();
@@ -53,6 +52,7 @@ namespace Nucleaire.Data
             foreach (var p in db.Machines.Cast<PlaceableDef>().Concat(db.Transmitters))
             {
                 if (p == null) { report.Errors.Add("Placeable nul dans la base."); continue; }
+                if (p is MachineDef { Behaviour: MachineBehaviour.Workbench }) report.Errors.Add($"{p.Id} : l'établi n'est plus une machine posable.");
                 if (p.Item == null) report.Errors.Add($"{p.Id} n'a pas d'objet d'inventaire associé.");
             }
 
@@ -131,7 +131,6 @@ namespace Nucleaire.Data
                 if (machines.Any(m => m.Behaviour == MachineBehaviour.Vault))
                     foreach (var b in db.BaseResources) changed |= have.Add(b);
 
-                bool hasWorkbench = machines.Any(m => m.Behaviour == MachineBehaviour.Workbench);
                 bool hasEnergy = db.Energy != null && have.Contains(db.Energy);
 
                 foreach (var p in db.Processes.Where(p => p != null && p.Machine != null && machines.Contains(p.Machine)))
@@ -141,8 +140,8 @@ namespace Nucleaire.Data
                     foreach (var o in p.Outputs.Where(o => o.Resource != null)) changed |= have.Add(o.Resource);
                 }
 
-                if (hasWorkbench)
-                    foreach (var c in db.CraftingRecipes.Where(c => c != null && c.Result.IsValid))
+                // L'établi est un panneau toujours accessible.
+                foreach (var c in db.CraftingRecipes.Where(c => c != null && c.Result.IsValid))
                         if (c.Ingredients.All(i => i.Resource != null && have.Contains(i.Resource)))
                             changed |= have.Add(c.Result.Resource);
 

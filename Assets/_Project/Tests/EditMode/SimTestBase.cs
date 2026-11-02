@@ -31,11 +31,11 @@ namespace Nucleaire.Tests
         protected TransmitterDef T(string id) => Db.Transmitters.First(t => t.Id == id);
         protected UpgradeDef U(string id) => Db.Upgrades.First(u => u.Id == id);
 
-        protected T Place<T>(string machineId, int x, int y) where T : Machine => (T)World.Place(M(machineId), new Vector2Int(x, y));
+        protected T Place<T>(string machineId, int x, int y) where T : Machine => (T)World.Place(M(machineId), new Vector3Int(x, y, 0));
 
         protected void Line(string transmitterId, int x0, int x1, int y)
         {
-            for (int x = x0; x <= x1; x++) World.Place(T(transmitterId), new Vector2Int(x, y));
+            for (int x = x0; x <= x1; x++) World.Place(T(transmitterId), new Vector3Int(x, y, 0));
         }
 
         /// <summary>Remplit le tampon d'énergie d'une machine (sans passer par ses faces).</summary>

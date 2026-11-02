@@ -18,16 +18,16 @@ namespace Nucleaire.Simulation
         public bool Allows(ResourceDef r) => Filter == null || Filter == r;
     }
 
-    /// <summary>Les quatre faces d'une machine.</summary>
+    /// <summary>Les six faces d'une machine (quatre côtés, haut, bas).</summary>
     public sealed class SideConfig
     {
-        private readonly SideSetting[] sides = new SideSetting[4];
+        private readonly SideSetting[] sides = new SideSetting[6];
 
         public event Action Changed;
 
         public SideConfig(SideMode defaultMode)
         {
-            for (int i = 0; i < 4; i++) sides[i] = new SideSetting(defaultMode);
+            for (int i = 0; i < sides.Length; i++) sides[i] = new SideSetting(defaultMode);
         }
 
         public SideSetting this[Direction d] => sides[(int)d];

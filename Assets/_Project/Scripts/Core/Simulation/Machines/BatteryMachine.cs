@@ -6,7 +6,7 @@ namespace Nucleaire.Simulation
     /// <summary>Stocke l'énergie : reçoit par ses faces d'entrée, restitue par ses faces de sortie.</summary>
     public sealed class BatteryMachine : Machine
     {
-        public BatteryMachine(MachineDef def, World world, Vector2Int pos) : base(def, world, pos, SideMode.Input) { }
+        public BatteryMachine(MachineDef def, World world, Vector3Int pos) : base(def, world, pos, SideMode.Input) { }
 
         public override bool ConsumesEnergy => true;
         public override bool ProducesEnergy => true;

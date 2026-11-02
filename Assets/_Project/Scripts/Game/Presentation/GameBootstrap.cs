@@ -25,6 +25,7 @@ namespace Nucleaire.Game
 
         private GameContext ctx;
         private GameUI ui;
+        private GameInput input;
         private IsoCameraRig rig;
         private WorldView worldView;
 
@@ -33,32 +34,38 @@ namespace Nucleaire.Game
             Application.targetFrameRate = 120;
             Shapes.Lit = litMaterial;
             WorldView.TransparentMaterial = transparentMaterial;
+            WorldView.UnlitMaterial = unlitMaterial;
 
             var session = new GameSession(database, settings, tutorial);
             var runner = gameObject.AddComponent<SimulationRunner>();
             runner.Init(session.World);
-            ctx = new GameContext(session, runner);
+            input = new GameInput();
+            ctx = new GameContext(session, runner, input);
 
             BuildLight();
             rig = new GameObject("Camera Rig").AddComponent<IsoCameraRig>();
             rig.Init(settings.gridSize);
+            rig.Input = input;
             rig.gameObject.AddComponent<SkyBackdrop>().Init(rig.Camera, unlitMaterial);
-            if (session.World.Machines.Count > 0) rig.Focus(GridMath.CellCenter(session.World.Machines[0].Position) + new Vector3(1f, 0, 1.5f));
+            var vault = session.World.FirstMachine<VaultMachine>();
+            if (vault != null) rig.Focus(GridMath.CellCenter(vault.Position) + new Vector3(0.5f, 0, 1.5f));
 
             worldView = new GameObject("World").AddComponent<WorldView>();
-            worldView.Init(ctx, unlitMaterial);
+            worldView.Init(ctx);
 
-            ui = new GameUI(ctx, uiDocument, rig.Camera);
+            ui = new GameUI(ctx, uiDocument, rig.Camera, worldView);
+            input.Suspended = () => ui.IsTyping;
             rig.PointerOverUI = () => Mouse.current != null && ui.IsPointerOverUI(Mouse.current.position.ReadValue());
-            rig.IsTyping = () => ui.IsTyping;
+            rig.RotationAllowed = () => !ui.CapturesKeys;
 
             var build = gameObject.AddComponent<BuildController>();
             build.Init(ctx, rig, worldView);
             build.PointerOverUI = rig.PointerOverUI;
 
-            var shots = gameObject.AddComponent<AutoScreenshot>();
-            shots.Scenario = DemoScenario;
+            gameObject.AddComponent<AutoScreenshot>().Scenario = DemoScenario;
         }
+
+        private void OnDestroy() => input?.Dispose();
 
         private void BuildLight()
         {
@@ -76,24 +83,31 @@ namespace Nucleaire.Game
 
         private void Update()
         {
-            var kb = Keyboard.current;
-            if (kb != null && !ui.IsTyping)
+            if (input.Pressed(GameInput.Inventory)) ui.ToggleInventory();
+            if (input.Pressed(GameInput.Workbench)) ui.ToggleWorkbench();
+            if (input.Pressed(GameInput.RecipeBook))
             {
-                if (kb.bKey.wasPressedThisFrame)
-                {
-                    if (ui.Book.IsOpen) ui.Book.Close();
-                    else ctx.OpenRecipeBook();
-                }
-                if (kb.spaceKey.wasPressedThisFrame && ctx.Require(PlayerPermission.SimulationSpeed)) ctx.Runner.TogglePause();
-                if (kb.escapeKey.wasPressedThisFrame)
-                {
-                    if (ui.Book.IsOpen) ui.Book.Close();
-                    else if (ctx.BuildItem == null) ctx.Selection = null;
-                }
+                if (ui.Book.IsOpen) ui.Book.Close();
+                else ctx.OpenRecipeBook();
             }
-            else if (kb != null && kb.escapeKey.wasPressedThisFrame && ui.Book.IsOpen) ui.Book.Close();
+            if (input.Pressed(GameInput.Pause) && ctx.Require(PlayerPermission.SimulationSpeed)) ctx.Runner.TogglePause();
+            if (input.Pressed(GameInput.Cancel) || (ui.IsTyping && Keyboard.current?.escapeKey.wasPressedThisFrame == true)) Cancel();
 
-            ui.Update(rig.Yaw);
+            worldView.UpdateCutaway(rig.Zoom, rig.Focus3, rig.HorizontalForward);
+            ui.Update(rig.Yaw, worldView.CutawayActive);
+        }
+
+        /// <summary>Échap : ferme ce qui est ouvert, du plus récent au plus général ; sinon ouvre les options.</summary>
+        private void Cancel()
+        {
+            if (ctx.ContextTarget != null) ctx.ContextTarget = null;
+            else if (ctx.MovingMachine != null) ctx.MovingMachine = null;
+            else if (ctx.BuildItem != null) ctx.BuildItem = null;
+            else if (!ui.CloseTopPanel())
+            {
+                if (ctx.Selection != null) ctx.Selection = null;
+                else ui.ToggleOptions();
+            }
         }
 
         // ---------------- Scénarios de captures (vérification) ----------------
@@ -102,67 +116,98 @@ namespace Nucleaire.Game
         {
             var w = ctx.World;
             var vault = w.FirstMachine<VaultMachine>();
-            var origin = vault.Position + new Vector2Int(2, 2);
+            var origin = vault.Position + new Vector3Int(2, 2, 0);
+            var a = ctx.Session.Actions;
             switch (name)
             {
                 case "overview":
-                    ui.Book.Close();
+                    ui.CloseAll();
                     ctx.Selection = null;
+                    break;
+                case "tutorial":
+                    ui.CloseAll();
+                    ctx.Selection = null;
+                    break;
+                case "skip":
+                    ctx.Session.Tutorial.Skip();
                     break;
                 case "chain":
                     ctx.Session.Tutorial.Skip();
-                    // Petite chaîne : panneaux solaires → câbles → four ; vault → convoyeur → broyeur → four.
                     var inv = ctx.Session.Inventory;
                     inv.Add(R("item_solar_panel"), 4);
                     inv.Add(R("item_electrolyser"), 1);
                     inv.Add(R("item_fission_reactor"), 1);
                     inv.Add(R("item_pressurized_tube"), 8);
-                    var a = ctx.Session.Actions;
+                    inv.Add(R("item_crusher"), 1);
                     a.TryPlace(R("item_solar_panel"), origin, out _);
-                    a.TryPlace(R("item_solar_panel"), origin + Vector2Int.up, out _);
-                    for (int i = 1; i <= 3; i++) a.TryPlace(R("item_cable"), origin + new Vector2Int(i, 0), out _);
-                    a.TryPlace(R("item_electric_furnace"), origin + new Vector2Int(4, 0), out _);
-                    a.TryPlace(R("item_crusher"), origin + new Vector2Int(4, 1), out _);
-                    ((Machine)w.At(origin + new Vector2Int(4, 1))).Sides.SetMode(Direction.South, SideMode.Output);
+                    a.TryPlace(R("item_solar_panel"), origin + new Vector3Int(0, 1, 0), out _);
+                    for (int i = 1; i <= 3; i++) a.TryPlace(R("item_cable"), origin + new Vector3Int(i, 0, 0), out _);
+                    a.TryPlace(R("item_electric_furnace"), origin + new Vector3Int(4, 0, 0), out _);
+                    // Broyeur posé au-dessus du four : il pousse vers le bas.
+                    a.TryPlace(R("item_crusher"), origin + new Vector3Int(4, 0, 1), out _);
+                    var crusher = (Machine)w.At(origin + new Vector3Int(4, 0, 1));
+                    foreach (var d in DirectionExtensions.All) crusher.Sides.SetMode(d, SideMode.Input);
+                    crusher.Sides.SetMode(Direction.Down, SideMode.Output);
+                    crusher.InsertManual(R("iron_ore"), 10);
                     vault.Sides.Set(Direction.East, SideMode.Output, R("iron_ore"));
-                    for (int i = 1; i <= 3; i++) a.TryPlace(R("item_conveyor"), vault.Position + new Vector2Int(i, 0), out _);
-                    a.TryPlace(R("item_fission_reactor"), origin + new Vector2Int(-1, 4), out _);
-                    a.TryPlace(R("item_electrolyser"), origin + new Vector2Int(2, 4), out _);
-                    for (int i = 0; i < 3; i++) a.TryPlace(R("item_pressurized_tube"), origin + new Vector2Int(3 + i, 4), out _);
+                    for (int i = 1; i <= 3; i++) a.TryPlace(R("item_conveyor"), vault.Position + new Vector3Int(i, 0, 0), out _);
+                    a.TryPlace(R("item_fission_reactor"), origin + new Vector3Int(-1, 4, 0), out _);
+                    a.TryPlace(R("item_electrolyser"), origin + new Vector3Int(2, 4, 0), out _);
+                    for (int i = 0; i < 3; i++) a.TryPlace(R("item_pressurized_tube"), origin + new Vector3Int(3 + i, 4, 0), out _);
+                    a.TryPlace(R("item_pressurized_tube"), origin + new Vector3Int(5, 4, 1), out _);
                     ctx.Runner.SetSpeedIndex(3);
                     yield return new WaitForSecondsRealtime(3f);
-                    ctx.Selection = w.At(origin + new Vector2Int(4, 0));
+                    ctx.Selection = w.At(origin + new Vector3Int(4, 0, 0));
                     break;
                 case "inspector":
-                    ctx.Selection = w.Machines.OfType<ProcessorMachine>().FirstOrDefault(m => m.MachineDef.Id == "electric_furnace") ?? (IGridEntity)vault;
+                    ui.CloseAll();
+                    ctx.Selection = w.Machines.OfType<ProcessorMachine>().FirstOrDefault(m => m.MachineDef.Id == "electrolyser") ?? (IGridEntity)vault;
                     break;
                 case "sides":
                     ctx.Selection = vault;
                     yield return null;
                     uiDocument.rootVisualElement.Q("inspector").Q<SegmentedControl>()?.Select(1);
                     break;
+                case "context":
+                    ctx.Selection = null;
+                    ctx.ContextTarget = w.Machines.OfType<ProcessorMachine>().FirstOrDefault() ?? (IGridEntity)vault;
+                    break;
                 case "reactor":
+                    ctx.ContextTarget = null;
                     var reactor = w.FirstMachine<ReactorMachine>();
                     if (reactor != null)
                     {
                         reactor.InsertManual(R("fissile_fuel"), 2000);
+                        reactor.InsertManual(R("water"), 3000);
                         reactor.SetBurnRate(6);
                         ctx.Selection = reactor;
-                        yield return new WaitForSecondsRealtime(2f);
+                        yield return new WaitForSecondsRealtime(1f);
                     }
                     break;
-                case "workbench":
-                    ctx.Selection = w.FirstMachine<WorkbenchMachine>();
-                    break;
-                case "tutorial":
-                    ui.Book.Close();
+                case "cutaway":
+                    ui.CloseAll();
                     ctx.Selection = null;
+                    for (int i = 0; i < 6; i++) { Mouse.current?.WarpCursorPosition(new Vector2(Screen.width / 2f, Screen.height / 2f)); yield return null; }
+                    rig.SetZoomForTests(4.5f);
+                    rig.Focus(GridMath.CellCenter(origin + new Vector3Int(3, 2, 0)));
+                    yield return new WaitForSecondsRealtime(1f);
                     break;
-                case "skip":
-                    ctx.Session.Tutorial.Skip();
+                case "workbench":
+                    ctx.Selection = null;
+                    rig.SetZoomForTests(7.5f);
+                    ui.CloseAll();
+                    ctx.OpenWorkbench();
+                    break;
+                case "inventory":
+                    ui.CloseAll();
+                    ui.ToggleInventory();
+                    break;
+                case "options":
+                    ui.CloseAll();
+                    ui.ToggleOptions();
                     break;
                 case "book":
-                    ctx.Selection = null;
+                    ui.CloseAll();
                     ctx.OpenRecipeBook(R("fissile_fuel"));
                     break;
             }

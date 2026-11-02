@@ -8,6 +8,8 @@ namespace Nucleaire.Data
     {
         [Min(1)] public int ticksPerSecond = 10;
         public Vector2Int gridSize = new(24, 24);
+        [Tooltip("Nombre d'étages constructibles.")]
+        [Min(1)] public int levels = 4;
 
         [Header("Transfert direct machine → machine voisine (par tick et par face)")]
         [Min(1)] public int directItemTransfer = 2;

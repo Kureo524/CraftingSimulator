@@ -11,7 +11,7 @@ namespace Nucleaire.Game
     {
         private TransmitterSegment segment;
         private World world;
-        private readonly Transform[] arms = new Transform[4];
+        private readonly Transform[] arms = new Transform[6];
         private Color color;
         private float thickness, height;
 
@@ -33,20 +33,31 @@ namespace Nucleaire.Game
             float node = seg.TransmitterDef.Carries == ResourceKind.Item ? thickness : thickness * 1.5f;
             float nodeH = seg.TransmitterDef.Carries == ResourceKind.Item ? thickness * 0.2f : thickness * 1.5f;
             Shapes.Box(transform, Vector3.up * height, new Vector3(node, nodeH, node), color, "Node");
-            for (int i = 0; i < 4; i++)
+            float thick = seg.TransmitterDef.Carries == ResourceKind.Item ? thickness * 0.2f : thickness;
+            foreach (var d in DirectionExtensions.Horizontal)
             {
-                var dir = GridMath.DirectionVector((Direction)i);
-                var thick = seg.TransmitterDef.Carries == ResourceKind.Item ? thickness * 0.2f : thickness;
-                var arm = Shapes.Box(transform, dir * 0.25f + Vector3.up * height, Vector3.one, color, "Arm " + (Direction)i);
+                var dir = GridMath.DirectionVector(d);
+                var arm = Shapes.Box(transform, dir * 0.25f + Vector3.up * height, Vector3.one, color, "Arm " + d);
                 arm.localScale = dir.x != 0 ? new Vector3(0.5f, thick, thickness) : new Vector3(thickness, thick, 0.5f);
-                arms[i] = arm;
+                arms[(int)d] = arm;
             }
+            // Bras verticaux : vers l'étage du dessus et vers le sol de la case.
+            float vThick = seg.TransmitterDef.Carries == ResourceKind.Item ? thickness * 0.5f : thickness;
+            var up = Shapes.Box(transform, new Vector3(0, height + (GridMath.LevelHeight - height) / 2f, 0), new Vector3(vThick, GridMath.LevelHeight - height, vThick), color, "Arm Up");
+            arms[(int)Direction.Up] = up;
+            var down = Shapes.Box(transform, new Vector3(0, height / 2f, 0), new Vector3(vThick, height, vThick), color, "Arm Down");
+            arms[(int)Direction.Down] = down;
+
+            var col = gameObject.AddComponent<BoxCollider>();
+            col.center = new Vector3(0, 0.2f, 0);
+            col.size = new Vector3(0.8f, 0.4f, 0.8f);
+            gameObject.AddComponent<EntityRef>().Entity = seg;
             Refresh();
         }
 
         public void Refresh()
         {
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 6; i++)
             {
                 var d = (Direction)i;
                 var n = world.At(segment.Position + d.Offset());

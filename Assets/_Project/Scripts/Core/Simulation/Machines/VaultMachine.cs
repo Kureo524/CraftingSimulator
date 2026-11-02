@@ -8,7 +8,7 @@ namespace Nucleaire.Simulation
     /// <summary>Stock illimité des ressources de base. Ses faces de sortie poussent la ressource choisie en filtre.</summary>
     public sealed class VaultMachine : Machine
     {
-        public VaultMachine(MachineDef def, World world, Vector2Int pos) : base(def, world, pos, SideMode.None)
+        public VaultMachine(MachineDef def, World world, Vector3Int pos) : base(def, world, pos, SideMode.None)
         {
             BaseResources = world.Db.BaseResources.ToList();
         }
