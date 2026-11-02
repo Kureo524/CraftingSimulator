@@ -75,6 +75,7 @@ namespace Nucleaire.Game.UI
         {
             ReactorMachine => new[] { "Pilotage", "Faces", "Améliorations" },
             VaultMachine => new[] { "Ressources", "Faces" },
+            SorterMachine => new[] { "Filtre" },
             BatteryMachine => new[] { "État", "Faces" },
             Machine m when m.MachineDef.UpgradeSlots > 0 => new[] { "État", "Faces", "Améliorations" },
             Machine => new[] { "État", "Faces" },
@@ -91,7 +92,7 @@ namespace Nucleaire.Game.UI
             updaters.Clear();
             var locked = CurrentTab switch
             {
-                "Faces" => PlayerPermission.Sides,
+                "Faces" or "Filtre" => PlayerPermission.Sides,
                 "Améliorations" => PlayerPermission.Upgrades,
                 _ => PlayerPermission.None,
             };
@@ -108,6 +109,7 @@ namespace Nucleaire.Game.UI
                 case "Faces": BuildSides((Machine)current); break;
                 case "Améliorations": BuildUpgrades((Machine)current); break;
                 case "Ressources": BuildVault((VaultMachine)current); break;
+                case "Filtre": BuildSorter((SorterMachine)current); break;
                 case "Réseau": BuildNetwork((TransmitterSegment)current); break;
             }
             RunUpdaters();
@@ -318,8 +320,10 @@ namespace Nucleaire.Game.UI
         {
             var help = Ui.Section(null, content);
             Ui.Text("Faces de la machine", "section-title", help);
-            Ui.Text("Entrée : reçoit depuis un tuyau ou une machine voisine. Sortie : pousse les produits vers le voisin. " +
-                    "Haut et Bas relient les étages. Sur la machine : plaques bleues = entrées, lavande = sorties.", "text-3 wrap", help);
+            Ui.Text(m is VaultMachine
+                ? "Entrée : ce qu'on pousse dans le vault est rangé dans le stockage commun (ton inventaire). Pour en sortir une ressource, colle un trieur au vault."
+                : "Entrée : reçoit depuis un câble ou une machine voisine. Sortie : pousse tous les produits vers le voisin. " +
+                  "Pour ne laisser sortir qu'une ressource, colle un trieur à la machine. Haut et Bas relient les étages.", "text-3 wrap", help);
 
             var cross = Ui.El("sides-cross", content);
             var rows = new[] { Ui.El("row sides-row", cross), Ui.El("row sides-row", cross), Ui.El("row sides-row", cross) };
@@ -344,42 +348,15 @@ namespace Nucleaire.Game.UI
             var mode = Ui.Button(label, () =>
             {
                 if (!ctx.Require(PlayerPermission.Sides)) return;
-                m.Sides.Cycle(d);
+                if (m.HasOutputSides) m.Sides.Cycle(d);
+                else m.Sides.SetMode(d, setting.Mode == SideMode.Input ? SideMode.None : SideMode.Input);
                 RebuildTab();
             }, "btn btn--small side-mode side-mode--" + setting.Mode.ToString().ToLowerInvariant(), cell);
             mode.name = "side-" + d;
-            Tooltips.Register(mode, $"Face {d.DisplayName()}", "Clic : Fermée → Entrée → Sortie.");
+            Tooltips.Register(mode, $"Face {d.DisplayName()}", m.HasOutputSides ? "Clic : Fermée → Entrée → Sortie." : "Clic : Fermée ↔ Entrée. Pour sortir quelque chose, colle un trieur.");
 
             var neighbour = ctx.World.At(m.Position + d.Offset());
             Ui.Text(neighbour == null ? "—" : neighbour.Def.DisplayName, "meta side-neighbour", cell);
-
-            if (setting.Mode == SideMode.None) return;
-            var options = FilterOptions(m, setting.Mode);
-            bool vault = m is VaultMachine;
-            var choices = new List<GlassDropdown.Option> { new(vault ? "Choisir une ressource…" : "Tout") };
-            choices.AddRange(options.Select(r => new GlassDropdown.Option(r.DisplayName, r)));
-            int index = setting.Filter == null ? 0 : options.IndexOf(setting.Filter) + 1;
-            var dd = new GlassDropdown(choices, Mathf.Max(0, index)) { name = "side-filter-" + d };
-            dd.AddToClassList("side-filter");
-            dd.Changed += i =>
-            {
-                if (!ctx.Require(PlayerPermission.Sides)) { dd.Select(setting.Filter == null ? 0 : options.IndexOf(setting.Filter) + 1, notify: false); return; }
-                m.Sides.SetFilter(d, i <= 0 ? null : options[i - 1]);
-            };
-            cell.Add(dd);
-        }
-
-        private List<ResourceDef> FilterOptions(Machine m, SideMode mode)
-        {
-            IEnumerable<ResourceDef> list = m switch
-            {
-                VaultMachine v => v.BaseResources,
-                _ when mode == SideMode.Input => (m.Inputs?.Allowed ?? ctx.Db.Resources.Where(r => r.Kind is ResourceKind.Fluid or ResourceKind.Gas).ToList())
-                    .Concat(m.ConsumesEnergy ? new[] { ctx.Db.Energy } : Array.Empty<ResourceDef>()),
-                _ => (m.Outputs?.Allowed ?? (IReadOnlyCollection<ResourceDef>)Array.Empty<ResourceDef>())
-                    .Concat(m.ProducesEnergy ? new[] { ctx.Db.Energy } : Array.Empty<ResourceDef>()),
-            };
-            return list.Where(r => r != null).Distinct().ToList();
         }
 
         // ---------------- Améliorations ----------------
@@ -523,6 +500,39 @@ namespace Nucleaire.Game.UI
             {
                 if (evt.keyCode is KeyCode.Return or KeyCode.KeypadEnter) Take(custom.value);
             });
+        }
+
+        // ---------------- Trieur ----------------
+
+        private void BuildSorter(SorterMachine t)
+        {
+            StatusBox(t);
+            var flow = Ui.Section("Sens", content);
+            var row = Ui.El("row sorter-flow", flow);
+            Ui.Text(t.Source?.Def.DisplayName ?? "rien", "bold", row);
+            Ui.Text($"  ({t.Back.DisplayName().ToLowerInvariant()})", "meta", row);
+            Ui.Text("  →  trieur  →  ", "text-3", row);
+            Ui.Text(t.Target?.Def.DisplayName ?? "rien", "bold", row);
+            Ui.Text($"  ({t.Facing.DisplayName().ToLowerInvariant()})", "meta", row);
+            Ui.Text("Il tire de ce qui est derrière lui (sorties d'une machine, ou stockage commun et ressources de base d'un vault) et pousse par son avant, repéré par le bandeau clair.", "text-3 wrap", flow);
+
+            var sec = Ui.Section("Filtre", content, "Seule cette ressource passe. « Tout » laisse passer chaque ressource disponible, l'une après l'autre.");
+            var available = t.Source?.Pullable().Select(p => p.resource).Where(r => r != null && r.Kind != ResourceKind.Energy).Distinct().ToList() ?? new List<ResourceDef>();
+            var options = available.Concat(ctx.Db.Resources.Where(r => r != null && r.Kind != ResourceKind.Energy && !available.Contains(r))
+                .OrderBy(r => r.Kind).ThenBy(r => r.DisplayName)).ToList();
+            var choices = new List<GlassDropdown.Option> { new("Tout laisser passer") };
+            choices.AddRange(options.Select(r => new GlassDropdown.Option(available.Contains(r) ? r.DisplayName + " · disponible" : r.DisplayName, r)));
+            var dd = new GlassDropdown(choices, t.Filter == null ? 0 : options.IndexOf(t.Filter) + 1) { name = "sorter-filter" };
+            dd.AddToClassList("sorter-filter");
+            dd.Changed += i =>
+            {
+                if (!ctx.Require(PlayerPermission.Sides)) { dd.Select(t.Filter == null ? 0 : options.IndexOf(t.Filter) + 1, notify: false); return; }
+                t.SetFilter(i <= 0 ? null : options[i - 1]);
+            };
+            sec.Add(dd);
+
+            var buffer = Ui.Section("En transit", content);
+            AddSlots(t, t.Outputs, Ui.El("machine-slots", buffer));
         }
 
         // ---------------- Réseau ----------------

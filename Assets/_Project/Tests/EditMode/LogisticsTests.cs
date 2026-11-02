@@ -1,3 +1,4 @@
+using System.Linq;
 using Nucleaire.Logistics;
 using Nucleaire.Simulation;
 using NUnit.Framework;
@@ -45,27 +46,58 @@ namespace Nucleaire.Tests
         }
 
         [Test]
-        public void Vault_FilteredOutput_FeedsConveyor()
+        public void Sorter_PullsFilteredResourceFromVault_IntoConveyor()
         {
             var vault = World.FirstMachine<VaultMachine>();
             var p = vault.Position;
-            vault.Sides.Set(Direction.North, SideMode.Output, R("iron_ore"));
-            World.Place(T("conveyor"), p + new Vector3Int(0, 1, 0));
-            var crusher = (ProcessorMachine)World.Place(M("crusher"), p + new Vector3Int(0, 2, 0));
-            World.Step(5);
+            var sorter = (SorterMachine)World.Place(M("sorter"), p + new Vector3Int(0, 1, 0), Direction.North);
+            sorter.SetFilter(R("iron_ore"));
+            World.Place(T("conveyor"), p + new Vector3Int(0, 2, 0));
+            var crusher = (ProcessorMachine)World.Place(M("crusher"), p + new Vector3Int(0, 3, 0));
+            World.Step(6);
             Assert.Greater(crusher.Inputs.Amount(R("iron_ore")), 0);
             Assert.AreEqual(0, crusher.Inputs.Amount(R("coal")));
         }
 
         [Test]
-        public void Vault_UnfilteredOutput_PushesNothing()
+        public void Sorter_TakesOnlyItsFilter_FromAMachine()
+        {
+            var crusher = Place<ProcessorMachine>("crusher", 2, 2);
+            crusher.Outputs.Insert(R("iron_dust"), 4);
+            var sorter = (SorterMachine)World.Place(M("sorter"), new Vector3Int(3, 2, 0), Direction.East);
+            sorter.SetFilter(R("copper_dust"));
+            World.Place(T("conveyor"), new Vector3Int(4, 2, 0));
+            World.Step(3);
+            Assert.AreEqual(4, crusher.Outputs.Amount(R("iron_dust")), "Le filtre ne laisse pas passer le fer");
+            sorter.SetFilter(R("iron_dust"));
+            World.Step(1);
+            Assert.Less(crusher.Outputs.Amount(R("iron_dust")), 4);
+        }
+
+        [Test]
+        public void VaultInput_StoresIntoSharedInventory()
         {
             var vault = World.FirstMachine<VaultMachine>();
             var p = vault.Position;
-            vault.Sides.Set(Direction.North, SideMode.Output);
-            World.Place(T("conveyor"), p + new Vector3Int(0, 1, 0));
-            World.Step(5);
-            Assert.AreEqual(0, World.Logistics.NetworkAt(p + new Vector3Int(0, 1, 0)).Stored);
+            vault.Sides.SetMode(Direction.East, SideMode.Input);
+            var crusher = (ProcessorMachine)World.Place(M("crusher"), p + new Vector3Int(1, 0, 0));
+            foreach (var d in DirectionExtensions.All) crusher.Sides.SetMode(d, SideMode.None);
+            crusher.Sides.SetMode(Direction.West, SideMode.Output);
+            crusher.Outputs.Insert(R("iron_dust"), 3);
+            World.Step(3);
+            Assert.AreEqual(3, Session.Inventory.Count(R("iron_dust")), "Le vault range dans l'inventaire commun");
+        }
+
+        [Test]
+        public void SeveralVaults_ShareStorage_AndTheLastOneStays()
+        {
+            var first = World.FirstMachine<VaultMachine>();
+            Assert.IsFalse(Session.Actions.TryPickUp(first.Position, out var err), "Le dernier vault ne se retire pas");
+            StringAssert.Contains("au moins un vault", err);
+            var second = (VaultMachine)World.Place(M("vault"), first.Position + new Vector3Int(3, 0, 0));
+            Session.Inventory.Add(R("iron_ingot"), 5);
+            Assert.IsTrue(second.Pullable().Any(x => x.resource == R("iron_ingot") && x.amount == 5));
+            Assert.IsTrue(Session.Actions.TryPickUp(first.Position, out err), err);
         }
 
         [Test]

@@ -166,10 +166,10 @@ namespace Nucleaire.Tests
         [Test]
         public void ReactorTurbineLoop_PowersTheShifter()
         {
-            //  y=5 : tuyau d'eau x=3..6 | réacteur x=7 | tube de vapeur x=8..12
-            //  y=4 : pompes x=3..6       |              | turbines x=8..11, déphaseur x=13
-            //  y=3 : bus de câbles x=2..14
-            Line("cable", 2, 14, 3);
+            //  y=5 : tuyau d'eau x=3..6 | réacteur x=7 | trieur (vapeur) x=8 | tube de vapeur x=9..13
+            //  y=4 : pompes x=3..6       |              |                    | turbines x=9..12, déphaseur x=14
+            //  y=3 : bus de câbles x=2..15
+            Line("cable", 2, 15, 3);
             for (int x = 3; x <= 6; x++)
             {
                 var pump = Place<ProcessorMachine>("electric_pump", x, 4);
@@ -183,11 +183,13 @@ namespace Nucleaire.Tests
             var reactor = Place<ReactorMachine>("fission_reactor", 7, 5);
             foreach (var d in DirectionExtensions.All) reactor.Sides.SetMode(d, SideMode.None);
             reactor.Sides.SetMode(Direction.West, SideMode.Input);
-            reactor.Sides.Set(Direction.East, SideMode.Output, R("steam"));
             reactor.InsertManual(R("fissile_fuel"), 8000);
-            Line("pressurized_tube", 8, 12, 5);
+            // Le réacteur sort vapeur ET déchets : un trieur ne laisse passer que la vapeur vers les turbines.
+            var sorter = (SorterMachine)World.Place(M("sorter"), new Vector3Int(8, 5, 0), Direction.East);
+            sorter.SetFilter(R("steam"));
+            Line("pressurized_tube", 9, 13, 5);
 
-            for (int x = 8; x <= 11; x++)
+            for (int x = 9; x <= 12; x++)
             {
                 var turbine = Place<ProcessorMachine>("turbine", x, 4);
                 foreach (var d in DirectionExtensions.All) turbine.Sides.SetMode(d, SideMode.None);
@@ -195,7 +197,7 @@ namespace Nucleaire.Tests
                 turbine.Sides.SetMode(Direction.South, SideMode.Output);
             }
 
-            var shifter = Place<ProcessorMachine>("supercritical_shifter", 13, 4);
+            var shifter = Place<ProcessorMachine>("supercritical_shifter", 14, 4);
             foreach (var d in DirectionExtensions.All) shifter.Sides.SetMode(d, SideMode.None);
             shifter.Sides.SetMode(Direction.South, SideMode.Input);
             shifter.InsertManual(R("polonium"), 200);

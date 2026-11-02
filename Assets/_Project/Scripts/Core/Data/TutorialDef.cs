@@ -14,6 +14,7 @@ namespace Nucleaire.Data
         Produce,              // avoir produit « amount » × resource
         VaultOutputFiltered,  // une face du vault en sortie avec un filtre
         ConfigureOutputSide,  // une face de sortie configurée sur une machine (hors vault)
+        SorterConfigured,     // un trieur posé contre une machine ou un vault, avec un filtre
     }
 
     [Serializable]

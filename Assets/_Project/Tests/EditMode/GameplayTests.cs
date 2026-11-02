@@ -50,11 +50,11 @@ namespace Nucleaire.Tests
         public void Vault_CanBeMovedAndKeepsItsSides()
         {
             var vault = World.FirstMachine<VaultMachine>();
-            vault.Sides.Set(Direction.East, SideMode.Output, R("iron_ore"));
+            vault.Sides.SetMode(Direction.East, SideMode.Input);
             var target = vault.Position + new Vector3Int(3, 0, 0);
             Assert.IsTrue(Session.Actions.TryMove(vault.Position, target, out var err), err);
             Assert.AreSame(vault, World.At(target));
-            Assert.AreEqual(R("iron_ore"), vault.Sides[Direction.East].Filter);
+            Assert.AreEqual(SideMode.Input, vault.Sides[Direction.East].Mode);
         }
 
         [Test]

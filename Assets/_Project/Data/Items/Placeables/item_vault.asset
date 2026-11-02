@@ -13,8 +13,7 @@ MonoBehaviour:
   m_Name: item_vault
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.ResourceDef
   displayName: Vault
-  description: "Stock illimit\xE9 de ressources de base. Ses faces de sortie peuvent
-    \xEAtre filtr\xE9es."
+  description: "Ton stockage commun : tous les vaults partagent ton inventaire. Ressources de base illimit\xE9es. Ce qu'on pousse dans ses faces d'entr\xE9e y est rang\xE9 ; un trieur coll\xE9 en sort ce qu'on veut."
   kind: 0
   color: {r: 0.29411766, g: 0.33333334, b: 0.3882353, a: 1}
   isBaseResource: 0

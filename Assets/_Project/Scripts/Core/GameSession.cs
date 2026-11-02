@@ -14,6 +14,7 @@ namespace Nucleaire
         {
             World = new World(db, settings);
             Inventory = new PlayerInventory(settings.canisterCapacity);
+            World.SharedStorage = Inventory;
             Permissions = new PermissionGate();
             Actions = new PlayerActions(World, Inventory, Permissions);
             Workbench = new WorkbenchService(World, Inventory, Permissions);

@@ -45,6 +45,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 8174e15e07c4bdd5ab87752f0ee177c7, type: 2}
   - {fileID: 11400000, guid: d188dd60a2a54e0448cb3474bfb08f64, type: 2}
   - {fileID: 11400000, guid: f702c7addb2d11ccb91c130798009fc0, type: 2}
+  - {fileID: 11400000, guid: 27cf735b92de43e8b92ebefb6b07d225, type: 2}
   - {fileID: 11400000, guid: 500538456ae99ff528d2cdb0ad6276ef, type: 2}
   - {fileID: 11400000, guid: ee9c1c6a16e49f79580c20e36de265e2, type: 2}
   - {fileID: 11400000, guid: eef29043dcd9b8ff5abe8d70452ffa8c, type: 2}
@@ -91,6 +92,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 878f607773ff49e8cae84c1ebada76c3, type: 2}
   - {fileID: 11400000, guid: 51301e79c2c4b81d1ab9ccd9013f47ff, type: 2}
   - {fileID: 11400000, guid: 681b14a83ac4035299db8e88780ae9b6, type: 2}
+  - {fileID: 11400000, guid: 90e3e1ac5d0840d3bda2076efe8fbc2a, type: 2}
   - {fileID: 11400000, guid: 723c5d43d2de479fc9cf3d2bd04d8742, type: 2}
   - {fileID: 11400000, guid: 740e6bc508e777d0c8c0b13ba1dcb5b6, type: 2}
   - {fileID: 11400000, guid: e426c1e68000f5aa1a7377bb4e69b85c, type: 2}
@@ -150,6 +152,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 41b26e82cdc3f32538b7b7eda6c67aef, type: 2}
   - {fileID: 11400000, guid: cc35719e1c07a8ff8bb48c537076b1ea, type: 2}
   - {fileID: 11400000, guid: ed42285944c2149c185ac192d92140b2, type: 2}
+  - {fileID: 11400000, guid: 071172ba78334de0b14649a438cfb0dc, type: 2}
   - {fileID: 11400000, guid: e2c687c5849eb465aac1ef0bcff537f4, type: 2}
   - {fileID: 11400000, guid: 3c0cfdd0d3ade72ffa9d776bd3c11183, type: 2}
   - {fileID: 11400000, guid: 0179391877e1d76aab92a317fe44bb05, type: 2}
@@ -157,6 +160,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 9955cbe72a2cf844980c69eed65595b9, type: 2}
   - {fileID: 11400000, guid: 90fdbfe0aebc64f8d9d47cf55536987e, type: 2}
   - {fileID: 11400000, guid: 74200180c370faa26a4339b8790f2544, type: 2}
+  - {fileID: 11400000, guid: 71532fa3f89041648d18b1da2da373d6, type: 2}
   - {fileID: 11400000, guid: 58e737b23e47b5bd6a853f2ad55681ec, type: 2}
   upgrades:
   - {fileID: 11400000, guid: f5ca5a153de9700a8a388ad4bbc07be4, type: 2}
@@ -179,3 +183,5 @@ MonoBehaviour:
     amount: 1
   - resource: {fileID: 11400000, guid: eef29043dcd9b8ff5abe8d70452ffa8c, type: 2}
     amount: 32
+  - resource: {fileID: 11400000, guid: 27cf735b92de43e8b92ebefb6b07d225, type: 2}
+    amount: 2

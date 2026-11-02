@@ -50,6 +50,11 @@ namespace Nucleaire.Crafting
             if (!Gate.Check(PlayerPermission.PickUp, out error)) return false;
             var e = world.At(pos);
             if (e == null) { error = "Rien à démonter ici."; return false; }
+            if (e is VaultMachine && world.Machines.OfType<VaultMachine>().Count() <= 1)
+            {
+                error = "Il faut garder au moins un vault : c'est ton stockage commun.";
+                return false;
+            }
 
             if (e is Machine m)
                 foreach (var s in m.SalvageableItems()) Inventory.Add(s.Resource, s.Amount);

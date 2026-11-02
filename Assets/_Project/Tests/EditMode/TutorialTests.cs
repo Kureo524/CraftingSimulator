@@ -72,6 +72,7 @@ namespace Nucleaire.Tests
                 [TutorialCondition.MachinePowered] = PlayerPermission.Place,
                 [TutorialCondition.Produce] = PlayerPermission.Deposit,
                 [TutorialCondition.VaultOutputFiltered] = PlayerPermission.Sides,
+                [TutorialCondition.SorterConfigured] = PlayerPermission.Sides,
                 [TutorialCondition.ConfigureOutputSide] = PlayerPermission.Sides,
             };
             var unlocked = PlayerPermission.None;

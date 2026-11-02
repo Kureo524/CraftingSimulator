@@ -123,6 +123,10 @@ namespace Nucleaire.Game.UI
                     GuideVaultFaces(vault);
                     break;
 
+                case TutorialCondition.SorterConfigured:
+                    GuideSorter(s, vault);
+                    break;
+
                 case TutorialCondition.ConfigureOutputSide:
                     PointMachine(w.Machines.OfType<ProcessorMachine>().FirstOrDefault(m => m.Recipes.Any(r => r.Inputs.Count > 0)), "Ouvre la machine, onglet Faces");
                     break;
@@ -241,6 +245,30 @@ namespace Nucleaire.Game.UI
         }
 
         /// <summary>Montre le bouton de fermeture du panneau ouvert (le plus haut d'abord).</summary>
+        /// <summary>Trieur : l'équiper, le poser contre le vault (avant vers l'extérieur), puis choisir le filtre.</summary>
+        private void GuideSorter(TutorialStep s, VaultMachine vault)
+        {
+            var sorter = ctx.World.Machines.OfType<SorterMachine>().FirstOrDefault(x => x.Source != null) ?? ctx.World.Machines.OfType<SorterMachine>().FirstOrDefault();
+            var item = s.machine != null ? s.machine.Item : null;
+            if (sorter == null)
+            {
+                if (ModalOpen()) { CloseHint($"Ferme ce panneau, puis équipe : {item?.DisplayName}"); return; }
+                if (ctx.BuildItem == item && item != null)
+                {
+                    PointMachine(vault, $"Pose-le collé au vault, l'avant vers l'extérieur ({ctx.Input.Display(GameInput.RotatePiece)} : tourner)");
+                    return;
+                }
+                int slot = ctx.Hotbar.IndexOf(item);
+                if (slot >= 0) PointIcon("hotbar", item, $"Appuie sur {ctx.Input.Display(GameInput.HotbarSlot(slot))} pour équiper le trieur");
+                else PointUi(root.Q("hotbar-inventory"), "Range le trieur dans la barre rapide");
+                return;
+            }
+            if (sorter.Source == null) { PointMachine(sorter, "Il doit toucher le vault par l'arrière : clic droit → Déplacer"); return; }
+            if (ctx.Selection == sorter) { PointUi(root.Q("sorter-filter"), "Choisis la ressource à laisser passer"); return; }
+            if (ModalOpen()) { CloseHint("Ferme, puis ouvre le trieur"); return; }
+            PointMachine(sorter, "Ouvre le trieur");
+        }
+
         private void CloseHint(string text = "Ferme ce panneau")
         {
             foreach (var (layerName, button) in new[] { ("options-layer", "options-close"), ("book-layer", "book-close"), ("workbench-layer", "workbench-close"), ("inventory-layer", "inventory-close") })

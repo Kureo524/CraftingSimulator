@@ -120,6 +120,19 @@ namespace Nucleaire.Simulation
             if (ProducesEnergy && Energy > 0 && s.Allows(EnergyDef)) yield return (EnergyDef, Energy);
         }
 
+        /// <summary>Ce qu'un trieur collé à la machine peut lui prendre (ses sorties, quelle que soit la face).</summary>
+        public virtual IEnumerable<(ResourceDef resource, int amount)> Pullable() =>
+            Outputs == null ? Enumerable.Empty<(ResourceDef, int)>() : Outputs.Contents.Select(kv => (kv.Key, kv.Value)).ToList();
+
+        /// <summary>Prélèvement par un trieur.</summary>
+        public virtual int Pull(ResourceDef r, int amount) => Outputs?.Extract(r, amount) ?? 0;
+
+        /// <summary>Appelé une fois posée (orientation connue).</summary>
+        protected internal virtual void OnPlaced() { }
+
+        /// <summary>Les faces de cette machine peuvent-elles être mises en sortie ?</summary>
+        public virtual bool HasOutputSides => true;
+
         public virtual int Extract(ResourceDef r, int amount)
         {
             if (r == EnergyDef && ProducesEnergy)

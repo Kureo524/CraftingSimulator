@@ -5,7 +5,8 @@ using UnityEngine;
 
 namespace Nucleaire.Simulation
 {
-    /// <summary>Stock illimité des ressources de base. Ses faces de sortie poussent la ressource choisie en filtre.</summary>
+    /// <summary>Vault : ressources de base illimitées, et stockage commun (l'inventaire du joueur), partagé par tous les vaults.
+    /// Ses faces d'entrée rangent ce qu'on y pousse ; un trieur collé au vault en sort la ressource choisie.</summary>
     public sealed class VaultMachine : Machine
     {
         public VaultMachine(MachineDef def, World world, Vector3Int pos) : base(def, world, pos, SideMode.None)
@@ -17,22 +18,36 @@ namespace Nucleaire.Simulation
 
         public bool Provides(ResourceDef r) => r != null && r.IsBaseResource;
 
-        protected override void OnTick()
+        public override bool HasOutputSides => false;
+
+        protected override void OnTick() => SetStatus(MachineStatus.Idle, "");
+
+        /// <summary>Ce qui entre par une face d'entrée va dans le stockage commun.</summary>
+        protected override int Accept(ResourceDef r, int amount, bool simulate)
         {
-            bool unfiltered = DirectionExtensions.All.Any(d => Sides[d].Mode == SideMode.Output && Sides[d].Filter == null);
-            if (unfiltered) SetStatus(MachineStatus.Idle, "Une face de sortie sans filtre ne sort rien : choisis une ressource.");
-            else SetStatus(MachineStatus.Idle, "");
+            var store = World.SharedStorage;
+            if (store == null || r == null || amount <= 0 || r.Kind == ResourceKind.Energy) return 0;
+            if (!simulate) store.Add(r, amount);
+            return amount;
         }
 
-        protected override int Accept(ResourceDef r, int amount, bool simulate) => 0;
+        public override IEnumerable<(ResourceDef resource, int amount)> Extractable(Direction side) => Enumerable.Empty<(ResourceDef, int)>();
 
-        public override IEnumerable<(ResourceDef resource, int amount)> Extractable(Direction side)
+        public override IEnumerable<(ResourceDef resource, int amount)> Pullable()
         {
-            var s = Sides[side];
-            if (s.Mode == SideMode.Output && Provides(s.Filter)) yield return (s.Filter, int.MaxValue);
+            foreach (var r in BaseResources) yield return (r, int.MaxValue);
+            if (World.SharedStorage == null) yield break;
+            foreach (var kv in World.SharedStorage.Items.ToList())
+                if (!Provides(kv.Key)) yield return (kv.Key, kv.Value);
         }
 
-        public override int Extract(ResourceDef r, int amount) => Provides(r) ? amount : 0;
+        public override int Pull(ResourceDef r, int amount)
+        {
+            if (Provides(r)) return amount;
+            return World.SharedStorage?.Remove(r, amount) ?? 0;
+        }
+
+        public override int Extract(ResourceDef r, int amount) => 0;
 
         public override IEnumerable<ResourceStack> SalvageableItems() => Enumerable.Empty<ResourceStack>();
     }

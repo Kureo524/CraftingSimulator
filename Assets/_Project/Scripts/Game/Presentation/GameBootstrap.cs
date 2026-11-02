@@ -282,6 +282,29 @@ namespace Nucleaire.Game
                     yield return new WaitForSecondsRealtime(0.6f);
                     break;
                 }
+                case "sorter":
+                {
+                    ctx.Session.Tutorial.Skip();
+                    ui.CloseAll();
+                    yield return null;
+                    var sorterDef = database.Machines.First(m => m.Behaviour == MachineBehaviour.Sorter);
+                    var srt = (SorterMachine)w.Place(sorterDef, vault.Position + new Vector3Int(0, 1, 0), Direction.North);
+                    srt.SetFilter(R("iron_ore"));
+                    w.Place(T(ResourceKind.Item), vault.Position + new Vector3Int(0, 2, 0));
+                    w.Place(T(ResourceKind.Item), vault.Position + new Vector3Int(0, 3, 0));
+                    w.Place(database.Machines.First(m => m.Id == "crusher"), vault.Position + new Vector3Int(0, 4, 0));
+                    rig.SetZoomForTests(6f);
+                    rig.Focus(GridMath.CellCenter(vault.Position + new Vector3Int(0, 2, 0)));
+                    yield return new WaitForSecondsRealtime(1.2f);
+                    ctx.Selection = srt;
+                    yield return new WaitForSecondsRealtime(0.5f);
+                    break;
+                }
+                case "sorter-world":
+                    ui.CloseAll();
+                    ctx.Selection = null;
+                    yield return new WaitForSecondsRealtime(0.5f);
+                    break;
                 case "skip":
                     ctx.Session.Tutorial.Skip();
                     break;

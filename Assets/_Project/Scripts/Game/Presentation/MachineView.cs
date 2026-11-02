@@ -95,6 +95,15 @@ namespace Nucleaire.Game
                     Shapes.Box(transform, new Vector3(0, 0.36f, 0), new Vector3(0.6f, 0.72f, 0.6f), body, "Body");
                     accent = Shapes.Box(transform, new Vector3(0, 0.74f, 0), new Vector3(0.3f, 0.05f, 0.3f), accentColor, "Cap");
                     break;
+                case "sorter":
+                    Shapes.Box(transform, new Vector3(0, 0.2f, -0.05f), new Vector3(0.7f, 0.4f, 0.7f), body, "Body");
+                    Shapes.Box(transform, new Vector3(0, 0.2f, 0.36f), new Vector3(0.5f, 0.28f, 0.12f), Palette.MachineBodyDark, "Nozzle");
+                    accent = Shapes.Box(transform, new Vector3(0, 0.42f, 0.05f), new Vector3(0.12f, 0.03f, 0.42f), accentColor, "Arrow");
+                    var tipL = Shapes.Box(transform, new Vector3(-0.08f, 0.42f, 0.22f), new Vector3(0.06f, 0.03f, 0.22f), accentColor, "Arrow L");
+                    tipL.localRotation = Quaternion.Euler(0, -40f, 0);
+                    var tipR = Shapes.Box(transform, new Vector3(0.08f, 0.42f, 0.22f), new Vector3(0.06f, 0.03f, 0.22f), accentColor, "Arrow R");
+                    tipR.localRotation = Quaternion.Euler(0, 40f, 0);
+                    break;
                 case "vault":
                     Shapes.Box(transform, new Vector3(0, 0.36f, 0), new Vector3(0.92f, 0.72f, 0.92f), body, "Body");
                     accent = Shapes.Box(transform, new Vector3(0, 0.73f, 0), new Vector3(0.7f, 0.03f, 0.7f), accentColor, "Lid");
@@ -109,7 +118,7 @@ namespace Nucleaire.Game
                     break;
             }
             // L'avant : un bandeau clair en façade et un repère sur le dessus, pour voir l'orientation.
-            if (def.Id is not ("vault" or "battery"))
+            if (def.Id is not ("vault" or "battery" or "sorter"))
             {
                 Shapes.Box(transform, new Vector3(0, 0.44f, 0.425f), new Vector3(0.52f, 0.07f, 0.02f), Color.Lerp(accentColor, Palette.Text, 0.35f), "Front");
                 if (def.Id is not ("solar_panel" or "fission_reactor" or "turbine" or "electric_pump" or "supercritical_shifter"))

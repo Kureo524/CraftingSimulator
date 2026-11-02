@@ -61,12 +61,12 @@ MonoBehaviour:
     machine: {fileID: 0}
     amount: 1
     unlocks: 1072
-  - title: "Automatiser avec les faces"
-    objective: "Sortie filtrée sur le vault"
-    body: "Plutôt que de tout porter à la main, le vault peut pousser une ressource par une de ses faces. Ouvre-le, onglet Faces : passe une face en Sortie et choisis la ressource. Une machine collée à cette face la recevra toute seule."
-    condition: 6
+  - title: "Le trieur"
+    objective: "Poser un trieur filtré contre le vault"
+    body: "Tous les vaults partagent ton inventaire, et leurs ressources de base sont illimitées. Pour en sortir une ressource automatiquement, colle un trieur au vault : il tire ce qui est derrière lui et le pousse par son avant (flèche claire), vers une machine ou un câble. Équipe le trieur, R pour l'orienter, pose-le contre le vault, puis ouvre-le et choisis la ressource."
+    condition: 8
     resource: {fileID: 0}
-    machine: {fileID: 0}
+    machine: {fileID: 11400000, guid: 90e3e1ac5d0840d3bda2076efe8fbc2a, type: 2}
     amount: 1
     unlocks: 64
   - title: "Le cuivre"

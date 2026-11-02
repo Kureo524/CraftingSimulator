@@ -15,5 +15,7 @@ namespace Nucleaire.Data
         Vent,
         /// <summary>Réacteur à fission : combustion pilotée, refroidissement à l'eau, chaleur.</summary>
         Reactor,
+        /// <summary>Trieur : tire une ressource choisie de la machine derrière lui et la pousse par l'avant.</summary>
+        Sorter,
     }
 }

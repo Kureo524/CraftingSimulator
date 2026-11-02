@@ -23,6 +23,9 @@ namespace Nucleaire.Simulation
         }
 
         public RecipeDatabase Db { get; }
+
+        /// <summary>Stockage commun à tous les vaults : c'est l'inventaire du joueur.</summary>
+        public Crafting.PlayerInventory SharedStorage { get; set; }
         public SimulationSettings Settings { get; }
         public LogisticsSystem Logistics { get; }
         public EventLog Events { get; } = new();
@@ -62,6 +65,7 @@ namespace Nucleaire.Simulation
                 case MachineDef md:
                     var m = MachineFactory.Create(md, this, p);
                     m.Facing = facing.IsVertical() ? Direction.North : facing;
+                    m.OnPlaced();
                     machines.Add(m);
                     grid[p] = m;
                     entity = m;
