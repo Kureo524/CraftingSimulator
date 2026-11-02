@@ -68,7 +68,11 @@ namespace Nucleaire.Game
             }
 
             if (mouse.leftButton.wasPressedThisFrame)
-                ctx.Selection = ctx.World.At(target);
+            {
+                var clicked = ctx.World.At(target);
+                if (clicked == null) ctx.Selection = null;
+                else if (ctx.Require(Data.PlayerPermission.Inspect)) ctx.Selection = clicked;
+            }
 
             if (mouse.rightButton.wasPressedThisFrame && ctx.World.At(target) is { } entity)
             {

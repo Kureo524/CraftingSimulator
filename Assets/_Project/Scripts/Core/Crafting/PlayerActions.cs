@@ -11,16 +11,19 @@ namespace Nucleaire.Crafting
     {
         private readonly World world;
 
-        public PlayerActions(World world, PlayerInventory inventory)
+        public PlayerActions(World world, PlayerInventory inventory, PermissionGate gate = null)
         {
             this.world = world;
             Inventory = inventory;
+            Gate = gate ?? new PermissionGate();
         }
 
         public PlayerInventory Inventory { get; }
+        public PermissionGate Gate { get; }
 
         public bool TryPlace(ResourceDef item, Vector2Int pos, out string error)
         {
+            if (!Gate.Check(PlayerPermission.Place, out error)) return false;
             var def = world.Db.PlaceableForItem(item);
             if (def == null) { error = $"{item?.DisplayName} ne se pose pas."; return false; }
             if (Inventory.Count(item) <= 0) { error = $"Plus de {item.DisplayName} dans l'inventaire."; return false; }
@@ -34,7 +37,7 @@ namespace Nucleaire.Crafting
         /// Les liquides et gaz qu'il contenait sont perdus.</summary>
         public bool TryPickUp(Vector2Int pos, out string error)
         {
-            error = null;
+            if (!Gate.Check(PlayerPermission.PickUp, out error)) return false;
             var e = world.At(pos);
             if (e == null) { error = "Rien à démonter ici."; return false; }
             if (world.Db.PrePlacedMachines.Contains(e.Def as MachineDef)) { error = $"{e.Def.DisplayName} est fixe."; return false; }
@@ -48,6 +51,7 @@ namespace Nucleaire.Crafting
 
         public int Deposit(Machine m, ResourceDef r, int amount)
         {
+            if (!Gate.IsAllowed(PlayerPermission.Deposit)) return 0;
             int n = m.InsertManual(r, Mathf.Min(amount, Inventory.Count(r)));
             Inventory.Remove(r, n);
             return n;
@@ -56,7 +60,7 @@ namespace Nucleaire.Crafting
         /// <summary>Prend des solides dans une machine (sorties d'abord, puis entrées).</summary>
         public int Take(Machine m, ResourceDef r, int amount)
         {
-            if (!PlayerInventory.CanHold(r)) return 0;
+            if (!PlayerInventory.CanHold(r) || !Gate.IsAllowed(PlayerPermission.Take)) return 0;
             int n = m.Outputs?.Extract(r, amount) ?? 0;
             if (n < amount && m.Inputs != null) n += m.Inputs.Extract(r, amount - n);
             Inventory.Add(r, n);
@@ -65,12 +69,13 @@ namespace Nucleaire.Crafting
 
         public int TakeFromVault(VaultMachine vault, ResourceDef r, int amount)
         {
-            if (vault == null || !vault.Provides(r) || !PlayerInventory.CanHold(r)) return 0;
+            if (vault == null || !vault.Provides(r) || !PlayerInventory.CanHold(r) || !Gate.IsAllowed(PlayerPermission.VaultTake)) return 0;
             return Inventory.Add(r, amount);
         }
 
         public bool TryInstallUpgrade(Machine m, ResourceDef item, out string error)
         {
+            if (!Gate.Check(PlayerPermission.Upgrades, out error)) return false;
             var u = world.Db.UpgradeForItem(item);
             if (u == null) { error = $"{item?.DisplayName} n'est pas une amélioration."; return false; }
             if (Inventory.Count(item) <= 0) { error = $"Aucune {u.DisplayName} dans l'inventaire."; return false; }
@@ -82,6 +87,7 @@ namespace Nucleaire.Crafting
 
         public bool RemoveUpgrade(Machine m, UpgradeDef u)
         {
+            if (!Gate.IsAllowed(PlayerPermission.Upgrades)) return false;
             if (!m.RemoveUpgrade(u)) return false;
             Inventory.Add(u.Item, 1);
             return true;

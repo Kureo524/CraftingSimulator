@@ -25,6 +25,8 @@ namespace Nucleaire.Data
         public ResourceDef resource;
         public MachineDef machine;
         [Min(1)] public int amount = 1;
+        [Tooltip("Actions débloquées à partir de cette étape (cumulatif).")]
+        public PlayerPermission unlocks;
     }
 
     /// <summary>Tutoriel guidé : une suite d'étapes, chacune validée par une condition de jeu.</summary>

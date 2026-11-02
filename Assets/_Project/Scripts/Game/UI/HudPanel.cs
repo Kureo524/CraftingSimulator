@@ -36,7 +36,9 @@ namespace Nucleaire.Game.UI
             ctx.Toast += ShowToast;
             ctx.BuildItemChanged += _ => RefreshModeHint();
             ctx.Runner.SpeedChanged += () => speed.Select(ctx.Runner.SpeedIndex, notify: false);
+            ctx.Session.Tutorial.Advanced += RefreshVisibility;
             RefreshModeHint();
+            RefreshVisibility();
         }
 
         // ---------------- Objectifs ----------------
@@ -140,7 +142,11 @@ namespace Nucleaire.Game.UI
             Tooltips.Register(compass, "Boussole", "Les faces des machines sont orientées Nord/Est/Sud/Ouest. Tourne la caméra avec Q/E (A/E en AZERTY).");
 
             speed = new SegmentedControl(new[] { "Pause", "×1", "×2", "×4" }, ctx.Runner.SpeedIndex);
-            speed.Changed += i => ctx.Runner.SetSpeedIndex(i);
+            speed.Changed += i =>
+            {
+                if (ctx.Require(PlayerPermission.SimulationSpeed)) ctx.Runner.SetSpeedIndex(i);
+                else speed.Select(ctx.Runner.SpeedIndex, notify: false);
+            };
             parent.Add(speed);
             Tooltips.Register(speed, "Vitesse de simulation", "Espace : pause / reprise.");
 
@@ -177,6 +183,9 @@ namespace Nucleaire.Game.UI
             t.schedule.Execute(() => t.RemoveFromHierarchy()).StartingIn(3200);
             while (toasts.childCount > 3) toasts.RemoveAt(0);
         }
+
+        /// <summary>Le panneau d'objectif n'apparaît qu'une fois le tutoriel terminé ou passé.</summary>
+        private void RefreshVisibility() => Ui.SetVisible(objectives, !ctx.Session.Tutorial.Active);
 
         private void RefreshModeHint()
         {

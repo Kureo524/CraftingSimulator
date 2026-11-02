@@ -85,6 +85,19 @@ namespace Nucleaire.Game.UI
             float scrollY = scrollView?.scrollOffset.y ?? 0f;
             content.Clear();
             updaters.Clear();
+            var locked = CurrentTab switch
+            {
+                "Faces" => PlayerPermission.Sides,
+                "Améliorations" => PlayerPermission.Upgrades,
+                "Fabriquer" => PlayerPermission.Craft,
+                _ => PlayerPermission.None,
+            };
+            if (locked != PlayerPermission.None && !ctx.IsAllowed(locked))
+            {
+                var box = Ui.El("status-window", content);
+                Ui.Text($"[Tu pourras {locked.DisplayName()} plus loin dans le tutoriel.]", "system", box);
+                return;
+            }
             switch (CurrentTab)
             {
                 case "État": BuildState((Machine)current); break;
@@ -132,7 +145,7 @@ namespace Nucleaire.Game.UI
                 var bar = Ui.El("row inspector__actions", header);
                 var badge = Ui.Badge("", null, bar);
                 Ui.El("spacer", bar);
-                var toggle = Ui.Button("", () => m.SetEnabled(!m.Enabled), "btn btn--small", bar);
+                var toggle = Ui.Button("", () => { if (ctx.Require(PlayerPermission.MachineControl)) m.SetEnabled(!m.Enabled); }, "btn btn--small", bar);
                 var pick = Ui.Button("Démonter", () => PickUp(e), "btn btn--danger btn--small", bar);
                 Tooltips.Register(pick, "Démonter", "La machine, ses solides et ses améliorations reviennent dans l'inventaire. Les liquides et gaz sont perdus. (Clic droit dans l'atelier.)");
                 headerUpdaters.Add(() =>
@@ -191,6 +204,7 @@ namespace Nucleaire.Game.UI
                     dd.AddToClassList("inspector__field");
                     dd.RegisterValueChangedCallback(evt =>
                     {
+                        if (!ctx.Require(PlayerPermission.MachineControl)) { dd.SetValueWithoutNotify(evt.previousValue); return; }
                         int i = choices.IndexOf(evt.newValue);
                         p.LockRecipe(i <= 0 ? null : p.Recipes[i - 1]);
                     });
@@ -250,6 +264,7 @@ namespace Nucleaire.Game.UI
                 {
                     var take = Ui.Button("Prendre", () =>
                     {
+                        if (!ctx.Require(PlayerPermission.Take)) return;
                         int n = ctx.Session.Actions.Take(m, r, int.MaxValue);
                         if (n == 0) ctx.Notify($"Aucun {r.DisplayName.ToLowerInvariant()} à prendre.", EventSeverity.Info);
                     }, "btn btn--ghost btn--small", row);
@@ -288,6 +303,7 @@ namespace Nucleaire.Game.UI
                 {
                     var b = Ui.Button(label, () =>
                     {
+                        if (!ctx.Require(PlayerPermission.Deposit)) return;
                         int moved = ctx.Session.Actions.Deposit(m, r, n);
                         if (moved == 0) ctx.Notify($"{m.MachineDef.DisplayName} : plus de place pour {r.DisplayName.ToLowerInvariant()}.");
                     }, "btn btn--small", row);
@@ -324,7 +340,11 @@ namespace Nucleaire.Game.UI
             var value = Ui.Text("", "number--small", burn);
             burn.Insert(burn.IndexOf(value), slider);
             var need = Ui.Text("", "meta", burn);
-            slider.RegisterValueChangedCallback(evt => r.SetBurnRate(evt.newValue));
+            slider.RegisterValueChangedCallback(evt =>
+            {
+                if (ctx.Require(PlayerPermission.MachineControl)) r.SetBurnRate(evt.newValue);
+                else slider.SetValueWithoutNotify(r.BurnRate);
+            });
             updaters.Add(() =>
             {
                 if (slider.value != r.BurnRate) slider.SetValueWithoutNotify(r.BurnRate);
@@ -340,6 +360,7 @@ namespace Nucleaire.Game.UI
             var cooling = Ui.Text("", "meta", heat);
             var restart = Ui.Button("Relancer le réacteur", () =>
             {
+                if (!ctx.Require(PlayerPermission.MachineControl)) return;
                 if (!r.Restart()) ctx.Notify("Le réacteur est encore trop chaud pour être relancé.");
             }, "btn btn--primary", heat);
             restart.style.marginTop = 8;
@@ -509,7 +530,7 @@ namespace Nucleaire.Game.UI
                 have.style.marginRight = 6;
                 foreach (var n in new[] { 1, 10, 64 })
                 {
-                    var b = Ui.Button($"+{n}", () => ctx.Session.Actions.TakeFromVault(v, r, n), "btn btn--small", row);
+                    var b = Ui.Button($"+{n}", () => { if (ctx.Require(PlayerPermission.VaultTake)) ctx.Session.Actions.TakeFromVault(v, r, n); }, "btn btn--small", row);
                     b.style.marginLeft = 4;
                 }
             }

@@ -11,10 +11,13 @@ namespace Nucleaire.Crafting
         private readonly World world;
         private readonly PlayerInventory inventory;
 
-        public WorkbenchService(World world, PlayerInventory inventory)
+        private readonly PermissionGate gate;
+
+        public WorkbenchService(World world, PlayerInventory inventory, PermissionGate gate = null)
         {
             this.world = world;
             this.inventory = inventory;
+            this.gate = gate ?? new PermissionGate();
         }
 
         public IReadOnlyList<CraftingRecipe> Recipes => world.Db.CraftingRecipes;
@@ -30,6 +33,7 @@ namespace Nucleaire.Crafting
         {
             reason = null;
             if (r == null) reason = "Recette inconnue.";
+            else if (!gate.Check(PlayerPermission.Craft, out var locked)) reason = locked;
             else if (!HasWorkbench) reason = "Il faut un établi dans l'atelier.";
             else
             {

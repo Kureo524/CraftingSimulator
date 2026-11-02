@@ -10,12 +10,13 @@ namespace Nucleaire
     /// <summary>Une partie : l'atelier, l'inventaire du joueur et les services, initialisés depuis les données.</summary>
     public sealed class GameSession
     {
-        public GameSession(RecipeDatabase db, SimulationSettings settings)
+        public GameSession(RecipeDatabase db, SimulationSettings settings, TutorialDef tutorial = null)
         {
             World = new World(db, settings);
             Inventory = new PlayerInventory();
-            Actions = new PlayerActions(World, Inventory);
-            Workbench = new WorkbenchService(World, Inventory);
+            Permissions = new PermissionGate();
+            Actions = new PlayerActions(World, Inventory, Permissions);
+            Workbench = new WorkbenchService(World, Inventory, Permissions);
             Objectives = new ObjectiveTracker(World);
 
             // Machines fixes posées côte à côte au centre de l'atelier.
@@ -28,11 +29,16 @@ namespace Nucleaire
 
             var finalGoal = Objectives.Objectives.LastOrDefault()?.Target.Resource;
             if (finalGoal != null) Goal = new GoalProgress(World, Inventory, finalGoal);
+            Tutorial = new TutorialTracker(this, tutorial);
             World.Log(EventSeverity.Info, "Bienvenue dans l'atelier. Ouvre le livre de recettes pour voir comment fabriquer l'antimatière.");
         }
 
         public World World { get; }
         public PlayerInventory Inventory { get; }
+        /// <summary>Actions permises au joueur (restreintes pendant le tutoriel).</summary>
+        public PermissionGate Permissions { get; }
+        /// <summary>Tutoriel guidé (inactif si aucune donnée de tutoriel).</summary>
+        public TutorialTracker Tutorial { get; }
         public PlayerActions Actions { get; }
         public WorkbenchService Workbench { get; }
         public ObjectiveTracker Objectives { get; }

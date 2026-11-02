@@ -12,7 +12,7 @@ namespace Nucleaire.Game.UI
         private readonly WorldOverlay overlay;
         private readonly TutorialPanel tutorial;
 
-        public GameUI(GameContext ctx, UIDocument document, Camera cam, Objectives.TutorialTracker tutorialTracker)
+        public GameUI(GameContext ctx, UIDocument document, Camera cam)
         {
             this.document = document;
             var root = document.rootVisualElement;
@@ -26,7 +26,7 @@ namespace Nucleaire.Game.UI
             new HotbarPanel(ctx, root);
             inspector = new InspectorPanel(ctx, root.Q("inspector"));
             Book = new RecipeBookPanel(ctx, root);
-            tutorial = new TutorialPanel(ctx, tutorialTracker, root);
+            tutorial = new TutorialPanel(ctx, ctx.Session.Tutorial, root);
         }
 
         public RecipeBookPanel Book { get; }

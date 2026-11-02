@@ -1,3 +1,5 @@
+using System.Linq;
+using Nucleaire.Data;
 using Nucleaire.Objectives;
 using Nucleaire.Simulation;
 using UnityEngine;
@@ -5,67 +7,67 @@ using UnityEngine.UIElements;
 
 namespace Nucleaire.Game.UI
 {
-    /// <summary>Tutoriel guidé : une étape à la fois, validée automatiquement par l'état de la partie.</summary>
+    /// <summary>Tutoriel guidé : une étape à la fois, validée automatiquement par ce que fait le joueur.
+    /// Pendant le tutoriel, seules les actions déjà présentées sont permises. « Passer le tutoriel » débloque tout.</summary>
     public sealed class TutorialPanel
     {
         private readonly GameContext ctx;
         private readonly TutorialTracker tracker;
         private readonly VisualElement panel;
-        private readonly Button reopen;
         private float nextCheck;
-        private bool hidden;
+        private bool confirmSkip;
 
         public TutorialPanel(GameContext ctx, TutorialTracker tracker, VisualElement root)
         {
             this.ctx = ctx;
             this.tracker = tracker;
             panel = root.Q("tutorial");
-            reopen = Ui.Button("Tutoriel", () => SetHidden(false), "btn btn--small hidden", root.Q("top-right"));
-            reopen.SendToBack();
-            Tooltips.Register(reopen, "Tutoriel", "Réafficher le tutoriel guidé.");
-            tracker.Advanced += Rebuild;
+            tracker.Advanced += () => { confirmSkip = false; Rebuild(); };
             ctx.RecipeBookRequested += _ => tracker.NotifyRecipeBookOpened();
-            Rebuild();
-        }
-
-        private void SetHidden(bool h)
-        {
-            hidden = h;
             Rebuild();
         }
 
         private void Rebuild()
         {
             panel.Clear();
-            bool show = !hidden && !tracker.Finished && tracker.Def != null;
-            Ui.SetVisible(panel, show);
-            Ui.SetVisible(reopen, tracker.Def != null && !show);
-            if (!show) { if (tracker.Finished) reopen.text = "Revoir le tutoriel"; return; }
+            Ui.SetVisible(panel, tracker.Active);
+            if (!tracker.Active) return;
 
             var step = tracker.Current;
             var head = Ui.El("row", panel);
             Ui.Text($"Tutoriel · étape {tracker.Index + 1} / {tracker.Count}", "meta grow", head);
-            var close = Ui.Button("×", () => SetHidden(true), "btn btn--ghost btn--icon", head);
-            Tooltips.Register(close, "Masquer le tutoriel", "Il reste accessible avec le bouton « Tutoriel » en haut à droite.");
+            var skip = Ui.Button(confirmSkip ? "Confirmer" : "Passer le tutoriel", () =>
+            {
+                if (confirmSkip) tracker.Skip();
+                else { confirmSkip = true; Rebuild(); }
+            }, confirmSkip ? "btn btn--danger btn--small" : "btn btn--ghost btn--small", head);
+            Tooltips.Register(skip, "Passer le tutoriel", "Débloque immédiatement toutes les actions et affiche l'objectif final.");
+
+            var gauge = Ui.Gauge(panel, out var fill);
+            gauge.AddToClassList("tutorial__progress");
+            Ui.SetGauge(fill, (float)tracker.Index / tracker.Count);
 
             Ui.Text(step.title, "title", panel).style.marginBottom = 4;
             Ui.Text(step.body, "text-2 wrap", panel);
 
+            var unlocked = System.Enum.GetValues(typeof(PlayerPermission)).Cast<PlayerPermission>()
+                .Where(p => p != PlayerPermission.None && p != PlayerPermission.All && (step.unlocks & p) == p)
+                .Select(p => p.DisplayName()).ToList();
+            if (unlocked.Count > 0 && step.unlocks != PlayerPermission.All)
+                Ui.System("Débloqué : " + string.Join(", ", unlocked) + ".", panel).style.marginTop = 8;
+
             var actions = Ui.El("row tutorial__actions", panel);
             if (tracker.Index > 0) Ui.Button("Précédent", tracker.Previous, "btn btn--ghost btn--small", actions);
             Ui.El("spacer", actions);
-            if (step.condition == Data.TutorialCondition.None)
-                Ui.Button(tracker.Index == tracker.Count - 1 ? "Terminer" : "Suivant", tracker.Next, "btn btn--primary btn--small", actions);
+            if (step.condition == TutorialCondition.None)
+                Ui.Button(tracker.Index == tracker.Count - 1 ? "Commencer" : "Suivant", tracker.Next, "btn btn--primary btn--small", actions);
             else
-            {
-                Ui.Badge("À faire", "accent", actions).style.marginRight = 6;
-                Ui.Button("Passer", tracker.Next, "btn btn--ghost btn--small", actions);
-            }
+                Ui.Badge("À toi de jouer", "accent", actions);
         }
 
         public void Update()
         {
-            if (tracker.Finished || Time.unscaledTime < nextCheck) return;
+            if (!tracker.Active || Time.unscaledTime < nextCheck) return;
             nextCheck = Time.unscaledTime + 0.25f;
             var step = tracker.Current;
             if (tracker.Check()) ctx.Notify($"Étape réussie : {step.title}", EventSeverity.Success);

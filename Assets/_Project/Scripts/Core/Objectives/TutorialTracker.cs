@@ -15,11 +15,15 @@ namespace Nucleaire.Objectives
         {
             this.session = session;
             Def = def;
+            ApplyPermissions();
         }
 
         public TutorialDef Def { get; }
         public int Index { get; private set; }
         public bool Finished => Def == null || Index >= Def.Steps.Count;
+        /// <summary>Le joueur suit le tutoriel (ses actions sont limitées à ce qui a été présenté).</summary>
+        public bool Active => !Finished;
+        public bool Skipped { get; private set; }
         public TutorialStep Current => Finished ? null : Def.Steps[Index];
         public int Count => Def?.Steps.Count ?? 0;
         public event Action Advanced;
@@ -59,6 +63,7 @@ namespace Nucleaire.Objectives
         {
             if (Finished) return;
             Index++;
+            ApplyPermissions();
             Advanced?.Invoke();
         }
 
@@ -66,7 +71,33 @@ namespace Nucleaire.Objectives
         {
             if (Index == 0) return;
             Index--;
+            ApplyPermissions();
             Advanced?.Invoke();
         }
+
+        /// <summary>Abandonne le tutoriel : toutes les actions sont débloquées.</summary>
+        public void Skip()
+        {
+            if (Finished) return;
+            Skipped = true;
+            Index = Count;
+            ApplyPermissions();
+            session.World.Log(EventSeverity.Info, "Tutoriel passé : toutes les actions sont disponibles.");
+            Advanced?.Invoke();
+        }
+
+        /// <summary>Actions permises = cumul des déblocages des étapes déjà atteintes.</summary>
+        public PlayerPermission CurrentPermissions
+        {
+            get
+            {
+                if (Finished) return PlayerPermission.All;
+                var p = PlayerPermission.None;
+                for (int i = 0; i <= Index; i++) p |= Def.Steps[i].unlocks;
+                return p;
+            }
+        }
+
+        private void ApplyPermissions() => session.Permissions.Set(CurrentPermissions);
     }
 }

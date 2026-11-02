@@ -22,6 +22,7 @@
 /* Tutoriel */
 .hud-tutorial { margin-top: 12px; padding: 12px 14px; }
 .tutorial__actions { margin-top: 10px; }
+.tutorial__progress { margin: 6px 0 10px 0; height: 3px; }
 .tutorial__actions > .btn { margin-left: 4px; }
 
 /* Contrôles */

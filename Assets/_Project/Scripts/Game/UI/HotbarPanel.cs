@@ -67,7 +67,11 @@ namespace Nucleaire.Game.UI
 
                 slot.RegisterCallback<ClickEvent>(_ =>
                 {
-                    if (placeable != null) ctx.BuildItem = ctx.BuildItem == r ? null : r;
+                    if (placeable != null)
+                    {
+                        if (ctx.BuildItem == r) ctx.BuildItem = null;
+                        else if (ctx.Require(PlayerPermission.Place)) ctx.BuildItem = r;
+                    }
                     else ctx.OpenRecipeBook(r);
                 });
                 Tooltips.Register(slot, () => (r.DisplayName,

@@ -34,7 +34,7 @@ namespace Nucleaire.Game
             Shapes.Lit = litMaterial;
             WorldView.TransparentMaterial = transparentMaterial;
 
-            var session = new GameSession(database, settings);
+            var session = new GameSession(database, settings, tutorial);
             var runner = gameObject.AddComponent<SimulationRunner>();
             runner.Init(session.World);
             ctx = new GameContext(session, runner);
@@ -48,7 +48,7 @@ namespace Nucleaire.Game
             worldView = new GameObject("World").AddComponent<WorldView>();
             worldView.Init(ctx, unlitMaterial);
 
-            ui = new GameUI(ctx, uiDocument, rig.Camera, new Objectives.TutorialTracker(session, tutorial));
+            ui = new GameUI(ctx, uiDocument, rig.Camera);
             rig.PointerOverUI = () => Mouse.current != null && ui.IsPointerOverUI(Mouse.current.position.ReadValue());
             rig.IsTyping = () => ui.IsTyping;
 
@@ -79,8 +79,12 @@ namespace Nucleaire.Game
             var kb = Keyboard.current;
             if (kb != null && !ui.IsTyping)
             {
-                if (kb.bKey.wasPressedThisFrame) ui.Book.Toggle();
-                if (kb.spaceKey.wasPressedThisFrame) ctx.Runner.TogglePause();
+                if (kb.bKey.wasPressedThisFrame)
+                {
+                    if (ui.Book.IsOpen) ui.Book.Close();
+                    else ctx.OpenRecipeBook();
+                }
+                if (kb.spaceKey.wasPressedThisFrame && ctx.Require(PlayerPermission.SimulationSpeed)) ctx.Runner.TogglePause();
                 if (kb.escapeKey.wasPressedThisFrame)
                 {
                     if (ui.Book.IsOpen) ui.Book.Close();
@@ -106,6 +110,7 @@ namespace Nucleaire.Game
                     ctx.Selection = null;
                     break;
                 case "chain":
+                    ctx.Session.Tutorial.Skip();
                     // Petite chaîne : panneaux solaires → câbles → four ; vault → convoyeur → broyeur → four.
                     var inv = ctx.Session.Inventory;
                     inv.Add(R("item_solar_panel"), 4);
@@ -152,6 +157,9 @@ namespace Nucleaire.Game
                 case "tutorial":
                     ui.Book.Close();
                     ctx.Selection = null;
+                    break;
+                case "skip":
+                    ctx.Session.Tutorial.Skip();
                     break;
                 case "book":
                     ctx.Selection = null;

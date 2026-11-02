@@ -41,7 +41,20 @@ namespace Nucleaire.Game
         /// <summary>Message court affiché au joueur (erreur d'action, aide).</summary>
         public event Action<string, EventSeverity> Toast;
 
-        public void OpenRecipeBook(ResourceDef r = null) => RecipeBookRequested?.Invoke(r);
+        public void OpenRecipeBook(ResourceDef r = null)
+        {
+            if (Require(PlayerPermission.RecipeBook)) RecipeBookRequested?.Invoke(r);
+        }
+
+        /// <summary>Vérifie qu'une action est permise (tutoriel) ; sinon prévient le joueur.</summary>
+        public bool Require(PlayerPermission p)
+        {
+            if (Session.Permissions.Check(p, out var error)) return true;
+            Notify(error, EventSeverity.Info);
+            return false;
+        }
+
+        public bool IsAllowed(PlayerPermission p) => Session.Permissions.IsAllowed(p);
         public void Notify(string message, EventSeverity severity = EventSeverity.Warning) => Toast?.Invoke(message, severity);
     }
 }
