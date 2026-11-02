@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Nucleaire.Data;
 
@@ -18,7 +19,7 @@ namespace Nucleaire.Game
         {
             this.ctx = ctx;
             ctx.Session.Inventory.Changed += AutoFill;
-            ctx.Session.BoardReset += () => { Array.Clear(slots, 0, Size); Selected = -1; AutoFill(); };
+            ctx.Session.BoardReset += () => { Array.Clear(slots, 0, Size); Selected = -1; known.Clear(); AutoFill(); };
             ctx.BuildItemChanged += item =>
             {
                 if (syncing) return;
@@ -68,17 +69,24 @@ namespace Nucleaire.Game
             syncing = false;
         }
 
+        private readonly HashSet<ResourceDef> known = new();
+
+        /// <summary>Range dans la barre les objets posables <b>nouvellement</b> obtenus (pas ceux que le joueur en a retirés).</summary>
         private void AutoFill()
         {
             bool changed = false;
+            var present = new HashSet<ResourceDef>();
             foreach (var (r, _) in ctx.Session.Inventory.Items.ToList())
             {
+                present.Add(r);
+                if (!known.Add(r)) continue;
                 if (!CanHold(r) || IndexOf(r) >= 0) continue;
                 int free = Array.IndexOf(slots, null);
-                if (free < 0) break;
+                if (free < 0) continue;
                 slots[free] = r;
                 changed = true;
             }
+            known.IntersectWith(present); // un objet épuisé puis retrouvé se rangera de nouveau
             if (changed) Changed?.Invoke();
         }
     }

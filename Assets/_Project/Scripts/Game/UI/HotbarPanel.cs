@@ -70,7 +70,7 @@ namespace Nucleaire.Game.UI
                 return p.Amount; // l'objet n'est plus « en main »
             });
             if (!inInventory) slot.RegisterCallback<ClickEvent>(_ => bar.Select(i));
-            else if (r != null) ItemTransfer.RegisterSource(slot, () => new Payload(r, ctx.Session.Inventory.Count(r)), _ => false);
+            else if (r != null) ItemTransfer.RegisterSource(slot, () => new Payload(r, ctx.Session.Inventory.Count(r), null, i), _ => false);
             return slot;
         }
     }

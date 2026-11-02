@@ -40,9 +40,14 @@ namespace Nucleaire.Game.UI
             hotbarRow = Ui.El("inventory__grid inventory__hotbar", panel);
             hint = Ui.Text("", "system inventory__hint", panel);
 
-            // Ce qu'on lâche sur l'inventaire depuis une machine y est récupéré.
-            ItemTransfer.RegisterTarget(panel, p => p.From != null, p =>
+            // Ce qu'on lâche sur l'inventaire : depuis une machine, il est récupéré ; depuis la barre rapide, il y est retiré.
+            ItemTransfer.RegisterTarget(panel, p => p.From != null || p.HotbarSlot >= 0, p =>
             {
+                if (p.HotbarSlot >= 0)
+                {
+                    ctx.Hotbar.Assign(p.HotbarSlot, null);
+                    return p.Amount;
+                }
                 if (!ctx.Require(PlayerPermission.Take)) return 0;
                 int n = ctx.Session.Actions.Take(p.From, p.Resource, p.Amount);
                 if (n == 0) ctx.Notify($"Impossible de récupérer {p.Resource.DisplayName.ToLowerInvariant()}.");

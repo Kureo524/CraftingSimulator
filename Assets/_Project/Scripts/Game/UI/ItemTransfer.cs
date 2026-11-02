@@ -14,9 +14,11 @@ namespace Nucleaire.Game.UI
         public ResourceDef Resource;
         public int Amount;
         public Machine From;
+        /// <summary>Emplacement de barre rapide d'où vient l'objet (-1 : grille de l'inventaire ou machine).</summary>
+        public int HotbarSlot = -1;
 
-        public Payload(ResourceDef r, int amount, Machine from = null) { Resource = r; Amount = amount; From = from; }
-        public Payload With(int amount) => new(Resource, amount, From);
+        public Payload(ResourceDef r, int amount, Machine from = null, int hotbarSlot = -1) { Resource = r; Amount = amount; From = from; HotbarSlot = hotbarSlot; }
+        public Payload With(int amount) => new(Resource, amount, From, HotbarSlot);
     }
 
     /// <summary>Déplacement d'objets entre l'inventaire et les machines, comme dans Minecraft :
