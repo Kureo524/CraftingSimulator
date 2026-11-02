@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: item_sorter
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.ResourceDef
   displayName: Trieur
-  description: "Coll\xE9 \xE0 une machine ou \xE0 un vault, il en tire la ressource choisie et la pousse par son avant."
+  description: "Plaque plate coll\xE9e sur une face de machine ou de vault : elle en tire les ressources de sa liste et les pousse vers ce qui touche cette face."
   kind: 0
   color: {r: 0.64705884, g: 0.5921569, b: 0.7529412, a: 1}
   isBaseResource: 0

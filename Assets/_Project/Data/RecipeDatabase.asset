@@ -92,7 +92,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 878f607773ff49e8cae84c1ebada76c3, type: 2}
   - {fileID: 11400000, guid: 51301e79c2c4b81d1ab9ccd9013f47ff, type: 2}
   - {fileID: 11400000, guid: 681b14a83ac4035299db8e88780ae9b6, type: 2}
-  - {fileID: 11400000, guid: 90e3e1ac5d0840d3bda2076efe8fbc2a, type: 2}
   - {fileID: 11400000, guid: 723c5d43d2de479fc9cf3d2bd04d8742, type: 2}
   - {fileID: 11400000, guid: 740e6bc508e777d0c8c0b13ba1dcb5b6, type: 2}
   - {fileID: 11400000, guid: e426c1e68000f5aa1a7377bb4e69b85c, type: 2}
@@ -172,6 +171,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 22b66cd3448aa2882bc487156bd4a3c7, type: 2}
   - {fileID: 11400000, guid: 883b44e8701e61326a58a53779c3e51c, type: 2}
   energy: {fileID: 11400000, guid: 1c39f5ddf14790113bb580a4a3e22ae5, type: 2}
+  sorterItem: {fileID: 11400000, guid: 27cf735b92de43e8b92ebefb6b07d225, type: 2}
   prePlacedMachines:
   - {fileID: 11400000, guid: e426c1e68000f5aa1a7377bb4e69b85c, type: 2}
   startingInventory:

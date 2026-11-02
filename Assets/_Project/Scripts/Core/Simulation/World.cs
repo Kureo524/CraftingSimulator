@@ -123,6 +123,7 @@ namespace Nucleaire.Simulation
         {
             CurrentTick++;
             foreach (var m in machines.ToList()) Logistics.PushOutputs(m);
+            foreach (var m in machines.ToList()) foreach (var s in m.Sorters.ToList()) s.Tick();
             Logistics.Distribute();
             foreach (var m in machines.ToList()) m.Tick();
             Ticked?.Invoke();

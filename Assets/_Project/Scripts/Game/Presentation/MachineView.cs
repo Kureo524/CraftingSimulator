@@ -48,12 +48,61 @@ namespace Nucleaire.Game
             col.size = new Vector3(0.94f, 1f, 0.94f);
             gameObject.AddComponent<EntityRef>().Entity = m;
             m.Sides.Changed += RefreshSides;
+            m.AttachmentsChanged += RefreshSorters;
             RefreshSides();
+            RefreshSorters();
+        }
+
+        private readonly GameObject[] sorterPlates = new GameObject[6];
+
+        /// <summary>Trieurs : plaques plates collées sur les faces, avec une flèche vers l'extérieur.</summary>
+        private void RefreshSorters()
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                var d = (Direction)i;
+                var s = machine.SorterAt(d);
+                if (s == null) { if (sorterPlates[i] != null) Destroy(sorterPlates[i]); sorterPlates[i] = null; continue; }
+                if (sorterPlates[i] != null) continue;
+                var plate = BuildSorterPlate(transform, d, topY);
+                plate.AddComponent<SorterRef>().Sorter = s;
+                var col = plate.AddComponent<BoxCollider>();
+                col.size = new Vector3(1f, 1f, 2.5f);
+                sorterPlates[i] = plate;
+            }
+        }
+
+        /// <summary>Plaque de trieur sur une face (aussi utilisée pour l'aperçu de pose).</summary>
+        public static GameObject BuildSorterPlate(Transform parent, Direction d, float topY = BodyHeight)
+        {
+            var go = new GameObject("Sorter " + d);
+            go.transform.SetParent(parent, false);
+            var t = go.transform;
+            var lav = Palette.Lavender;
+            if (d.IsVertical())
+            {
+                t.localPosition = new Vector3(0, d == Direction.Up ? topY + 0.03f : 0.03f, 0);
+                t.localRotation = Quaternion.LookRotation(d == Direction.Up ? Vector3.up : Vector3.down, Vector3.forward);
+            }
+            else
+            {
+                var dir = GridMath.DirectionVector(d);
+                t.localPosition = dir * 0.5f + Vector3.up * 0.27f;
+                t.localRotation = Quaternion.LookRotation(dir);
+            }
+            t.localScale = new Vector3(0.6f, 0.46f, 0.05f);
+            Shapes.Box(t, Vector3.zero, Vector3.one, Palette.MachineBodyDark, "Plate");
+            Shapes.Box(t, new Vector3(0, 0, 0.55f), new Vector3(0.86f, 0.84f, 0.3f), Color.Lerp(lav, Palette.MachineBody, 0.1f), "Face");
+            var a = Shapes.Box(t, new Vector3(-0.13f, 0, 0.8f), new Vector3(0.1f, 0.5f, 0.3f), Palette.Text, "Chevron L");
+            a.localRotation = Quaternion.Euler(0, 0, 40f);
+            var b = Shapes.Box(t, new Vector3(0.13f, 0, 0.8f), new Vector3(0.1f, 0.5f, 0.3f), Palette.Text, "Chevron R");
+            b.localRotation = Quaternion.Euler(0, 0, -40f);
+            return go;
         }
 
         private void OnDestroy()
         {
-            if (machine != null) machine.Sides.Changed -= RefreshSides;
+            if (machine != null) { machine.Sides.Changed -= RefreshSides; machine.AttachmentsChanged -= RefreshSorters; }
         }
 
         /// <summary>Modèle 3D d'une machine (corps, plaque d'identité, avant), tourné selon son orientation.

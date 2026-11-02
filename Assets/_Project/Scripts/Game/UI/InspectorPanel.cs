@@ -55,9 +55,13 @@ namespace Nucleaire.Game.UI
 
             BuildHeader(e);
             tabNames = TabsFor(e);
+            if (e is Machine withSorters && withSorters.Sorters.Any()) tabNames = tabNames.Append("Trieurs").ToArray();
             if (tabNames.Length > 1)
             {
-                tabs = new SegmentedControl(tabNames);
+                int initial = 0;
+                if (ctx.FocusSorterFace != null && Array.IndexOf(tabNames, "Trieurs") is var ti && ti >= 0) initial = ti;
+                ctx.FocusSorterFace = null;
+                tabs = new SegmentedControl(tabNames, initial);
                 tabs.AddToClassList("inspector__tabs");
                 tabs.Changed += _ => RebuildTab();
                 root.Add(tabs);
@@ -75,7 +79,6 @@ namespace Nucleaire.Game.UI
         {
             ReactorMachine => new[] { "Pilotage", "Faces", "Améliorations" },
             VaultMachine => new[] { "Ressources", "Faces" },
-            SorterMachine => new[] { "Filtre" },
             BatteryMachine => new[] { "État", "Faces" },
             Machine m when m.MachineDef.UpgradeSlots > 0 => new[] { "État", "Faces", "Améliorations" },
             Machine => new[] { "État", "Faces" },
@@ -92,7 +95,7 @@ namespace Nucleaire.Game.UI
             updaters.Clear();
             var locked = CurrentTab switch
             {
-                "Faces" or "Filtre" => PlayerPermission.Sides,
+                "Faces" or "Trieurs" => PlayerPermission.Sides,
                 "Améliorations" => PlayerPermission.Upgrades,
                 _ => PlayerPermission.None,
             };
@@ -109,7 +112,7 @@ namespace Nucleaire.Game.UI
                 case "Faces": BuildSides((Machine)current); break;
                 case "Améliorations": BuildUpgrades((Machine)current); break;
                 case "Ressources": BuildVault((VaultMachine)current); break;
-                case "Filtre": BuildSorter((SorterMachine)current); break;
+                case "Trieurs": BuildSorters((Machine)current); break;
                 case "Réseau": BuildNetwork((TransmitterSegment)current); break;
             }
             RunUpdaters();
@@ -322,8 +325,8 @@ namespace Nucleaire.Game.UI
             Ui.Text("Faces de la machine", "section-title", help);
             Ui.Text(m is VaultMachine
                 ? "Entrée : ce qu'on pousse dans le vault est rangé dans le stockage commun (ton inventaire). Pour en sortir une ressource, colle un trieur au vault."
-                : "Entrée : reçoit depuis un câble ou une machine voisine. Sortie : pousse tous les produits vers le voisin. " +
-                  "Pour ne laisser sortir qu'une ressource, colle un trieur à la machine. Haut et Bas relient les étages.", "text-3 wrap", help);
+                : "Entrée : reçoit depuis un câble ou une machine voisine (Entrée 1, 2… : seulement dans cet emplacement). " +
+                  "Sortie : pousse tous les produits (Sortie 1, 2… : seulement cet emplacement). Pour trier, colle un trieur sur la face. Haut et Bas relient les étages.", "text-3 wrap", help);
 
             var cross = Ui.El("sides-cross", content);
             var rows = new[] { Ui.El("row sides-row", cross), Ui.El("row sides-row", cross), Ui.El("row sides-row", cross) };
@@ -344,16 +347,18 @@ namespace Nucleaire.Game.UI
             var setting = m.Sides[d];
             var cell = Ui.El("sides-cell glass" + (d.IsVertical() ? " sides-cell--vertical" : ""), parent);
             Ui.Text(d.DisplayName(), "meta", cell);
-            string label = setting.Mode switch { SideMode.Input => "Entrée", SideMode.Output => "Sortie", _ => "Fermée" };
+            var sorterHere = m.SorterAt(d);
+            string label = sorterHere != null ? "Trieur" : m.SideLabel(d);
             var mode = Ui.Button(label, () =>
             {
                 if (!ctx.Require(PlayerPermission.Sides)) return;
-                if (m.HasOutputSides) m.Sides.Cycle(d);
-                else m.Sides.SetMode(d, setting.Mode == SideMode.Input ? SideMode.None : SideMode.Input);
+                if (sorterHere != null) { tabs?.Select(Array.IndexOf(tabNames, "Trieurs")); return; }
+                m.CycleSide(d);
                 RebuildTab();
-            }, "btn btn--small side-mode side-mode--" + setting.Mode.ToString().ToLowerInvariant(), cell);
+            }, "btn btn--small side-mode side-mode--" + (sorterHere != null ? "output" : setting.Mode.ToString().ToLowerInvariant()), cell);
             mode.name = "side-" + d;
-            Tooltips.Register(mode, $"Face {d.DisplayName()}", m.HasOutputSides ? "Clic : Fermée → Entrée → Sortie." : "Clic : Fermée ↔ Entrée. Pour sortir quelque chose, colle un trieur.");
+            Tooltips.Register(mode, $"Face {d.DisplayName()}", sorterHere != null ? "Un trieur occupe cette face : clic pour le régler."
+                : string.Join(" → ", m.SideOptions().Select(o => m.SideLabel(o))) + ". Aussi en mode Modification (touche A deux fois), directement dans l'atelier.");
 
             var neighbour = ctx.World.At(m.Position + d.Offset());
             Ui.Text(neighbour == null ? "—" : neighbour.Def.DisplayName, "meta side-neighbour", cell);
@@ -504,35 +509,51 @@ namespace Nucleaire.Game.UI
 
         // ---------------- Trieur ----------------
 
-        private void BuildSorter(SorterMachine t)
+        /// <summary>Trieurs collés sur les faces : liste de ressources à laisser passer (vide : tout passe).</summary>
+        private void BuildSorters(Machine m)
         {
-            StatusBox(t);
-            var flow = Ui.Section("Sens", content);
-            var row = Ui.El("row sorter-flow", flow);
-            Ui.Text(t.Source?.Def.DisplayName ?? "rien", "bold", row);
-            Ui.Text($"  ({t.Back.DisplayName().ToLowerInvariant()})", "meta", row);
-            Ui.Text("  →  trieur  →  ", "text-3", row);
-            Ui.Text(t.Target?.Def.DisplayName ?? "rien", "bold", row);
-            Ui.Text($"  ({t.Facing.DisplayName().ToLowerInvariant()})", "meta", row);
-            Ui.Text("Il tire de ce qui est derrière lui (sorties d'une machine, ou stockage commun et ressources de base d'un vault) et pousse par son avant, repéré par le bandeau clair.", "text-3 wrap", flow);
-
-            var sec = Ui.Section("Filtre", content, "Seule cette ressource passe. « Tout » laisse passer chaque ressource disponible, l'une après l'autre.");
-            var available = t.Source?.Pullable().Select(p => p.resource).Where(r => r != null && r.Kind != ResourceKind.Energy).Distinct().ToList() ?? new List<ResourceDef>();
-            var options = available.Concat(ctx.Db.Resources.Where(r => r != null && r.Kind != ResourceKind.Energy && !available.Contains(r))
-                .OrderBy(r => r.Kind).ThenBy(r => r.DisplayName)).ToList();
-            var choices = new List<GlassDropdown.Option> { new("Tout laisser passer") };
-            choices.AddRange(options.Select(r => new GlassDropdown.Option(available.Contains(r) ? r.DisplayName + " · disponible" : r.DisplayName, r)));
-            var dd = new GlassDropdown(choices, t.Filter == null ? 0 : options.IndexOf(t.Filter) + 1) { name = "sorter-filter" };
-            dd.AddToClassList("sorter-filter");
-            dd.Changed += i =>
+            var info = Ui.El("status-window", content);
+            info.style.marginBottom = 10;
+            Ui.Text("[Un trieur tire de cette machine les ressources de sa liste et les pousse vers ce qui touche sa face (machine ou câble). Liste vide : tout passe.]", "system", info);
+            var available = m.Pullable().Select(p => p.resource).Where(r => r != null && r.Kind != ResourceKind.Energy).Distinct().ToList();
+            bool first = true;
+            foreach (var sorter in m.Sorters.ToList())
             {
-                if (!ctx.Require(PlayerPermission.Sides)) { dd.Select(t.Filter == null ? 0 : options.IndexOf(t.Filter) + 1, notify: false); return; }
-                t.SetFilter(i <= 0 ? null : options[i - 1]);
-            };
-            sec.Add(dd);
+                var t = sorter;
+                var target = t.Target;
+                var sec = Ui.Section($"Face {t.Face.DisplayName().ToLowerInvariant()} → {target?.Def.DisplayName ?? "rien (pose une machine ou un câble devant)"}", content);
+                var chips = Ui.El("row sorter-chips", sec);
+                if (t.Filters.Count == 0) Ui.Text("[Tout passe.]", "system", chips);
+                foreach (var r in t.Filters.ToList())
+                {
+                    var chip = IconSlot.Create(r, chips, classes: "rslot--small sorter-chip", extra: () => "Clic : retirer de la liste.");
+                    chip.RegisterCallback<ClickEvent>(_ => { if (ctx.Require(PlayerPermission.Sides)) { t.RemoveFilter(r); RebuildTab(); } });
+                }
 
-            var buffer = Ui.Section("En transit", content);
-            AddSlots(t, t.Outputs, Ui.El("machine-slots", buffer));
+                var options = available.Concat(ctx.Db.Resources.Where(r => r != null && r.Kind != ResourceKind.Energy && !available.Contains(r))
+                    .OrderBy(r => r.Kind).ThenBy(r => r.DisplayName)).Where(r => !t.Filters.Contains(r)).ToList();
+                var choices = new List<GlassDropdown.Option> { new("Ajouter une ressource…") };
+                choices.AddRange(options.Select(r => new GlassDropdown.Option(available.Contains(r) ? r.DisplayName + " · disponible" : r.DisplayName, r)));
+                var row = Ui.El("row sorter-actions", sec);
+                var dd = new GlassDropdown(choices);
+                if (first) dd.name = "sorter-add";
+                dd.AddToClassList("sorter-add grow");
+                dd.Changed += i =>
+                {
+                    if (i <= 0 || !ctx.Require(PlayerPermission.Sides)) return;
+                    t.AddFilter(options[i - 1]);
+                    RebuildTab();
+                };
+                row.Add(dd);
+                var remove = Ui.Button("Retirer", () =>
+                {
+                    if (ctx.Session.Actions.TryDetachSorter(m, t.Face, out var err)) Show(m);
+                    else ctx.Notify(err);
+                }, "btn btn--ghost btn--small", row);
+                remove.style.marginLeft = 6;
+                Tooltips.Register(remove, "Retirer le trieur", "Il revient dans l'inventaire.");
+                first = false;
+            }
         }
 
         // ---------------- Réseau ----------------

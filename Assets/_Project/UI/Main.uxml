@@ -19,6 +19,7 @@
             <ui:VisualElement name="cable-picker" class="glass glass--light cable-picker hidden" />
             <ui:VisualElement name="plan-panel" class="glass mode-panel hidden" />
             <ui:VisualElement name="delete-panel" class="glass mode-panel mode-panel--danger hidden" />
+            <ui:VisualElement name="configure-panel" class="glass mode-panel mode-panel--accent hidden" />
         </ui:VisualElement>
         <ui:VisualElement name="view-filter" class="glass glass--light view-filter" />
         <ui:VisualElement name="context-layer" class="layer-fill" picking-mode="Ignore" />

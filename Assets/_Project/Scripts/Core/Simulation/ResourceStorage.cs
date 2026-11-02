@@ -80,6 +80,19 @@ namespace Nucleaire.Simulation
             return n;
         }
 
+        /// <summary>Insertion dans un emplacement précis (face réglée sur « Entrée n »).</summary>
+        public int InsertInto(int index, ResourceDef r, int amount, bool simulate = false)
+        {
+            if (index < 0 || index >= slots.Count || amount <= 0 || !Accepts(r)) return 0;
+            var s = slots[index];
+            if (s.Kind != r.Kind || (!s.IsEmpty && s.Resource != r)) return 0;
+            if (slots.Any(o => o != s && o.Resource == r && o.Amount > 0)) return 0;
+            int n = Math.Min(amount, Capacity(r) - s.Amount);
+            if (n <= 0) return 0;
+            if (!simulate) { s.Resource = r; s.Amount += n; }
+            return n;
+        }
+
         public int Extract(ResourceDef r, int amount, bool simulate = false)
         {
             if (amount <= 0) return 0;

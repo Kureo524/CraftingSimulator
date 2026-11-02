@@ -57,9 +57,35 @@ namespace Nucleaire.Crafting
             }
 
             if (e is Machine m)
+            {
                 foreach (var s in m.SalvageableItems()) Inventory.Add(s.Resource, s.Amount);
+                int sorters = m.Sorters.Count();
+                if (sorters > 0 && world.Db.SorterItem != null) Inventory.Add(world.Db.SorterItem, sorters);
+            }
             world.Remove(pos);
             Inventory.Add(e.Def.Item, 1);
+            return true;
+        }
+
+        /// <summary>Colle un trieur (objet de l'inventaire) sur une face de machine.</summary>
+        public bool TryAttachSorter(Machine m, Direction face, out string error)
+        {
+            if (!Gate.Check(PlayerPermission.Place, out error)) return false;
+            var item = world.Db.SorterItem;
+            if (m == null) { error = "Un trieur se colle sur une face de machine ou de vault."; return false; }
+            if (item == null || Inventory.Count(item) <= 0) { error = "Plus de trieur dans l'inventaire."; return false; }
+            if (m.SorterAt(face) != null) { error = "Il y a déjà un trieur sur cette face."; return false; }
+            Inventory.Remove(item, 1);
+            m.AttachSorter(face);
+            return true;
+        }
+
+        /// <summary>Retire un trieur : il revient dans l'inventaire.</summary>
+        public bool TryDetachSorter(Machine m, Direction face, out string error)
+        {
+            if (!Gate.Check(PlayerPermission.PickUp, out error)) return false;
+            if (m == null || !m.DetachSorter(face)) { error = "Pas de trieur ici."; return false; }
+            if (world.Db.SorterItem != null) Inventory.Add(world.Db.SorterItem, 1);
             return true;
         }
 

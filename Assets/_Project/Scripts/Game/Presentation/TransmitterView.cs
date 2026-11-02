@@ -57,19 +57,36 @@ namespace Nucleaire.Game
             arms[(int)Direction.Down] = Shapes.Box(transform, new Vector3(0, height / 2f, 0), new Vector3(vThick, height, vThick), color, "Arm Down");
         }
 
+        private readonly Transform[] markers = new Transform[6];
+
         public void Refresh()
         {
             for (int i = 0; i < 6; i++)
             {
                 var d = (Direction)i;
                 var n = world.At(segment.Position + d.Offset());
+                var cs = segment[d];
                 bool connected = n switch
                 {
                     TransmitterSegment other => other.ConnectsTo(segment),
-                    Machine m => m.Sides[d.Opposite()].Mode != SideMode.None,
+                    Machine m => m.Sides[d.Opposite()].Mode != SideMode.None || cs is CableSide.Pull or CableSide.Push || m.SorterAt(d.Opposite()) != null,
                     _ => false,
                 };
                 arms[i].gameObject.SetActive(connected);
+
+                // Tirer (lavande) / Pousser (bleu) : une bague au bout du bras, côté machine.
+                bool marked = n is Machine && cs is CableSide.Pull or CableSide.Push;
+                if (marked && markers[i] == null)
+                {
+                    var p = GridMath.DirectionVector(d) * 0.42f + arms[i].localPosition.y * Vector3.up;
+                    if (d.IsVertical()) p = new Vector3(0, d == Direction.Up ? 0.85f : 0.05f, 0);
+                    markers[i] = Shapes.Box(transform, p, Vector3.one * 0.2f, Palette.Lavender, "Marker " + d);
+                }
+                if (markers[i] != null)
+                {
+                    markers[i].gameObject.SetActive(marked);
+                    if (marked) Shapes.SetColor(markers[i], cs == CableSide.Pull ? Palette.Lavender : Palette.Accent);
+                }
             }
         }
     }

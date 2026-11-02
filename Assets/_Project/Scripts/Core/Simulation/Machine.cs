@@ -85,12 +85,87 @@ namespace Nucleaire.Simulation
         // ---------------- Échanges ----------------
 
         /// <summary>Réception par une face (transmetteur ou machine voisine).</summary>
-        public int Receive(ResourceDef r, int amount, Direction side, bool simulate = false)
+        /// <param name="force">Ignore le réglage de la face (trieur, câble en « Pousser »).</param>
+        public int Receive(ResourceDef r, int amount, Direction side, bool simulate = false) => Receive(r, amount, side, simulate, false);
+
+        public int Receive(ResourceDef r, int amount, Direction side, bool simulate, bool force)
         {
             var s = Sides[side];
-            if (s.Mode != SideMode.Input || !s.Allows(r)) return 0;
+            if (!force && (s.Mode != SideMode.Input || !s.Allows(r))) return 0;
+            if (s.Mode == SideMode.Input && s.Slot >= 0 && r != EnergyDef && Inputs != null) return Inputs.InsertInto(s.Slot, r, amount, simulate);
             return Accept(r, amount, simulate);
         }
+
+        // ---------------- Réglage des faces ----------------
+
+        /// <summary>Réglages possibles d'une face, dans l'ordre du cycle : neutre, entrée (toutes puis chaque emplacement),
+        /// sortie (globale puis chaque emplacement).</summary>
+        public IReadOnlyList<SideSetting> SideOptions()
+        {
+            var list = new List<SideSetting> { new(SideMode.None), new(SideMode.Input) };
+            if (Inputs != null && Inputs.Slots.Count > 1)
+                for (int i = 0; i < Inputs.Slots.Count; i++) list.Add(new SideSetting(SideMode.Input, null, i));
+            if (HasOutputSides && ((Outputs != null && Outputs.Slots.Count > 0) || ProducesEnergy))
+            {
+                list.Add(new SideSetting(SideMode.Output));
+                if (Outputs != null && Outputs.Slots.Count > 1)
+                    for (int i = 0; i < Outputs.Slots.Count; i++) list.Add(new SideSetting(SideMode.Output, null, i));
+            }
+            return list;
+        }
+
+        /// <summary>Passe la face au réglage suivant (step = 1) ou précédent (step = -1).</summary>
+        public void CycleSide(Direction d, int step = 1)
+        {
+            var options = SideOptions();
+            int i = 0;
+            for (int k = 0; k < options.Count; k++) if (options[k].SameAs(Sides[d])) { i = k; break; }
+            i = ((i + step) % options.Count + options.Count) % options.Count;
+            Sides.Set(d, options[i]);
+        }
+
+        /// <summary>Nom lisible du réglage d'une face (« Entrée 2 · eau », « Sortie », « Neutre »).</summary>
+        public string SideLabel(Direction d) => SideLabel(Sides[d]);
+
+        public string SideLabel(SideSetting s)
+        {
+            if (s.Mode == SideMode.None) return "Neutre";
+            bool input = s.Mode == SideMode.Input;
+            if (s.Slot < 0) return input ? "Entrée" : "Sortie";
+            var storage = input ? Inputs : Outputs;
+            string what = storage != null && s.Slot < storage.Slots.Count
+                ? storage.Slots[s.Slot].Resource?.DisplayName.ToLowerInvariant() ?? storage.Slots[s.Slot].Kind.DisplayName().ToLowerInvariant()
+                : "";
+            return $"{(input ? "Entrée" : "Sortie")} {s.Slot + 1}" + (what.Length > 0 ? $" · {what}" : "");
+        }
+
+        // ---------------- Trieurs (plaques sur les faces) ----------------
+
+        private readonly FaceSorter[] sorters = new FaceSorter[6];
+        public event Action AttachmentsChanged;
+        public FaceSorter SorterAt(Direction d) => sorters[(int)d];
+        public IEnumerable<FaceSorter> Sorters => sorters.Where(s => s != null);
+
+        /// <summary>Colle un trieur sur une face (la face passe en neutre : c'est le trieur qui fait sortir).</summary>
+        public FaceSorter AttachSorter(Direction d)
+        {
+            if (sorters[(int)d] != null) return null;
+            var s = new FaceSorter(this, d);
+            sorters[(int)d] = s;
+            Sides.Set(d, SideMode.None);
+            AttachmentsChanged?.Invoke();
+            return s;
+        }
+
+        public bool DetachSorter(Direction d)
+        {
+            if (sorters[(int)d] == null) return false;
+            sorters[(int)d] = null;
+            AttachmentsChanged?.Invoke();
+            return true;
+        }
+
+        internal void NotifyAttachments() => AttachmentsChanged?.Invoke();
 
         /// <summary>Insertion sans tenir compte des faces (dépôt manuel du joueur).</summary>
         public int InsertManual(ResourceDef r, int amount) => Accept(r, amount, false);
@@ -115,8 +190,16 @@ namespace Nucleaire.Simulation
             var s = Sides[side];
             if (s.Mode != SideMode.Output) yield break;
             if (Outputs != null)
+            {
+                if (s.Slot >= 0)
+                {
+                    if (s.Slot < Outputs.Slots.Count && !Outputs.Slots[s.Slot].IsEmpty)
+                        yield return (Outputs.Slots[s.Slot].Resource, Outputs.Slots[s.Slot].Amount);
+                    yield break;
+                }
                 foreach (var kv in Outputs.Contents.ToList())
                     if (s.Allows(kv.Key)) yield return (kv.Key, kv.Value);
+            }
             if (ProducesEnergy && Energy > 0 && s.Allows(EnergyDef)) yield return (EnergyDef, Energy);
         }
 

@@ -36,7 +36,7 @@ namespace Nucleaire.Game
             (CycleCable, "Câble universel : changer de type", "<Keyboard>/t"),
             (RotatePiece, "Tourner la machine à poser", "<Keyboard>/r"),
             // Position physique de Q en QWERTY = touche A sur un clavier AZERTY.
-            (DeleteToggle, "Mode suppression", "<Keyboard>/q"),
+            (DeleteToggle, "Changer de mode : normal → suppression → modification", "<Keyboard>/q"),
             ("hotbar_1", "Barre rapide : emplacement 1", "<Keyboard>/1"),
             ("hotbar_2", "Barre rapide : emplacement 2", "<Keyboard>/2"),
             ("hotbar_3", "Barre rapide : emplacement 3", "<Keyboard>/3"),

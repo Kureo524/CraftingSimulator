@@ -46,32 +46,70 @@ namespace Nucleaire.Tests
         }
 
         [Test]
-        public void Sorter_PullsFilteredResourceFromVault_IntoConveyor()
+        public void Sorter_OnVaultFace_PushesItsListIntoConveyor()
         {
             var vault = World.FirstMachine<VaultMachine>();
             var p = vault.Position;
-            var sorter = (SorterMachine)World.Place(M("sorter"), p + new Vector3Int(0, 1, 0), Direction.North);
-            sorter.SetFilter(R("iron_ore"));
-            World.Place(T("conveyor"), p + new Vector3Int(0, 2, 0));
-            var crusher = (ProcessorMachine)World.Place(M("crusher"), p + new Vector3Int(0, 3, 0));
-            World.Step(6);
-            Assert.Greater(crusher.Inputs.Amount(R("iron_ore")), 0);
-            Assert.AreEqual(0, crusher.Inputs.Amount(R("coal")));
+            var sorter = vault.AttachSorter(Direction.North);
+            sorter.AddFilter(R("iron_ore"));
+            sorter.AddFilter(R("coal"));
+            World.Place(T("conveyor"), p + new Vector3Int(0, 1, 0));
+            var furnace = (ProcessorMachine)World.Place(M("electric_furnace"), p + new Vector3Int(0, 2, 0));
+            World.Step(8);
+            Assert.Greater(furnace.Inputs.Amount(R("iron_ore")) + furnace.Inputs.Amount(R("coal")), 0);
+            Assert.AreEqual(0, furnace.Inputs.Amount(R("copper_ore")), "Le cuivre n'est pas dans la liste");
+            Assert.IsNull(World.At(p + new Vector3Int(0, 0, 0)) as Logistics.TransmitterSegment, "Le trieur ne prend pas de case");
         }
 
         [Test]
-        public void Sorter_TakesOnlyItsFilter_FromAMachine()
+        public void Sorter_TakesOnlyItsList_FromAMachine()
         {
             var crusher = Place<ProcessorMachine>("crusher", 2, 2);
             crusher.Outputs.Insert(R("iron_dust"), 4);
-            var sorter = (SorterMachine)World.Place(M("sorter"), new Vector3Int(3, 2, 0), Direction.East);
-            sorter.SetFilter(R("copper_dust"));
-            World.Place(T("conveyor"), new Vector3Int(4, 2, 0));
+            var sorter = crusher.AttachSorter(Direction.East);
+            sorter.AddFilter(R("copper_dust"));
+            World.Place(T("conveyor"), new Vector3Int(3, 2, 0));
             World.Step(3);
-            Assert.AreEqual(4, crusher.Outputs.Amount(R("iron_dust")), "Le filtre ne laisse pas passer le fer");
-            sorter.SetFilter(R("iron_dust"));
+            Assert.AreEqual(4, crusher.Outputs.Amount(R("iron_dust")), "Le fer n'est pas dans la liste");
+            sorter.AddFilter(R("iron_dust"));
             World.Step(1);
             Assert.Less(crusher.Outputs.Amount(R("iron_dust")), 4);
+        }
+
+        [Test]
+        public void SideSlots_InputOnlyIntoChosenSlot()
+        {
+            var furnace = Place<ProcessorMachine>("electric_furnace", 2, 2);
+            Assert.Greater(furnace.Inputs.Slots.Count, 1);
+            furnace.Sides.Set(Direction.West, new SideSetting(SideMode.Input, null, 1));
+            Assert.AreEqual(5, furnace.Receive(R("coal"), 5, Direction.West));
+            Assert.AreEqual(R("coal"), furnace.Inputs.Slots[1].Resource);
+            Assert.IsTrue(furnace.Inputs.Slots[0].IsEmpty);
+            var options = furnace.SideOptions();
+            Assert.IsTrue(options.Any(o => o.Mode == SideMode.Input && o.Slot == 1));
+            Assert.AreEqual("Entrée 2 · charbon", furnace.SideLabel(Direction.West));
+        }
+
+        [Test]
+        public void CableSides_PullPushAndCut()
+        {
+            var crusher = Place<ProcessorMachine>("crusher", 1, 1);
+            foreach (var d in DirectionExtensions.All) crusher.Sides.SetMode(d, SideMode.None);
+            crusher.Outputs.Insert(R("iron_dust"), 6);
+            Line("conveyor", 2, 4, 1);
+            var first = (Logistics.TransmitterSegment)World.At(new Vector3Int(2, 1, 0));
+            Assert.AreEqual(1, World.Logistics.Networks.Count);
+
+            World.Logistics.CycleCableSide(first, Direction.West);       // tirer depuis le broyeur
+            Assert.AreEqual(Logistics.CableSide.Pull, first[Direction.West]);
+            World.Step(2);
+            Assert.Less(crusher.Outputs.Amount(R("iron_dust")), 6, "Le câble tire même si la face est neutre");
+
+            World.Logistics.CycleCableSide(first, Direction.East);       // entre deux câbles : couper
+            Assert.AreEqual(2, World.Logistics.Networks.Count);
+            var second = (Logistics.TransmitterSegment)World.At(new Vector3Int(3, 1, 0));
+            World.Logistics.CycleCableSide(second, Direction.West);      // depuis l'autre côté : relier
+            Assert.AreEqual(1, World.Logistics.Networks.Count);
         }
 
         [Test]

@@ -87,12 +87,12 @@ namespace Nucleaire.Game
             if (input.Pressed(GameInput.DeleteToggle) && !ui.IsTyping)
             {
                 ui.CloseAll();
-                ctx.Deletion.Toggle();
+                ctx.CycleToolMode();
             }
-            if (ctx.Deletion.Active)
+            if (ctx.ToolModeActive)
             {
-                // Mode suppression : aucun panneau, seulement l'aperçu et sa validation.
-                if (input.Pressed(GameInput.Cancel)) ctx.Deletion.Exit();
+                // Modes suppression / modification : aucun panneau, seulement l'atelier et le panneau du mode.
+                if (input.Pressed(GameInput.Cancel)) { ctx.Deletion.Exit(); ctx.Configure.Exit(); }
                 worldView.UpdateCutaway(rig.Zoom, rig.Focus3, rig.HorizontalForward);
                 ui.Update(rig.Yaw, worldView.CutawayActive);
                 return;
@@ -258,7 +258,7 @@ namespace Nucleaire.Game
                     ctx.BuildItem = null;
                     ctx.Session.Inventory.Add(R("item_crusher"), 1);
                     ctx.Session.Actions.TryPlace(R("item_crusher"), vault.Position + new Vector3Int(2, 0, 0), out _, null, Direction.South);
-                    ctx.Deletion.Toggle();
+                    ctx.Deletion.Enter();
                     foreach (var e in w.Entities.Where(e => e.Position.y == vault.Position.y + 2).Take(3).ToList()) ctx.Deletion.Mark(e, true);
                     ctx.Deletion.Mark(w.At(vault.Position + new Vector3Int(2, 0, 0)), true);
                     yield return new WaitForSecondsRealtime(0.5f);
@@ -287,16 +287,35 @@ namespace Nucleaire.Game
                     ctx.Session.Tutorial.Skip();
                     ui.CloseAll();
                     yield return null;
-                    var sorterDef = database.Machines.First(m => m.Behaviour == MachineBehaviour.Sorter);
-                    var srt = (SorterMachine)w.Place(sorterDef, vault.Position + new Vector3Int(0, 1, 0), Direction.North);
-                    srt.SetFilter(R("iron_ore"));
+                    vault = w.FirstMachine<VaultMachine>();
+                    var fs = vault.AttachSorter(Direction.North);
+                    fs.AddFilter(R("iron_ore"));
+                    fs.AddFilter(R("coal"));
+                    w.Place(T(ResourceKind.Item), vault.Position + new Vector3Int(0, 1, 0));
                     w.Place(T(ResourceKind.Item), vault.Position + new Vector3Int(0, 2, 0));
-                    w.Place(T(ResourceKind.Item), vault.Position + new Vector3Int(0, 3, 0));
-                    w.Place(database.Machines.First(m => m.Id == "crusher"), vault.Position + new Vector3Int(0, 4, 0));
-                    rig.SetZoomForTests(6f);
+                    var furnace = (Machine)w.Place(database.Machines.First(m => m.Id == "electric_furnace"), vault.Position + new Vector3Int(0, 3, 0), Direction.South);
+                    furnace.AttachSorter(Direction.East).AddFilter(R("steel_ingot"));
+                    vault.AttachSorter(Direction.West);
+                    furnace.AttachSorter(Direction.West);
+                    rig.SetZoomForTests(7.2f);
                     rig.Focus(GridMath.CellCenter(vault.Position + new Vector3Int(0, 2, 0)));
                     yield return new WaitForSecondsRealtime(1.2f);
-                    ctx.Selection = srt;
+                    ctx.FocusSorterFace = Direction.North;
+                    ctx.Selection = vault;
+                    yield return new WaitForSecondsRealtime(0.5f);
+                    break;
+                }
+                case "configure":
+                {
+                    ui.CloseAll();
+                    ctx.Selection = null;
+                    var seg = (Nucleaire.Logistics.TransmitterSegment)w.At(vault.Position + new Vector3Int(0, 2, 0));
+                    w.Logistics.CycleCableSide(seg, Direction.North, 2); // pousser vers le four
+                    w.Logistics.CycleCableSide((Nucleaire.Logistics.TransmitterSegment)w.At(vault.Position + new Vector3Int(0, 1, 0)), Direction.North); // couper
+                    var furnace = (Machine)w.At(vault.Position + new Vector3Int(0, 3, 0));
+                    furnace.CycleSide(Direction.West, 3);
+                    ctx.Configure.Enter();
+                    ctx.Configure.Report("Four électrique · face ouest : " + furnace.SideLabel(Direction.West));
                     yield return new WaitForSecondsRealtime(0.5f);
                     break;
                 }

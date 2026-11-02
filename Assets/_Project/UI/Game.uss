@@ -376,4 +376,16 @@
 /* Mode suppression : HUD masqué, cadre rouge discret */
 .delete-frame { position: absolute; left: 0; top: 0; right: 0; bottom: 0; border-width: 2px; border-color: rgba(224, 96, 106, 0.55); display: none; }
 .delete-mode .delete-frame { display: flex; }
+.configure-mode .delete-frame { border-color: rgba(138, 168, 224, 0.55); }
 .delete-mode .hud-top-left, .delete-mode .hud-bottom, .delete-mode #view-filter, .delete-mode #tutorial-layer, .delete-mode .hud-log { display: none; }
+
+/* ---------- Mode modification ---------- */
+.mode-panel--accent { border-color: rgba(138, 168, 224, 0.45); border-top-color: rgba(138, 168, 224, 0.6); border-left-color: rgba(138, 168, 224, 0.6); }
+.mode-panel__accent { color: var(--accent-text); }
+.mode-panel__hover { margin-top: 8px; color: var(--text); }
+.face-tag { position: absolute; translate: -50% -50%; padding: 2px 8px; border-radius: 8px; font-size: 10px; color: var(--text); background-color: rgba(14, 16, 26, 0.88); border-width: 1px; border-color: rgba(138, 168, 224, 0.4); -unity-font-definition: url("Fonts/IBMPlexMono-Regular.ttf"); white-space: nowrap; }
+.face-tag--none { color: var(--text-3); border-color: var(--border); }
+.face-tag--current { border-color: var(--accent); background-color: rgba(40, 52, 80, 0.95); }
+.sorter-chips { flex-wrap: wrap; margin-bottom: 8px; align-items: center; }
+.sorter-chip { margin: 0 6px 6px 0; }
+.sorter-actions { align-items: center; }

@@ -45,6 +45,7 @@ namespace Nucleaire.Game
             world.EntityPlaced += OnPlaced;
             world.EntityRemoved += OnRemoved;
             world.EntityMoved += OnMoved;
+            world.Logistics.SideChanged += seg => RefreshNeighbours(seg.Position);
             ctx.SelectionChanged += _ => UpdateSelection();
         }
 
@@ -58,7 +59,11 @@ namespace Nucleaire.Game
 
         // ---------------- Entités ----------------
 
-        private void Watch(Machine m) => m.Sides.Changed += () => RefreshNeighbours(m.Position);
+        private void Watch(Machine m)
+        {
+            m.Sides.Changed += () => RefreshNeighbours(m.Position);
+            m.AttachmentsChanged += () => RefreshNeighbours(m.Position);
+        }
 
         private void OnPlaced(IGridEntity e)
         {

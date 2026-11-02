@@ -13,7 +13,6 @@ namespace Nucleaire.Simulation
             MachineBehaviour.Vault => new VaultMachine(def, world, pos),
             MachineBehaviour.Battery => new BatteryMachine(def, world, pos),
             MachineBehaviour.Vent => new VentMachine(def, world, pos),
-            MachineBehaviour.Sorter => new SorterMachine(def, world, pos),
             _ => throw new ArgumentOutOfRangeException(nameof(def), def.Behaviour, "Comportement inconnu"),
         };
     }

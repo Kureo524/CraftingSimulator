@@ -67,13 +67,17 @@ namespace Nucleaire.Logistics
             LastMoved = 0;
             if (Stored == 0) return;
 
-            var acceptors = new List<(Machine machine, Direction side)>();
+            var acceptors = new List<(Machine machine, Direction side, bool force)>();
             foreach (var seg in segments)
                 foreach (var d in DirectionExtensions.All)
                     if (world.At(seg.Position + d.Offset()) is Machine m)
                     {
                         var side = d.Opposite();
-                        if (m.Sides[side].Mode == SideMode.Input && !acceptors.Contains((m, side))) acceptors.Add((m, side));
+                        var cs = seg[d];
+                        if (cs == CableSide.Pull) continue; // ce côté ne fait que tirer
+                        bool force = cs == CableSide.Push;
+                        if ((force || m.Sides[side].Mode == SideMode.Input) && !acceptors.Any(a => a.machine == m && a.side == side))
+                            acceptors.Add((m, side, force));
                     }
             if (acceptors.Count == 0) return;
 
@@ -87,11 +91,11 @@ namespace Nucleaire.Logistics
                 for (int pass = 0; pass < 2 && budget > 0; pass++)
                 {
                     int share = pass == 0 ? Math.Max(1, budget / ordered.Count) : budget;
-                    foreach (var (m, side) in ordered)
+                    foreach (var (m, side, force) in ordered)
                     {
                         int available = contents[r];
                         if (available <= 0 || budget <= 0) break;
-                        int n = m.Receive(r, Math.Min(Math.Min(share, budget), available), side);
+                        int n = m.Receive(r, Math.Min(Math.Min(share, budget), available), side, false, force);
                         if (n <= 0) continue;
                         contents[r] = available - n;
                         budget -= n;

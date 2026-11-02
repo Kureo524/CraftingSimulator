@@ -22,7 +22,7 @@ namespace Nucleaire.Game
         private (PlaceableDef def, Direction facing) planKey;
         private bool planDirty = true;
 
-        private readonly Dictionary<IGridEntity, GameObject> deleteMarks = new();
+        private readonly Dictionary<object, GameObject> deleteMarks = new();
         private Transform deleteHover;
 
         public void Init(GameContext context)
@@ -35,6 +35,75 @@ namespace Nucleaire.Game
             world.EntityRemoved += _ => planDirty = true;
             deleteHover = DangerBox("Delete hover", 0.22f);
             deleteHover.gameObject.SetActive(false);
+            faceHighlight = DangerBox("Face highlight", 0.4f);
+            Shapes.SetColor(faceHighlight.GetComponent<Renderer>(), Palette.WithAlpha(Palette.Accent, 0.45f));
+            faceHighlight.gameObject.SetActive(false);
+        }
+
+        // ---------------- Faces (trieur, mode modification) ----------------
+
+        private Transform faceHighlight;
+        private GameObject sorterGhost;
+        private (Machine m, Direction d) sorterGhostKey;
+
+        /// <summary>Place une plaque fine sur la face d'une case (ou le bout d'un côté de câble).</summary>
+        private static void OnFace(Transform t, Vector3Int cell, Direction d, float size, float thickness, float inset = 0.5f)
+        {
+            var center = GridMath.CellCenter(cell, 0.5f);
+            if (d.IsVertical())
+            {
+                t.localPosition = center + Vector3.up * (d == Direction.Up ? inset : -inset + 0.02f);
+                t.localRotation = Quaternion.identity;
+                t.localScale = new Vector3(size, thickness, size);
+            }
+            else
+            {
+                var dir = GridMath.DirectionVector(d);
+                t.localPosition = center + dir * inset;
+                t.localRotation = Quaternion.LookRotation(dir);
+                t.localScale = new Vector3(size, size, thickness);
+            }
+        }
+
+        /// <summary>Surligne une face de machine (mode modification).</summary>
+        public void SetFaceHighlight(Vector3Int? cell, Direction d, bool cableSide = false)
+        {
+            faceHighlight.gameObject.SetActive(cell != null);
+            if (cell == null) return;
+            if (cableSide)
+            {
+                OnFace(faceHighlight, cell.Value, d, 0.3f, 0.3f, 0.38f);
+                if (!d.IsVertical()) faceHighlight.localPosition = GridMath.CellCenter(cell.Value, 0.15f) + GridMath.DirectionVector(d) * 0.38f;
+            }
+            else OnFace(faceHighlight, cell.Value, d, 0.98f, 0.04f, 0.51f);
+        }
+
+        /// <summary>Aperçu d'un trieur sur la face visée.</summary>
+        public void SetSorterGhost(Machine m, Direction? face, bool valid)
+        {
+            if (m == null || face == null)
+            {
+                if (sorterGhost != null) sorterGhost.SetActive(false);
+                return;
+            }
+            if (sorterGhost == null || sorterGhostKey != (m, face.Value))
+            {
+                if (sorterGhost != null) Destroy(sorterGhost);
+                sorterGhostKey = (m, face.Value);
+                sorterGhost = new GameObject("Sorter ghost");
+                sorterGhost.transform.SetParent(transform, false);
+                sorterGhost.transform.localPosition = GridMath.CellCenter(m.Position);
+                MachineView.BuildSorterPlate(sorterGhost.transform, face.Value, 0.6f);
+                foreach (var r in sorterGhost.GetComponentsInChildren<Renderer>())
+                {
+                    var c = Shapes.GetColor(r);
+                    r.sharedMaterial = WorldView.TransparentMaterial;
+                    r.shadowCastingMode = ShadowCastingMode.Off;
+                    r.gameObject.AddComponent<PreviewColor>().Original = c;
+                }
+            }
+            sorterGhost.SetActive(true);
+            Tint(sorterGhost, valid);
         }
 
         // ---------------- Objet sous le curseur ----------------
@@ -84,10 +153,25 @@ namespace Nucleaire.Game
 
         // ---------------- Suppression ----------------
 
-        public void SetDeleteHover(IGridEntity e)
+        public void SetDeleteHover(object e)
         {
             deleteHover.gameObject.SetActive(e != null && ctx.Deletion.Active);
-            if (e != null) deleteHover.localPosition = GridMath.CellCenter(e.Position, 0.5f);
+            if (e != null) Place(deleteHover, e);
+        }
+
+        private static void Place(Transform t, object e)
+        {
+            switch (e)
+            {
+                case FaceSorter s:
+                    OnFace(t, s.Machine.Position, s.Face, 0.66f, 0.1f, 0.52f);
+                    break;
+                case IGridEntity g:
+                    t.localPosition = GridMath.CellCenter(g.Position, 0.5f);
+                    t.localRotation = Quaternion.identity;
+                    t.localScale = new Vector3(1.02f, 1.02f, 1.02f);
+                    break;
+            }
         }
 
         private void RebuildDeleteMarks()
@@ -97,7 +181,7 @@ namespace Nucleaire.Game
             foreach (var e in ctx.Deletion.Marks)
             {
                 var box = DangerBox("Delete mark", 0.45f);
-                box.localPosition = GridMath.CellCenter(e.Position, 0.5f);
+                Place(box, e);
                 deleteMarks[e] = box.gameObject;
             }
             if (!ctx.Deletion.Active) deleteHover.gameObject.SetActive(false);

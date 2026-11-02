@@ -24,6 +24,7 @@ namespace Nucleaire.Game.UI
         private readonly ItemTransfer transfer;
         private readonly ViewFilterPanel viewFilter;
         private readonly CablePicker cablePicker;
+        private readonly ConfigureOverlay configure;
 
         public GameUI(GameContext ctx, UIDocument document, Camera cam, WorldView view)
         {
@@ -44,7 +45,9 @@ namespace Nucleaire.Game.UI
             viewFilter = new ViewFilterPanel(ctx, root, view);
             cablePicker = new CablePicker(ctx, root);
             new ModePanels(ctx, root);
+            configure = new ConfigureOverlay(ctx, root, cam);
             ctx.Deletion.Changed += () => { if (ctx.Deletion.Active) CloseAll(); };
+            ctx.Configure.Changed += () => { if (ctx.Configure.Active) CloseAll(); };
             inventory = new InventoryPanel(ctx, root);
             transfer = new ItemTransfer(ctx, root);
             // Ouvrir une machine ouvre l'écran machine + inventaire ; le fermer abandonne la sélection.
@@ -120,7 +123,7 @@ namespace Nucleaire.Game.UI
         /// <summary>Touches 1 à 9 : équiper un emplacement ; inventaire ouvert et objet survolé : l'y ranger.</summary>
         private void UpdateHotbarKeys()
         {
-            if (IsTyping || options.IsOpen || ctx.Input.IsRebinding || ctx.Deletion.Active) return;
+            if (IsTyping || options.IsOpen || ctx.Input.IsRebinding || ctx.ToolModeActive) return;
             for (int i = 0; i < Hotbar.Size; i++)
             {
                 if (!ctx.Input.Pressed(GameInput.HotbarSlot(i))) continue;
@@ -152,13 +155,14 @@ namespace Nucleaire.Game.UI
             transfer.Update();
             viewFilter.Update();
             cablePicker.Update();
+            configure.Update();
             UpdateHotbarKeys();
             guide.Update();
             contextMenu.Update();
             catalog.SetVisible(inventory.IsOpen || Book.IsOpen);
 
             // R / U sur n'importe quelle icône survolée (inventaire, catalogue, livre, machine, vault…).
-            if (!IsTyping && !options.IsOpen && !ctx.Input.IsRebinding && !ctx.Deletion.Active)
+            if (!IsTyping && !options.IsOpen && !ctx.Input.IsRebinding && !ctx.ToolModeActive)
             {
                 bool recipe = ctx.Input.Pressed(GameInput.ShowRecipe), usage = ctx.Input.Pressed(GameInput.ShowUsage);
                 if (recipe || usage)

@@ -26,7 +26,29 @@ namespace Nucleaire.Game
             Hotbar = new Hotbar(this);
             Plan = new BuildPlan(this);
             Deletion = new DeleteMode(this);
+            Configure = new ConfigureMode(this);
         }
+
+        /// <summary>Mode modification (faces des machines, côtés des câbles).</summary>
+        public ConfigureMode Configure { get; }
+
+        /// <summary>Un mode outil (suppression ou modification) est actif : pas de panneaux.</summary>
+        public bool ToolModeActive => Deletion.Active || Configure.Active;
+
+        /// <summary>Touche A : Normal → Suppression → Modification → Normal.</summary>
+        public void CycleToolMode()
+        {
+            if (Deletion.Active) { Deletion.Exit(); Configure.Enter(); return; }
+            if (Configure.Active) { Configure.Exit(); return; }
+            if (!Require(PlayerPermission.PickUp)) return;
+            Deletion.Enter();
+        }
+
+        /// <summary>Ce qui est sous le curseur dans l'atelier (entité, face visée, trieur).</summary>
+        public (IGridEntity entity, Direction? face, FaceSorter sorter) Hover { get; set; }
+
+        /// <summary>Face dont le trieur doit être montré à l'ouverture de la machine.</summary>
+        public Direction? FocusSorterFace { get; set; }
 
         /// <summary>Pose multiple en attente de validation.</summary>
         public BuildPlan Plan { get; }
@@ -98,8 +120,8 @@ namespace Nucleaire.Game
         public event Action<ResourceDef> WorkbenchRequested;
         public event Action InventoryRequested;
 
-        public void OpenWorkbench(ResourceDef focus = null) { if (!Deletion.Active && Require(PlayerPermission.Craft)) WorkbenchRequested?.Invoke(focus); }
-        public void OpenInventory() { if (!Deletion.Active) InventoryRequested?.Invoke(); }
+        public void OpenWorkbench(ResourceDef focus = null) { if (!ToolModeActive && Require(PlayerPermission.Craft)) WorkbenchRequested?.Invoke(focus); }
+        public void OpenInventory() { if (!ToolModeActive) InventoryRequested?.Invoke(); }
 
         public GameSession Session { get; }
         public SimulationRunner Runner { get; }
@@ -134,7 +156,7 @@ namespace Nucleaire.Game
 
         public void OpenRecipeBook(ResourceDef r = null, int tab = 0)
         {
-            if (!Deletion.Active && Require(PlayerPermission.RecipeBook)) RecipeBookRequested?.Invoke(r, tab);
+            if (!ToolModeActive && Require(PlayerPermission.RecipeBook)) RecipeBookRequested?.Invoke(r, tab);
         }
 
         /// <summary>Vérifie qu'une action est permise (tutoriel) ; sinon prévient le joueur.</summary>

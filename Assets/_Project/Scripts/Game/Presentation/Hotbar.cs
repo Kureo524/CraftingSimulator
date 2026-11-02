@@ -34,7 +34,7 @@ namespace Nucleaire.Game
         public ResourceDef this[int i] => slots[i];
         public int IndexOf(ResourceDef r) => Array.IndexOf(slots, r);
 
-        public bool CanHold(ResourceDef r) => r != null && ctx.Db.PlaceableForItem(r) != null;
+        public bool CanHold(ResourceDef r) => r != null && (ctx.Db.PlaceableForItem(r) != null || r == ctx.Db.SorterItem);
 
         /// <summary>Range un objet dans un emplacement (il quitte son ancien emplacement ; échange si occupé).</summary>
         public bool Assign(int index, ResourceDef r)
@@ -52,7 +52,7 @@ namespace Nucleaire.Game
         /// <summary>Équipe un emplacement ; le rééquiper le range (mains vides).</summary>
         public void Select(int index)
         {
-            if (ctx.Deletion.Active) return;
+            if (ctx.ToolModeActive) return;
             if (index == Selected) index = -1;
             if (index >= 0 && slots[index] != null && !ctx.Require(PlayerPermission.Place)) return;
             Equip(index);

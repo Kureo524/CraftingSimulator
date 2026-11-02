@@ -22,6 +22,8 @@ namespace Nucleaire.Data
         [Header("Partie")]
         [Tooltip("Ressource « énergie » produite par les générateurs.")]
         [SerializeField] private ResourceDef energy;
+        [Tooltip("Objet « Trieur » : il se colle sur une face de machine au lieu d'occuper une case.")]
+        [SerializeField] private ResourceDef sorterItem;
         [Tooltip("Machines déjà posées dans l'atelier au lancement.")]
         [SerializeField] private List<MachineDef> prePlacedMachines = new();
         [Tooltip("Inventaire du joueur au lancement.")]
@@ -37,6 +39,7 @@ namespace Nucleaire.Data
         public ResourceDef Energy => energy;
         public IReadOnlyList<MachineDef> PrePlacedMachines => prePlacedMachines;
         public IReadOnlyList<ResourceStack> StartingInventory => startingInventory;
+        public ResourceDef SorterItem => sorterItem;
 
         // ---- Index construits à la demande ----
         private List<RecipeEntry> entries;

@@ -12,8 +12,12 @@ namespace Nucleaire.Simulation
         public SideMode Mode;
         /// <summary>Si non nul, seule cette ressource passe par la face.</summary>
         public ResourceDef Filter;
+        /// <summary>Emplacement visé (-1 : tous). Ex. « Entrée 2 » = deuxième emplacement d'entrée.</summary>
+        public int Slot;
 
-        public SideSetting(SideMode mode, ResourceDef filter = null) { Mode = mode; Filter = filter; }
+        public SideSetting(SideMode mode, ResourceDef filter = null, int slot = -1) { Mode = mode; Filter = filter; Slot = slot; }
+
+        public bool SameAs(SideSetting o) => Mode == o.Mode && (Mode == SideMode.None || Slot == o.Slot);
 
         public bool Allows(ResourceDef r) => Filter == null || Filter == r;
     }
@@ -32,9 +36,15 @@ namespace Nucleaire.Simulation
 
         public SideSetting this[Direction d] => sides[(int)d];
 
-        public void Set(Direction d, SideMode mode, ResourceDef filter = null)
+        public void Set(Direction d, SideMode mode, ResourceDef filter = null, int slot = -1)
         {
-            sides[(int)d] = new SideSetting(mode, filter);
+            sides[(int)d] = new SideSetting(mode, filter, slot);
+            Changed?.Invoke();
+        }
+
+        public void Set(Direction d, SideSetting s)
+        {
+            sides[(int)d] = s;
             Changed?.Invoke();
         }
 

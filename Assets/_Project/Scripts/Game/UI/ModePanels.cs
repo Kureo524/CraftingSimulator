@@ -22,6 +22,7 @@ namespace Nucleaire.Game.UI
             ctx.CableKindChanged += _ => RefreshPlan();
             ctx.Session.Inventory.Changed += () => { RefreshPlan(); RefreshDelete(); };
             ctx.Deletion.Changed += RefreshDelete;
+            ctx.Configure.Changed += RefreshDelete;
             ctx.Input.Changed += () => { RefreshPlan(); RefreshDelete(); };
             RefreshPlan();
             RefreshDelete();
@@ -60,7 +61,8 @@ namespace Nucleaire.Game.UI
         private void RefreshDelete()
         {
             var d = ctx.Deletion;
-            root.EnableInClassList("delete-mode", d.Active);
+            root.EnableInClassList("delete-mode", d.Active || ctx.Configure.Active);
+            root.EnableInClassList("configure-mode", ctx.Configure.Active);
             del.Clear();
             Ui.SetVisible(del, d.Active);
             if (!d.Active) return;
@@ -79,7 +81,7 @@ namespace Nucleaire.Game.UI
                 if (d.Marks.Any(e => e is Simulation.Machine m && (m.Inputs?.Slots.Any(s => s.Kind != ResourceKind.Item && s.Amount > 0) == true || m.Outputs?.Slots.Any(s => s.Kind != ResourceKind.Item && s.Amount > 0) == true)))
                     Ui.Text("[Les liquides et gaz contenus seront perdus.]", "system mode-panel__missing", del);
             }
-            Ui.Text($"[Clic ou glisser : marquer · sur un élément marqué : le démarquer · clic droit : démarquer · {ctx.Input.Display(GameInput.DeleteToggle)} ou Échap : quitter.]", "system mode-panel__hint", del);
+            Ui.Text($"[Clic ou glisser : marquer (un trieur se marque seul en visant sa plaque) · clic droit : démarquer · {ctx.Input.Display(GameInput.DeleteToggle)} : mode modification · Échap : quitter.]", "system mode-panel__hint", del);
 
             var actions = Ui.El("row mode-panel__actions", del);
             Ui.El("spacer", actions);

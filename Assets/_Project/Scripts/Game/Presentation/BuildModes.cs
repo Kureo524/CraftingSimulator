@@ -75,56 +75,70 @@ namespace Nucleaire.Game
     }
 
     /// <summary>Mode suppression : le joueur marque des éléments (aperçu rouge), puis valide ou annule.
-    /// Tant qu'il est actif, aucun autre panneau n'est accessible.</summary>
+    /// Tant qu'il est actif, aucun autre panneau n'est accessible. Les trieurs (plaques) se marquent aussi.</summary>
     public sealed class DeleteMode
     {
         private readonly GameContext ctx;
-        private readonly List<IGridEntity> marks = new();
+        private readonly List<object> marks = new();
 
         public DeleteMode(GameContext ctx)
         {
             this.ctx = ctx;
-            ctx.World.EntityRemoved += e => { if (marks.Remove(e)) Changed?.Invoke(); };
+            ctx.World.EntityRemoved += e =>
+            {
+                if (marks.RemoveAll(x => x == e || (x is FaceSorter s && s.Machine == e)) > 0) Changed?.Invoke();
+            };
             ctx.Session.BoardReset += () => Exit();
         }
 
         public event Action Changed;
         public bool Active { get; private set; }
-        public IReadOnlyList<IGridEntity> Marks => marks;
+        /// <summary>Éléments marqués : entités de la grille ou trieurs.</summary>
+        public IReadOnlyList<object> Marks => marks;
         /// <summary>Étage du premier élément marqué pendant un glisser.</summary>
         public int DragLayer { get; set; } = -1;
 
-        public bool Toggle()
+        public void Enter()
         {
-            if (Active) { Exit(); return true; }
-            if (!ctx.Require(PlayerPermission.PickUp)) return false;
+            if (Active) return;
             ctx.ContextTarget = null;
             ctx.MovingMachine = null;
             ctx.BuildItem = null;
             ctx.Selection = null;
             Active = true;
             Changed?.Invoke();
-            return true;
         }
 
-        public bool IsMarked(IGridEntity e) => marks.Contains(e);
+        public bool IsMarked(object e) => marks.Contains(e);
 
-        public void Mark(IGridEntity e, bool on)
+        public void Mark(object e, bool on)
         {
             if (e == null || on == marks.Contains(e)) return;
             if (on) marks.Add(e); else marks.Remove(e);
             Changed?.Invoke();
         }
 
-        /// <summary>Ce que la suppression rendra à l'inventaire (les machines et leurs objets).</summary>
+        /// <summary>Ce que la suppression rendra à l'inventaire.</summary>
         public Dictionary<ResourceDef, int> Refund()
         {
             var r = new Dictionary<ResourceDef, int>();
             void Add(ResourceDef res, int n) { if (res != null && n > 0) r[res] = (r.TryGetValue(res, out var v) ? v : 0) + n; }
-            foreach (var e in marks)
+            foreach (var x in marks)
             {
-                Add(e.Def.Item, 1);
-                if (e is Machine m) foreach (var s in m.SalvageableItems()) Add(s.Resource, s.Amount);
+                switch (x)
+                {
+                    case FaceSorter s:
+                        if (!marks.Contains(s.Machine)) Add(ctx.Db.SorterItem, 1);
+                        break;
+                    case IGridEntity e:
+                        Add(e.Def.Item, 1);
+                        if (e is Machine m)
+                        {
+                            foreach (var st in m.SalvageableItems()) Add(st.Resource, st.Amount);
+                            Add(ctx.Db.SorterItem, m.Sorters.Count());
+                        }
+                        break;
+                }
             }
             return r;
         }
@@ -132,9 +146,14 @@ namespace Nucleaire.Game
         public int Confirm()
         {
             int n = 0;
-            foreach (var e in marks.ToList())
-                if (ctx.Session.Actions.TryPickUp(e.Position, out _)) n++;
+            string error = null;
+            foreach (var x in marks.OfType<FaceSorter>().ToList())
+                if (!marks.Contains(x.Machine) && ctx.Session.Actions.TryDetachSorter(x.Machine, x.Face, out error)) n++;
+            foreach (var e in marks.OfType<IGridEntity>().ToList())
+                if (ctx.Session.Actions.TryPickUp(e.Position, out var err)) n++;
+                else error = err;
             if (n > 0) ctx.Notify($"{n} élément(s) démonté(s), rendus à l'inventaire.", EventSeverity.Success);
+            if (error != null) ctx.Notify(error);
             Exit();
             return n;
         }
@@ -146,6 +165,48 @@ namespace Nucleaire.Game
             marks.Clear();
             DragLayer = -1;
             if (was) Changed?.Invoke();
+        }
+    }
+
+    /// <summary>Mode modification : on règle les faces des machines et les côtés des câbles directement dans l'atelier.</summary>
+    public sealed class ConfigureMode
+    {
+        private readonly GameContext ctx;
+
+        public ConfigureMode(GameContext ctx)
+        {
+            this.ctx = ctx;
+            ctx.Session.BoardReset += Exit;
+        }
+
+        public event Action Changed;
+        public bool Active { get; private set; }
+        /// <summary>Dernier réglage appliqué (affiché en haut de l'écran).</summary>
+        public string LastChange { get; private set; }
+
+        public void Enter()
+        {
+            if (Active) return;
+            ctx.ContextTarget = null;
+            ctx.MovingMachine = null;
+            ctx.BuildItem = null;
+            ctx.Selection = null;
+            LastChange = null;
+            Active = true;
+            Changed?.Invoke();
+        }
+
+        public void Exit()
+        {
+            if (!Active) return;
+            Active = false;
+            Changed?.Invoke();
+        }
+
+        public void Report(string change)
+        {
+            LastChange = change;
+            Changed?.Invoke();
         }
     }
 }

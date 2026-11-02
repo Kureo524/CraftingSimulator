@@ -45,7 +45,7 @@ namespace Nucleaire.Objectives
                 case TutorialCondition.VaultOutputFiltered:
                     return w.Machines.OfType<VaultMachine>().Any(v => DirectionExtensions.All.Any(d => v.Sides[d].Mode == SideMode.Output && v.Sides[d].Filter != null));
                 case TutorialCondition.SorterConfigured:
-                    return w.Machines.OfType<SorterMachine>().Any(x => x.Filter != null && x.Source != null);
+                    return w.Machines.Any(m => m.Sorters.Any(x => x.Filters.Count > 0));
                 case TutorialCondition.ConfigureOutputSide:
                     return w.Machines.Any(m => m is not VaultMachine && m is ProcessorMachine p && p.Recipes.Any(r => r.Inputs.Count > 0)
                                                && DirectionExtensions.All.Any(d => m.Sides[d].Mode == SideMode.Output));
