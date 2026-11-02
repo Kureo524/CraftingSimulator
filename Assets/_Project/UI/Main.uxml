@@ -5,7 +5,7 @@
         <ui:VisualElement name="overlay" class="world-overlay" picking-mode="Ignore" />
         <ui:VisualElement name="top-left" class="hud-top-left" picking-mode="Ignore">
             <ui:VisualElement name="objectives" class="glass glass--light hud-objectives" />
-            <ui:VisualElement name="tutorial" class="glass hud-tutorial" />
+            <ui:VisualElement name="tutorial" class="glass quest" />
         </ui:VisualElement>
         <ui:VisualElement name="top-right" class="hud-top-right" picking-mode="Ignore" />
         <ui:Label name="cutaway-hint" class="system cutaway-hint hidden" picking-mode="Ignore" />
@@ -27,9 +27,13 @@
             <ui:VisualElement name="book" class="book" />
         </ui:VisualElement>
         <ui:VisualElement name="catalog" class="glass glass--light catalog hidden" />
+        <ui:VisualElement name="scenario-layer" class="modal-layer scenario-layer hidden">
+            <ui:VisualElement name="scenario" class="glass scenario" />
+        </ui:VisualElement>
         <ui:VisualElement name="options-layer" class="modal-layer hidden">
             <ui:VisualElement name="options" class="glass glass--light options" />
         </ui:VisualElement>
+        <ui:VisualElement name="tutorial-guide" class="layer-fill" picking-mode="Ignore" />
         <ui:VisualElement name="tooltip-layer" class="tooltip-layer" picking-mode="Ignore" />
     </ui:VisualElement>
 </ui:UXML>

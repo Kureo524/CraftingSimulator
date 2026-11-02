@@ -128,6 +128,28 @@ namespace Nucleaire.Game
                     ui.CloseAll();
                     ctx.Selection = null;
                     break;
+                case "quest":
+                    ui.CloseAll();
+                    while (ctx.Session.Tutorial.Index < 2) ctx.Session.Tutorial.Next();
+                    ctx.Selection = null;
+                    yield return new WaitForSecondsRealtime(1.5f);
+                    break;
+                case "quest-vault":
+                    ctx.Selection = vault;
+                    yield return new WaitForSecondsRealtime(1f);
+                    break;
+                case "quest-done":
+                    ctx.Session.Actions.TakeFromVault(vault, R("iron_ore"), 10);
+                    yield return new WaitForSecondsRealtime(0.8f);
+                    break;
+                case "quest-place":
+                    ctx.Selection = null;
+                    yield return new WaitForSecondsRealtime(2f);
+                    break;
+                case "rules":
+                    while (ctx.Session.Tutorial.Index < 8) ctx.Session.Tutorial.Next();
+                    yield return new WaitForSecondsRealtime(1f);
+                    break;
                 case "skip":
                     ctx.Session.Tutorial.Skip();
                     break;

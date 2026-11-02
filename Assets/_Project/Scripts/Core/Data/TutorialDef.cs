@@ -20,6 +20,8 @@ namespace Nucleaire.Data
     public sealed class TutorialStep
     {
         public string title;
+        [Tooltip("Consigne courte affichée comme une case à cocher (vide pour une étape d'annonce).")]
+        public string objective;
         [TextArea(3, 8)] public string body;
         public TutorialCondition condition;
         public ResourceDef resource;

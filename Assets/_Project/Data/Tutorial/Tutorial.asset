@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.TutorialDef
   steps:
   - title: Bienvenue dans l'atelier
+    objective: 
     body: "Ton but : fabriquer une pastille d'antimati\xE8re. Chaque ressource s'obtient
       \xE0 partir d'autres ressources, avec des machines que tu fabriques et relies
       entre elles. Suis les \xE9tapes : chacune d\xE9bloque de nouvelles actions. Tu
@@ -24,7 +25,8 @@ MonoBehaviour:
     amount: 1
     unlocks: 2048
   - title: Le livre de recettes
-    body: "Ouvre le livre de recettes (touche B, ou le bouton en haut \xE0 gauche).
+    objective: "Ouvrir le livre de recettes"
+    body: "Ouvre le livre de recettes (touche B, ou le bouton Livre en bas).
       Pour chaque ressource, il indique comment l'obtenir et \xE0 quoi elle sert.
       Survole n'importe quelle ic\xF4ne (le nom s'affiche) : R montre sa recette,
       U ses usages, y compris dans le livre. Le catalogue \xE0 droite liste tout le jeu."
@@ -34,6 +36,7 @@ MonoBehaviour:
     amount: 1
     unlocks: 1
   - title: Le vault
+    objective: "Prendre du minerai de fer"
     body: "Clique sur le vault (le grand bloc gris) pour ouvrir son panneau, survole les ic\xF4nes pour lire leur nom, puis clique sur le minerai de fer (roche grise piquet\xE9e de brun) pour en prendre (Maj + clic : 64). Prends aussi du charbon. Ses ressources de base sont illimit\xE9es."
     condition: 2
     resource: {fileID: 11400000, guid: c7d4b147f2e7249c5838218055a46da9, type: 2}
@@ -41,6 +44,7 @@ MonoBehaviour:
     amount: 1
     unlocks: 6
   - title: "L'\xE9nergie"
+    objective: "Poser un panneau solaire"
     body: "Les machines consomment de l'\xE9nergie. Clique sur le panneau solaire dans la barre du bas (ou dans l'inventaire, touche E), puis pose-le dans l'atelier (clic gauche). Clic droit ou \xC9chap pour arr\xEAter de poser."
     condition: 3
     resource: {fileID: 0}
@@ -48,6 +52,7 @@ MonoBehaviour:
     amount: 1
     unlocks: 8
   - title: "Le four \xE9lectrique"
+    objective: "Alimenter un four \xE9lectrique"
     body: "Pose le four \xE9lectrique coll\xE9 au panneau solaire, \xE0 c\xF4t\xE9 ou au-dessus, ou relie-les avec des c\xE2bles. Le panneau pousse son \xE9nergie par ses faces de sortie (lavande) ; le four la re\xE7oit par ses faces d'entr\xE9e (bleu). Clic droit sur une machine : la d\xE9placer ou la supprimer."
     condition: 4
     resource: {fileID: 0}
@@ -55,6 +60,7 @@ MonoBehaviour:
     amount: 1
     unlocks: 4608
   - title: "Premi\xE8re fonte"
+    objective: "Fondre un lingot de fer"
     body: "S\xE9lectionne le four : d\xE9pose ton minerai de fer dans ses emplacements. Le four fond tout seul ce qu'on lui donne, comme dans Minecraft. Quand le lingot appara\xEEt en sortie, clique dessus pour le r\xE9cup\xE9rer. Le panneau indique toujours pourquoi une machine est bloqu\xE9e."
     condition: 5
     resource: {fileID: 11400000, guid: d0acb630fec9ae07ba389a482eac3de3, type: 2}
@@ -62,6 +68,7 @@ MonoBehaviour:
     amount: 1
     unlocks: 1072
   - title: Automatiser avec les faces
+    objective: "Sortie filtr\xE9e sur le vault"
     body: "Ouvre l'onglet Faces du vault : passe une face en Sortie et choisis une ressource. Colle une machine contre cette face (m\xEAme au-dessus, face Haut), ou relie-les avec des convoyeurs. Chaque machine se configure de la m\xEAme fa\xE7on."
     condition: 6
     resource: {fileID: 0}
@@ -69,6 +76,7 @@ MonoBehaviour:
     amount: 1
     unlocks: 64
   - title: "L'\xE9tabli"
+    objective: "Fabriquer un circuit"
     body: "Toutes les machines, tuyaux et am\xE9liorations se fabriquent \xE0 l'\xE9tabli : ouvre-le avec la touche C ou le bouton en bas. Fabrique un circuit : il faut 2 lingots de cuivre et 1 lingot de fer."
     condition: 5
     resource: {fileID: 11400000, guid: 1c37ecbf66463ce199e3cf5a464cd092, type: 2}
@@ -76,6 +84,7 @@ MonoBehaviour:
     amount: 1
     unlocks: 128
   - title: "Les r\xE8gles de l'atelier"
+    objective: 
     body: "1) Une machine sans assez d'\xE9nergie ralentit ; le d\xE9phaseur, lui,
       exige toute sa puissance. 2) Une sortie pleine arr\xEAte la machine : \xE9vacue
       chaque sous-produit (l'\xE9lectrolyseur donne de l'hydrog\xE8ne ET de l'oxyg\xE8ne).
@@ -87,6 +96,7 @@ MonoBehaviour:
     amount: 1
     unlocks: 256
   - title: "\xC0 toi de jouer"
+    objective: 
     body: "Tout est d\xE9bloqu\xE9. Le panneau \xAB Objectif final \xBB montre ta progression
       vers l'antimati\xE8re et les prochaines \xE9tapes possibles. Premier jalon : 4
       lingots d'acier (fer + charbon au four), puis le combustible fissile. Astuce

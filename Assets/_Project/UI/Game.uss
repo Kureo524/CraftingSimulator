@@ -19,11 +19,53 @@
 .milestones .objective { padding: 5px 8px; }
 .milestones .mono { margin-left: 6px; }
 
-/* Tutoriel */
-.hud-tutorial { margin-top: 12px; padding: 12px 14px; }
-.tutorial__actions { margin-top: 10px; }
-.tutorial__progress { margin: 6px 0 10px 0; height: 3px; }
-.tutorial__actions > .btn { margin-left: 4px; }
+/* ---------- Tutoriel : scénarios ---------- */
+/* Carte de quête (haut-gauche) */
+.quest { margin-top: 0; padding: 12px 14px 10px 16px; border-radius: 18px; transition-property: opacity, translate, border-color; transition-duration: 0.35s; transition-timing-function: ease-out-cubic; }
+.quest--enter { opacity: 0; translate: -16px 0; }
+.quest__head { align-items: center; margin-bottom: 2px; }
+.quest__head .btn--icon { width: 22px; height: 22px; margin-left: 2px; }
+.quest__title { -unity-font-definition: url("Fonts/GothicA1-Bold.ttf"); font-size: 17px; color: var(--text); margin-bottom: 8px; }
+.quest__task { align-items: center; padding: 8px 10px; border-radius: 12px; border-width: 1px; border-color: rgba(138, 168, 224, 0.28); border-top-color: rgba(138, 168, 224, 0.45); border-left-color: rgba(138, 168, 224, 0.45); background-color: rgba(16, 20, 32, 0.55); transition-property: border-color, background-color; transition-duration: 0.3s; }
+.quest__check { width: 16px; height: 16px; border-radius: 5px; border-width: 1.5px; border-color: var(--accent); margin-right: 10px; align-items: center; justify-content: center; transition-property: background-color, border-color, scale; transition-duration: 0.3s; transition-timing-function: ease-out-back; }
+.quest__check-mark { font-size: 11px; color: #0e0e13; opacity: 0; padding: 0; margin: 0; -unity-font-definition: url("Fonts/GothicA1-Bold.ttf"); transition-property: opacity; transition-duration: 0.2s; }
+.quest__objective { -unity-font-definition: url("Fonts/GothicA1-Bold.ttf"); font-size: 12px; color: var(--text); white-space: normal; }
+.quest__counter { color: var(--accent-text); margin-left: 8px; }
+.quest__body { margin-top: 10px; font-size: 11px; }
+.quest__status { margin-top: 6px; white-space: normal; }
+.quest__status--done { color: var(--success); }
+.quest__foot { margin-top: 6px; }
+.quest--done .quest__task { border-color: rgba(158, 189, 133, 0.45); background-color: var(--success-soft); }
+.quest--done .quest__check { background-color: var(--success); border-color: var(--success); scale: 1.15 1.15; }
+.quest--done .quest__check-mark { opacity: 1; }
+.quest--collapsed .quest__title { margin-bottom: 6px; font-size: 13px; }
+
+/* Rail de constellation (une étoile par étape) */
+.rail { align-items: center; margin-top: 10px; }
+.rail__star { width: 7px; height: 7px; border-radius: 4px; border-width: 1px; border-color: rgba(232, 238, 250, 0.22); background-color: rgba(0, 0, 0, 0); }
+.rail__star--done { background-color: var(--lavender); border-color: var(--lavender); }
+.rail__star--current { width: 11px; height: 11px; border-radius: 6px; border-color: var(--accent); border-width: 1.5px; background-color: var(--accent-soft); }
+.rail__link { flex-grow: 1; height: 1px; max-width: 22px; min-width: 6px; background-color: rgba(232, 238, 250, 0.1); }
+.rail__link--done { background-color: rgba(165, 151, 192, 0.6); }
+
+/* Fenêtre d'annonce (centre) */
+.scenario-layer { background-color: rgba(8, 8, 12, 0.45); }
+.scenario { width: 540px; padding: 22px 26px 18px 26px; border-radius: 22px; background-color: rgba(22, 22, 30, 0.88); transition-property: opacity, translate, scale; transition-duration: 0.45s; transition-timing-function: ease-out-cubic; }
+.scenario--enter { opacity: 0; translate: 0 14px; scale: 0.97 0.97; }
+.scenario__kicker { margin-bottom: 6px; }
+.scenario__title { -unity-font-definition: url("Fonts/GothicA1-Bold.ttf"); font-size: 22px; color: var(--text); margin-bottom: 2px; }
+.scenario .rail { margin: 8px 0 14px 0; }
+.scenario__body { font-size: 13px; color: var(--text-2); margin-bottom: 8px; }
+.scenario__rule { align-items: flex-start; padding: 10px 12px; margin-top: 6px; border-radius: 12px; border-width: 1px; border-color: rgba(138, 168, 224, 0.28); border-top-color: rgba(138, 168, 224, 0.45); border-left-color: rgba(138, 168, 224, 0.45); background-color: rgba(16, 20, 32, 0.55); }
+.scenario__rule-n { width: 28px; color: var(--lavender); margin-top: -6px; }
+.scenario__reward { margin-top: 12px; }
+.scenario__actions { margin-top: 16px; align-items: center; }
+
+/* Fil vers la cible */
+.guide__tag { position: absolute; translate: 0 -50%; padding: 3px 10px; border-radius: 10px; background-color: rgba(16, 20, 32, 0.82); border-width: 1px; border-color: rgba(138, 168, 224, 0.35); white-space: nowrap; }
+.guide__tag--left { translate: -100% -50%; }
+.guide__tag--above { translate: -50% -100%; }
+.scenario__rule > Label { flex-shrink: 1; }
 
 /* Contrôles */
 .hud-top-right { position: absolute; right: 12px; top: 12px; flex-direction: row; align-items: center; }

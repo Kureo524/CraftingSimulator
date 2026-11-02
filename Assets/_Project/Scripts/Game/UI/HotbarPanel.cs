@@ -19,9 +19,15 @@ namespace Nucleaire.Game.UI
             this.ctx = ctx;
             hotbar = root.Q("hotbar");
             var top = Ui.El("row hotbar__top", hotbar);
+            var book = Ui.Button("Livre", () => ctx.OpenRecipeBook(), "btn btn--small", top);
+            book.name = "hotbar-book";
+            book.style.marginRight = 4;
+            Tooltips.Register(book, () => ("Livre de recettes", $"Touche {ctx.Input.Display(GameInput.RecipeBook)}. Comment obtenir chaque ressource, et à quoi elle sert."));
             var inv = Ui.Button("Inventaire", ctx.OpenInventory, "btn btn--small", top);
+            inv.name = "hotbar-inventory";
             Tooltips.Register(inv, () => ("Inventaire", $"Touche {ctx.Input.Display(GameInput.Inventory)}. Avec le catalogue de tout le jeu."));
             var wb = Ui.Button("Établi", ctx.OpenWorkbench, "btn btn--small", top);
+            wb.name = "hotbar-workbench";
             wb.style.marginLeft = 4;
             Tooltips.Register(wb, () => ("Établi", $"Touche {ctx.Input.Display(GameInput.Workbench)}. Fabrique machines, tuyaux et améliorations."));
             filter = new SegmentedControl(Categories);

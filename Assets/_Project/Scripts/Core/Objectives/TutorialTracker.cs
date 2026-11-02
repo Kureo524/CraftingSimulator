@@ -51,6 +51,18 @@ namespace Nucleaire.Objectives
             }
         }
 
+        /// <summary>Avancement chiffré d'une étape (ex. 3 / 10 lingots), ou (0, 0) si elle n'a pas de quantité.</summary>
+        public (long have, long need) ProgressOf(TutorialStep s)
+        {
+            if (s == null) return (0, 0);
+            return s.condition switch
+            {
+                TutorialCondition.HaveItem => (System.Math.Min(session.Inventory.Count(s.resource), s.amount), s.amount),
+                TutorialCondition.Produce => (System.Math.Min(session.World.Produced(s.resource), s.amount), s.amount),
+                _ => (0, 0),
+            };
+        }
+
         /// <summary>Passe à l'étape suivante si la condition est remplie. Renvoie vrai si on a avancé.</summary>
         public bool Check()
         {

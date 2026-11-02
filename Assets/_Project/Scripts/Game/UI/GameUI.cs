@@ -20,6 +20,7 @@ namespace Nucleaire.Game.UI
         private readonly WorkbenchPanel workbench;
         private readonly OptionsPanel options;
         private readonly CatalogPanel catalog;
+        private readonly TutorialGuide guide;
 
         public GameUI(GameContext ctx, UIDocument document, Camera cam, WorldView view)
         {
@@ -43,6 +44,7 @@ namespace Nucleaire.Game.UI
             catalog = new CatalogPanel(ctx, root);
             IconSlot.KeyHint = () => $"{ctx.Input.Display(GameInput.ShowRecipe)} : recette · {ctx.Input.Display(GameInput.ShowUsage)} : usages";
             tutorial = new TutorialPanel(ctx, ctx.Session.Tutorial, root);
+            guide = new TutorialGuide(ctx, ctx.Session.Tutorial, tutorial, root, cam, view);
         }
 
         public RecipeBookPanel Book { get; }
@@ -100,6 +102,7 @@ namespace Nucleaire.Game.UI
             inspector.Update();
             overlay.Update();
             tutorial.Update();
+            guide.Update();
             contextMenu.Update();
             catalog.SetVisible(inventory.IsOpen || Book.IsOpen);
 
