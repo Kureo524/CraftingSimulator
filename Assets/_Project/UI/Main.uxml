@@ -14,6 +14,7 @@
             <ui:Label name="mode-hint" class="system mode-hint hidden" picking-mode="Ignore" />
             <ui:VisualElement name="hotbar" class="glass glass--light hotbar" />
         </ui:VisualElement>
+        <ui:VisualElement name="cable-picker" class="glass glass--light cable-picker hidden" />
         <ui:VisualElement name="view-filter" class="glass glass--light view-filter" />
         <ui:VisualElement name="context-layer" class="layer-fill" picking-mode="Ignore" />
         <ui:VisualElement name="inventory-layer" class="modal-layer modal-layer--with-catalog hidden">

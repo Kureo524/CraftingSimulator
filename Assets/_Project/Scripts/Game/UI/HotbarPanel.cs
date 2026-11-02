@@ -1,96 +1,77 @@
-using System.Linq;
 using Nucleaire.Data;
 using UnityEngine.UIElements;
 
 namespace Nucleaire.Game.UI
 {
-    /// <summary>Inventaire du joueur en bas de l'écran. Cliquer un élément posable passe en mode pose.</summary>
+    /// <summary>Barre rapide en bas de l'écran, comme dans Minecraft : 9 emplacements numérotés.
+    /// L'emplacement équipé (touche 1 à 9 ou clic) est celui qui se pose dans l'atelier ; le rééquiper vide les mains.
+    /// Au-dessus : accès au livre, à l'inventaire (pour ranger la barre) et à l'établi.</summary>
     public sealed class HotbarPanel
     {
         private readonly GameContext ctx;
-        private readonly VisualElement hotbar;
-        private readonly ScrollView scroll;
-        private readonly SegmentedControl filter;
-
-        private static readonly string[] Categories = { "Tout", "Machines", "Transport", "Matériaux", "Améliorations" };
+        private readonly VisualElement slotsRow;
 
         public HotbarPanel(GameContext ctx, VisualElement root)
         {
             this.ctx = ctx;
-            hotbar = root.Q("hotbar");
+            var hotbar = root.Q("hotbar");
             var top = Ui.El("row hotbar__top", hotbar);
             var book = Ui.Button("Livre", () => ctx.OpenRecipeBook(), "btn btn--small", top);
             book.name = "hotbar-book";
-            book.style.marginRight = 4;
             Tooltips.Register(book, () => ("Livre de recettes", $"Touche {ctx.Input.Display(GameInput.RecipeBook)}. Comment obtenir chaque ressource, et à quoi elle sert."));
             var inv = Ui.Button("Inventaire", ctx.OpenInventory, "btn btn--small", top);
             inv.name = "hotbar-inventory";
-            Tooltips.Register(inv, () => ("Inventaire", $"Touche {ctx.Input.Display(GameInput.Inventory)}. Avec le catalogue de tout le jeu."));
+            inv.style.marginLeft = 4;
+            Tooltips.Register(inv, () => ("Inventaire", $"Touche {ctx.Input.Display(GameInput.Inventory)}. Glisse un objet sur la barre rapide pour l'y ranger."));
             var wb = Ui.Button("Établi", () => ctx.OpenWorkbench(), "btn btn--small", top);
             wb.name = "hotbar-workbench";
             wb.style.marginLeft = 4;
-            Tooltips.Register(wb, () => ("Établi", $"Touche {ctx.Input.Display(GameInput.Workbench)}. Fabrique machines, tuyaux et améliorations."));
-            filter = new SegmentedControl(Categories);
-            filter.AddToClassList("hotbar__filter");
-            filter.Changed += _ => Rebuild();
-            top.Add(filter);
-            scroll = new ScrollView(ScrollViewMode.Horizontal);
-            scroll.AddToClassList("hotbar__scroll");
-            hotbar.Add(scroll);
+            Tooltips.Register(wb, () => ("Établi", $"Touche {ctx.Input.Display(GameInput.Workbench)}. Fabrique machines, câbles et améliorations."));
 
+            slotsRow = Ui.El("row hotbar__slots", hotbar);
+            ctx.Hotbar.Changed += Rebuild;
             ctx.Session.Inventory.Changed += Rebuild;
-            ctx.BuildItemChanged += _ => Rebuild();
+            ctx.Input.Changed += Rebuild;
             Rebuild();
-        }
-
-        private int CategoryOf(ResourceDef r)
-        {
-            var p = ctx.Db.PlaceableForItem(r);
-            if (p is MachineDef) return 1;
-            if (p is TransmitterDef) return 2;
-            if (ctx.Db.UpgradeForItem(r) != null) return 4;
-            return 3;
         }
 
         private void Rebuild()
         {
-            scroll.Clear();
-            int cat = filter.Selected;
-            var items = ctx.Session.Inventory.Items
-                .Where(kv => cat == 0 || CategoryOf(kv.Key) == cat)
-                .OrderBy(kv => CategoryOf(kv.Key)).ThenBy(kv => kv.Key.DisplayName)
-                .ToList();
+            slotsRow.Clear();
+            for (int i = 0; i < Hotbar.Size; i++) BuildSlot(slotsRow, ctx, i, false);
+        }
 
-            if (items.Count == 0)
+        /// <summary>Un emplacement de barre rapide (en bas de l'écran ou dans l'inventaire).</summary>
+        public static VisualElement BuildSlot(VisualElement parent, GameContext ctx, int i, bool inInventory)
+        {
+            var bar = ctx.Hotbar;
+            var r = bar[i];
+            int count = r != null ? ctx.Session.Inventory.Count(r) : 0;
+            var slot = Ui.El("slot hotbar-slot" + (inInventory ? " rslot rslot--inv" : ""), parent);
+            slot.name = (inInventory ? "inv-hotbar-" : "hotbar-slot-") + i;
+            slot.EnableInClassList("slot--active", !inInventory && bar.Selected == i);
+            slot.EnableInClassList("hotbar-slot--empty", r == null);
+            slot.EnableInClassList("hotbar-slot--out", r != null && count == 0);
+            Ui.Text(ctx.Input.Display(GameInput.HotbarSlot(i)), "hotbar-slot__key", slot).pickingMode = PickingMode.Ignore;
+            if (r != null)
             {
-                Ui.Text(cat == 0 ? "[Inventaire vide. Prends des ressources dans le vault.]" : "[Rien dans cette catégorie.]", "system hotbar__empty", scroll);
-                return;
+                slot.Add(new ResourceIcon(r));
+                Ui.Text(count.ToString(), "rslot__count", slot).pickingMode = PickingMode.Ignore;
+                IconSlot.Bind(slot, () => r, () => $"×{count} · " + (inInventory
+                    ? "glisse un autre objet ici pour le remplacer"
+                    : $"touche {ctx.Input.Display(GameInput.HotbarSlot(i))} ou clic : l'équiper pour le poser"));
             }
+            else Tooltips.Register(slot, $"Emplacement {i + 1}", "Vide. Ouvre l'inventaire et glisses-y une machine ou un câble.");
 
-            foreach (var (r, count) in items)
+            // Ranger : lâcher un objet posable de l'inventaire sur l'emplacement.
+            ItemTransfer.RegisterTarget(slot, p => p.From == null && bar.CanHold(p.Resource), p =>
             {
-                var placeable = ctx.Db.PlaceableForItem(r);
-                var slot = Ui.El("slot", scroll);
-                slot.EnableInClassList("slot--active", ctx.BuildItem == r);
-                slot.EnableInClassList("slot--placeable", placeable != null);
-                bool fluid = r.Kind is ResourceKind.Fluid or ResourceKind.Gas;
-                slot.Add(new ResourceIcon(r) { Canister = fluid, Level = fluid ? (float)count / ctx.Session.Inventory.CanisterCapacity : 1f });
-                Ui.Text(fluid ? $"{count / 1000f:0.#}B" : count.ToString(), "rslot__count", slot).pickingMode = PickingMode.Ignore;
-
-                slot.RegisterCallback<ClickEvent>(_ =>
-                {
-                    if (placeable != null)
-                    {
-                        if (ctx.BuildItem == r) ctx.BuildItem = null;
-                        else if (ctx.Require(PlayerPermission.Place)) ctx.BuildItem = r;
-                    }
-                    else ctx.OpenRecipeBook(r);
-                });
-                IconSlot.Bind(slot, () => r, () => $"×{count} · " +
-                    (placeable != null ? "clic : poser dans l'atelier" : ctx.Db.UpgradeForItem(r) != null
-                        ? "s'installe depuis le panneau d'une machine"
-                        : "clic : livre de recettes"));
-            }
+                bar.Assign(i, p.Resource);
+                return p.Amount; // l'objet n'est plus « en main »
+            });
+            if (!inInventory) slot.RegisterCallback<ClickEvent>(_ => bar.Select(i));
+            else if (r != null) ItemTransfer.RegisterSource(slot, () => new Payload(r, ctx.Session.Inventory.Count(r)), _ => false);
+            return slot;
         }
     }
 }

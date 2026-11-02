@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f593ebbabb0c9d7d9f632e91aac810b, type: 3}
   m_Name: pipe
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.TransmitterDef
-  displayName: Tuyau
+  displayName: "C\xE2ble \xE0 liquide"
   description: Transporte les liquides.
-  item: {fileID: 11400000, guid: 82c13cbf6994950cab547a7bd5ee1a3f, type: 2}
+  item: {fileID: 11400000, guid: eef29043dcd9b8ff5abe8d70452ffa8c, type: 2}
   color: {r: 0.23137255, g: 0.50980395, b: 0.9647059, a: 1}
   carries: 1
   throughputPerTick: 200

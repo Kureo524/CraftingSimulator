@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f593ebbabb0c9d7d9f632e91aac810b, type: 3}
   m_Name: conveyor
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.TransmitterDef
-  displayName: Convoyeur
+  displayName: "C\xE2ble \xE0 objets"
   description: Transporte les solides.
-  item: {fileID: 11400000, guid: a2554843fc11ebc88927762a501d5563, type: 2}
+  item: {fileID: 11400000, guid: eef29043dcd9b8ff5abe8d70452ffa8c, type: 2}
   color: {r: 0.41960785, g: 0.44705883, b: 0.5019608, a: 1}
   carries: 0
   throughputPerTick: 1

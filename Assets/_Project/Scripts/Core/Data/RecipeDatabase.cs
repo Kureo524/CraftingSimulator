@@ -68,6 +68,10 @@ namespace Nucleaire.Data
             return machine != null && processesByMachine.TryGetValue(machine, out var l) ? l : (IReadOnlyList<ProcessRecipe>)System.Array.Empty<ProcessRecipe>();
         }
 
+        /// <summary>Transmetteurs posables avec cet objet (le câble universel en pose plusieurs, un par type transporté).</summary>
+        public IReadOnlyList<TransmitterDef> TransmittersForItem(ResourceDef item) =>
+            item == null ? System.Array.Empty<TransmitterDef>() : Transmitters.Where(t => t != null && t.Item == item).ToList();
+
         public PlaceableDef PlaceableForItem(ResourceDef item)
         {
             EnsureIndex();
@@ -139,7 +143,7 @@ namespace Nucleaire.Data
             }
 
             foreach (var p in machines.Cast<PlaceableDef>().Concat(transmitters))
-                if (p != null && p.Item != null) placeableByItem[p.Item] = p;
+                if (p != null && p.Item != null && !placeableByItem.ContainsKey(p.Item)) placeableByItem[p.Item] = p;
             foreach (var u in upgrades)
                 if (u != null && u.Item != null) upgradeByItem[u.Item] = u;
         }

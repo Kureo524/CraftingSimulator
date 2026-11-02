@@ -335,3 +335,25 @@
 .scenario__body { font-size: 14px; color: var(--text); }
 .scenario__rule .text-2 { font-size: 13px; color: var(--text); }
 .guide__tag { font-size: 12px; color: var(--text); background-color: rgba(14, 16, 26, 0.95); padding: 5px 12px; }
+
+/* ---------- Barre rapide (9 emplacements) ---------- */
+.hotbar__slots { justify-content: center; }
+.hotbar-slot { width: 52px; height: 52px; }
+.hotbar-slot .ricon { left: 7px; top: 8px; right: 7px; bottom: 6px; }
+.hotbar-slot__key { position: absolute; left: 4px; top: 1px; padding: 0; margin: 0; font-size: 9px; color: var(--text-3); -unity-font-definition: url("Fonts/IBMPlexMono-Regular.ttf"); }
+.hotbar-slot.slot--active { border-color: var(--accent); border-width: 2px; background-color: var(--accent-soft); translate: 0 -3px; }
+.hotbar-slot.slot--active .hotbar-slot__key { color: var(--accent-text); }
+.hotbar-slot--empty { background-color: rgba(10, 10, 15, 0.35); }
+.hotbar-slot--out .ricon { opacity: 0.35; }
+.inventory__bar-title { margin: 6px 0 4px 0; }
+.inventory__hotbar { padding-top: 6px; border-top-width: 1px; border-color: var(--border); }
+.inventory__hotbar .hotbar-slot { margin: 0 6px 6px 0; }
+
+/* ---------- Choix du câble ---------- */
+.cable-picker { position: absolute; top: 12px; left: 50%; translate: -50% 0; padding: 8px 10px; align-items: center; border-radius: 18px; }
+.cable-picker__title { margin-bottom: 6px; }
+.cable-picker__option { align-items: center; padding: 5px 12px 5px 8px; margin: 0 3px; border-radius: 12px; border-width: 1px; border-color: var(--border); background-color: var(--surface-raised); transition-property: border-color, background-color; transition-duration: 0.12s; }
+.cable-picker__option:hover { border-color: var(--border-strong); }
+.cable-picker__option--active { border-color: var(--accent); background-color: var(--accent-soft); }
+.cable-picker__icon { position: relative; left: 0; top: 0; width: 20px; height: 20px; margin-right: 6px; }
+.cable-picker__hint { margin-top: 6px; }

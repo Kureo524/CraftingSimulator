@@ -56,7 +56,7 @@ namespace Nucleaire.Game.UI
             if (r.IconShape != IconShape.Auto) return r.IconShape;
             string id = r.Id;
             if (id.StartsWith("item_upgrade")) return IconShape.Upgrade;
-            if (id is "item_cable" or "item_pipe" or "item_pressurized_tube" or "item_conveyor") return IconShape.Transmitter;
+            if (id is "item_universal_cable") return IconShape.Transmitter;
             if (id.StartsWith("item_")) return IconShape.Machine;
             if (id.EndsWith("_ore")) return IconShape.Ore;
             if (id.EndsWith("_dust") || id is "yellowcake" or "sand") return IconShape.Dust;

@@ -42,7 +42,7 @@ namespace Nucleaire.Game
             if (placing && TargetCell is { } t)
             {
                 if (ctx.MovingMachine != null) valid = ctx.World.CanMove(ctx.MovingMachine.Position, t, out _);
-                else valid = ctx.World.CanPlace(ctx.Db.PlaceableForItem(ctx.BuildItem), t, out _) && ctx.Session.Inventory.Count(ctx.BuildItem) > 0;
+                else valid = ctx.World.CanPlace(ctx.BuildPlaceable, t, out _) && ctx.Session.Inventory.Count(ctx.BuildItem) > 0;
             }
             view.SetGhost(placing ? TargetCell : null, valid);
             view.SetHoverEntity(placing ? null : HoveredEntity);
@@ -71,10 +71,10 @@ namespace Nucleaire.Game
             {
                 if (right) { ctx.BuildItem = null; return; }
                 if (TargetCell is not { } target) return;
-                bool isTransmitter = ctx.Db.PlaceableForItem(ctx.BuildItem) is TransmitterDef;
+                bool isTransmitter = ctx.BuildPlaceable is TransmitterDef;
                 bool click = left || (isTransmitter && mouse.leftButton.isPressed && lastPlaced != target && lastPlaced != null);
                 if (!click) return;
-                if (ctx.Session.Actions.TryPlace(ctx.BuildItem, target, out var error)) lastPlaced = target;
+                if (ctx.Session.Actions.TryPlace(ctx.BuildItem, target, out var error, ctx.BuildPlaceable)) lastPlaced = target;
                 else if (left) ctx.Notify(error);
                 if (ctx.Session.Inventory.Count(ctx.BuildItem) == 0) ctx.BuildItem = null;
                 return;

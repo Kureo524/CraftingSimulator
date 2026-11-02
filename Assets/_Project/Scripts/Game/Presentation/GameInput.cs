@@ -12,6 +12,10 @@ namespace Nucleaire.Game
         public const string CameraForward = "camera_forward", CameraBack = "camera_back", CameraLeft = "camera_left", CameraRight = "camera_right";
         public const string RotateCamera = "rotate_camera", Inventory = "inventory", Workbench = "workbench", RecipeBook = "recipe_book";
         public const string ShowRecipe = "show_recipe", ShowUsage = "show_usage", Pause = "pause", Cancel = "cancel";
+        public const string CycleCable = "cycle_cable";
+
+        /// <summary>Identifiant de la touche d'un emplacement de la barre rapide (0 à 8).</summary>
+        public static string HotbarSlot(int i) => "hotbar_" + (i + 1);
 
         private const string PrefsKey = "nucleaire.bindings";
 
@@ -29,6 +33,16 @@ namespace Nucleaire.Game
             (ShowUsage, "Voir les usages (objet survolé)", "<Keyboard>/u"),
             (Pause, "Pause / reprise", "<Keyboard>/space"),
             (Cancel, "Annuler / fermer / options", "<Keyboard>/escape"),
+            (CycleCable, "Câble universel : changer de type", "<Keyboard>/t"),
+            ("hotbar_1", "Barre rapide : emplacement 1", "<Keyboard>/1"),
+            ("hotbar_2", "Barre rapide : emplacement 2", "<Keyboard>/2"),
+            ("hotbar_3", "Barre rapide : emplacement 3", "<Keyboard>/3"),
+            ("hotbar_4", "Barre rapide : emplacement 4", "<Keyboard>/4"),
+            ("hotbar_5", "Barre rapide : emplacement 5", "<Keyboard>/5"),
+            ("hotbar_6", "Barre rapide : emplacement 6", "<Keyboard>/6"),
+            ("hotbar_7", "Barre rapide : emplacement 7", "<Keyboard>/7"),
+            ("hotbar_8", "Barre rapide : emplacement 8", "<Keyboard>/8"),
+            ("hotbar_9", "Barre rapide : emplacement 9", "<Keyboard>/9"),
         };
 
         private readonly InputActionMap map = new("Jeu");

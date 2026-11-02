@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f593ebbabb0c9d7d9f632e91aac810b, type: 3}
   m_Name: cable
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.TransmitterDef
-  displayName: "C\xE2ble"
+  displayName: "C\xE2ble \xE9lectrique"
   description: "Transporte l'\xE9nergie."
   item: {fileID: 11400000, guid: eef29043dcd9b8ff5abe8d70452ffa8c, type: 2}
   color: {r: 0.98039216, g: 0.8, b: 0.08235294, a: 1}

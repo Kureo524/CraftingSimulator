@@ -19,7 +19,7 @@ namespace Nucleaire.Game.UI
 
             var head = Ui.El("row", panel);
             Ui.Text("Options", "sheet-title grow", head);
-            Ui.Button("×", Close, "btn btn--ghost btn--icon", head);
+            Ui.Button("×", Close, "btn btn--ghost btn--icon", head).name = "options-close";
 
             var sec = Ui.Section("Raccourcis clavier", panel, "Clique sur un raccourci puis appuie sur la nouvelle touche (Échap pour annuler). Les raccourcis sont enregistrés.");
             var scroll = new ScrollView(ScrollViewMode.Vertical);

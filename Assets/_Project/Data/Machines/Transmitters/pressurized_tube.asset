@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f593ebbabb0c9d7d9f632e91aac810b, type: 3}
   m_Name: pressurized_tube
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.TransmitterDef
-  displayName: "Tube pressuris\xE9"
+  displayName: "C\xE2ble \xE0 gaz"
   description: Transporte les gaz.
-  item: {fileID: 11400000, guid: 87ecdaa353ab295299d5bfaba7b8ed04, type: 2}
+  item: {fileID: 11400000, guid: eef29043dcd9b8ff5abe8d70452ffa8c, type: 2}
   color: {r: 0.8980392, g: 0.90588236, b: 0.92156863, a: 1}
   carries: 2
   throughputPerTick: 200

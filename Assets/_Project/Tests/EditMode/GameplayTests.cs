@@ -97,10 +97,10 @@ namespace Nucleaire.Tests
         [Test]
         public void Place_OutOfBoundsOrOccupied_IsRefused()
         {
-            Assert.IsFalse(Session.Actions.TryPlace(R("item_cable"), new Vector3Int(-1, 0, 0), out _));
+            Assert.IsFalse(Session.Actions.TryPlace(R("item_universal_cable"), new Vector3Int(-1, 0, 0), out _));
             var vault = World.FirstMachine<VaultMachine>();
-            Assert.IsFalse(Session.Actions.TryPlace(R("item_cable"), vault.Position, out _));
-            Assert.AreEqual(16, Session.Inventory.Count(R("item_cable")));
+            Assert.IsFalse(Session.Actions.TryPlace(R("item_universal_cable"), vault.Position, out _));
+            Assert.AreEqual(32, Session.Inventory.Count(R("item_universal_cable")));
         }
 
         [Test]

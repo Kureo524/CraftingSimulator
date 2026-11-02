@@ -39,7 +39,7 @@ MonoBehaviour:
     unlocks: 6
   - title: "L'énergie"
     objective: "Poser un panneau solaire"
-    body: "Les machines ont besoin d'énergie, et le panneau solaire en produit. Clique sur son icône dans la barre du bas, puis sur une case libre de l'atelier pour le poser. Clic droit ou Échap pour arrêter de poser."
+    body: "Les machines ont besoin d'énergie, et le panneau solaire en produit. Il est rangé dans ta barre rapide, en bas de l'écran : appuie sur son chiffre (ou clique-le) pour l'équiper, puis clique une case libre de l'atelier. Clic droit ou Échap : ranger."
     condition: 3
     resource: {fileID: 0}
     machine: {fileID: 11400000, guid: 681b14a83ac4035299db8e88780ae9b6, type: 2}
@@ -47,7 +47,7 @@ MonoBehaviour:
     unlocks: 8
   - title: "Le four électrique"
     objective: "Alimenter un four électrique"
-    body: "Le four électrique fond les minerais. Pose-le collé au panneau solaire, à côté ou au-dessus : l'énergie passe directement d'une machine à sa voisine. Plus tard, des câbles permettront de les éloigner."
+    body: "Le four électrique fond les minerais. Équipe-le dans la barre rapide, puis pose-le collé au panneau solaire, à côté ou au-dessus : l'énergie passe d'une machine à sa voisine. Pour les éloigner : équipe le câble universel et choisis « Électricité » en haut de l'écran."
     condition: 4
     resource: {fileID: 0}
     machine: {fileID: 11400000, guid: 53faf76fb2c81fef0ad8739f29d7f341, type: 2}

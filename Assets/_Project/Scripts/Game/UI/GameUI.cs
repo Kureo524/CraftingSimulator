@@ -23,6 +23,7 @@ namespace Nucleaire.Game.UI
         private readonly TutorialGuide guide;
         private readonly ItemTransfer transfer;
         private readonly ViewFilterPanel viewFilter;
+        private readonly CablePicker cablePicker;
 
         public GameUI(GameContext ctx, UIDocument document, Camera cam, WorldView view)
         {
@@ -41,6 +42,7 @@ namespace Nucleaire.Game.UI
             inspector = new InspectorPanel(ctx, root.Q("inspector"));
             contextMenu = new ContextMenuPanel(ctx, root, cam);
             viewFilter = new ViewFilterPanel(ctx, root, view);
+            cablePicker = new CablePicker(ctx, root);
             inventory = new InventoryPanel(ctx, root);
             transfer = new ItemTransfer(ctx, root);
             // Ouvrir une machine ouvre l'écran machine + inventaire ; le fermer abandonne la sélection.
@@ -113,6 +115,23 @@ namespace Nucleaire.Game.UI
             ctx.ContextTarget = null;
         }
 
+        /// <summary>Touches 1 à 9 : équiper un emplacement ; inventaire ouvert et objet survolé : l'y ranger.</summary>
+        private void UpdateHotbarKeys()
+        {
+            if (IsTyping || options.IsOpen || ctx.Input.IsRebinding) return;
+            for (int i = 0; i < Hotbar.Size; i++)
+            {
+                if (!ctx.Input.Pressed(GameInput.HotbarSlot(i))) continue;
+                if (inventory.IsOpen)
+                {
+                    var r = HoveredResource();
+                    if (r != null && ctx.Hotbar.CanHold(r)) ctx.Hotbar.Assign(i, r);
+                }
+                else if (!workbench.IsOpen && !Book.IsOpen) ctx.Hotbar.Select(i);
+                return;
+            }
+        }
+
         public bool IsPointerOverUI(Vector2 screenPosition)
         {
             var panel = document.rootVisualElement?.panel;
@@ -130,6 +149,8 @@ namespace Nucleaire.Game.UI
             tutorial.Update();
             transfer.Update();
             viewFilter.Update();
+            cablePicker.Update();
+            UpdateHotbarKeys();
             guide.Update();
             contextMenu.Update();
             catalog.SetVisible(inventory.IsOpen || Book.IsOpen);

@@ -96,18 +96,19 @@ namespace Nucleaire.Game.UI
                     var item = s.machine != null ? s.machine.Item : null;
                     if (placed == null)
                     {
+                        if (ModalOpen()) { CloseHint($"Ferme ce panneau, puis équipe : {item?.DisplayName}"); break; }
                         if (ctx.BuildItem == item && item != null)
                         {
                             if (s.condition == TutorialCondition.MachinePowered)
                                 PointMachine(w.Machines.LastOrDefault(m => m is not VaultMachine) ?? vault, "Pose-le collé à cette machine (clic gauche)");
                             break;
                         }
-                        if (PointIcon("inventory", item, "Clique-le pour le poser")) break;
-                        if (ctx.Selection != null) { CloseHint(); break; }
-                        PointIcon("hotbar", item, $"Clique sur : {item?.DisplayName}");
+                        int slot = ctx.Hotbar.IndexOf(item);
+                        if (slot >= 0) PointIcon("hotbar", item, $"Appuie sur {ctx.Input.Display(GameInput.HotbarSlot(slot))} (ou clique) pour l'équiper");
+                        else PointUi(root.Q("hotbar-inventory"), $"Range {item?.DisplayName} dans la barre rapide");
                         break;
                     }
-                    if (ctx.Selection != null) { CloseHint(); break; }
+                    if (ModalOpen()) { CloseHint(); break; }
                     PointMachine(placed, s.condition == TutorialCondition.MachinePowered
                         ? "Pas d'énergie : colle-le au panneau solaire, ou relie-les par un câble"
                         : placed.MachineDef.DisplayName);
@@ -239,7 +240,16 @@ namespace Nucleaire.Game.UI
             PointMachine(vault, "Ouvre le vault");
         }
 
-        private void CloseHint(string text = "Ferme ce panneau") => PointUi(root.Q("inventory-close"), text);
+        /// <summary>Montre le bouton de fermeture du panneau ouvert (le plus haut d'abord).</summary>
+        private void CloseHint(string text = "Ferme ce panneau")
+        {
+            foreach (var (layerName, button) in new[] { ("options-layer", "options-close"), ("book-layer", "book-close"), ("workbench-layer", "workbench-close"), ("inventory-layer", "inventory-close") })
+            {
+                if (root.Q(layerName) is not { } l || l.ClassListContains("hidden")) continue;
+                PointUi(root.Q(button), text);
+                return;
+            }
+        }
 
         /// <summary>Montre un onglet s'il n'est pas déjà actif. Renvoie vrai s'il a fallu le montrer.</summary>
         private bool PointTab(string container, string label, string text)
@@ -277,7 +287,10 @@ namespace Nucleaire.Game.UI
 
         private void PointMachine(Machine m, string text = null)
         {
-            if (m == null || !view.IsVisible(m) || ModalOpen()) return;
+            if (m == null) return;
+            // Un panneau couvre l'atelier : d'abord le fermer.
+            if (ModalOpen()) { CloseHint(text != null ? $"Ferme ce panneau, puis : {Lower(text)}" : "Ferme ce panneau"); return; }
+            if (!view.IsVisible(m)) return;
             hint = text;
             var p3 = GridMath.CellCenter(m.Position, 0.55f);
             if (cam.WorldToViewportPoint(p3).z <= 0) return;
@@ -285,6 +298,8 @@ namespace Nucleaire.Game.UI
             targetIsRect = false;
             targetPoint = RuntimePanelUtils.CameraTransformWorldToPanel(layer.panel, p3, cam);
         }
+
+        private static string Lower(string s) => string.IsNullOrEmpty(s) ? s : char.ToLowerInvariant(s[0]) + s.Substring(1);
 
         private static bool IsShown(VisualElement e)
         {

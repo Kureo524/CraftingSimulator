@@ -21,10 +21,12 @@ namespace Nucleaire.Crafting
         public PlayerInventory Inventory { get; }
         public PermissionGate Gate { get; }
 
-        public bool TryPlace(ResourceDef item, Vector3Int pos, out string error)
+        /// <summary>Pose un objet. <paramref name="variant"/> choisit ce qui est posé quand l'objet en permet plusieurs
+        /// (câble universel : électrique, à liquide, à gaz ou à objets).</summary>
+        public bool TryPlace(ResourceDef item, Vector3Int pos, out string error, PlaceableDef variant = null)
         {
             if (!Gate.Check(PlayerPermission.Place, out error)) return false;
-            var def = world.Db.PlaceableForItem(item);
+            var def = variant != null && variant.Item == item ? variant : world.Db.PlaceableForItem(item);
             if (def == null) { error = $"{item?.DisplayName} ne se pose pas."; return false; }
             if (Inventory.Count(item) <= 0) { error = $"Plus de {item.DisplayName} dans l'inventaire."; return false; }
             if (!world.CanPlace(def, pos, out error)) return false;

@@ -19,6 +19,7 @@ namespace Nucleaire.Game.UI
         private readonly VisualElement layer, panel, grid;
         private readonly SegmentedControl filter;
         private readonly Label hint;
+        private readonly VisualElement hotbarRow;
 
         public InventoryPanel(GameContext ctx, VisualElement root)
         {
@@ -35,6 +36,8 @@ namespace Nucleaire.Game.UI
             filter.Changed += _ => Rebuild();
             panel.Add(filter);
             grid = Ui.El("inventory__grid", panel);
+            Ui.Text("Barre rapide", "meta inventory__bar-title", panel);
+            hotbarRow = Ui.El("inventory__grid inventory__hotbar", panel);
             hint = Ui.Text("", "system inventory__hint", panel);
 
             // Ce qu'on lâche sur l'inventaire depuis une machine y est récupéré.
@@ -48,6 +51,7 @@ namespace Nucleaire.Game.UI
 
             ctx.InventoryRequested += Toggle;
             ctx.Session.Inventory.Changed += () => { if (IsOpen) Rebuild(); };
+            ctx.Hotbar.Changed += () => { if (IsOpen) Rebuild(); };
             Ui.SetVisible(layer, false);
         }
 
@@ -89,7 +93,7 @@ namespace Nucleaire.Game.UI
             layer.EnableInClassList("inventory-layer--machine", MachineMode);
             hint.text = OpenMachine != null && OpenMachine is not VaultMachine
                 ? "[Glisse un objet sur la machine, ou clique-le puis clique la machine (clic droit : une unité). Maj + clic : tout déposer.]"
-                : "[Clic sur une machine ou un tuyau : le poser. Survol : nom ; R / U : recette / usages.]";
+                : "[Range les machines et câbles dans la barre rapide : glisse-les dessus (Maj + clic : place libre). Survol + touche 1–9 : ranger à cet emplacement. R / U : recette / usages.]";
 
             grid.Clear();
             int f = filter.Selected;
@@ -104,7 +108,10 @@ namespace Nucleaire.Game.UI
                 foreach (int amount in inv.Canisters(r)) { CanisterSlot(r, amount); used++; }
             }
 
-            int minRows = MachineMode ? 3 : 4;
+            hotbarRow.Clear();
+            for (int i = 0; i < Hotbar.Size; i++) HotbarPanel.BuildSlot(hotbarRow, ctx, i, true);
+
+            int minRows = MachineMode ? 2 : 3;
             int total = System.Math.Max(minRows * Columns, (used + Columns - 1) / Columns * Columns);
             for (int i = used; i < total; i++) Ui.El("rslot rslot--inv rslot--empty", grid);
         }
@@ -113,7 +120,7 @@ namespace Nucleaire.Game.UI
         {
             var placeable = ctx.Db.PlaceableForItem(r);
             var slot = IconSlot.Create(r, grid, count.ToString(), "rslot--inv",
-                () => $"×{count}" + (MachineMode ? " · glisse-le sur la machine" : placeable != null ? " · clic : poser dans l'atelier" : ""));
+                () => $"×{count}" + (MachineMode ? " · glisse-le sur la machine" : placeable != null ? " · glisse-le dans la barre rapide" : ""));
             ItemTransfer.RegisterSource(slot, () => new Payload(r, ctx.Session.Inventory.Count(r)), shift => Click(r, placeable, shift));
         }
 
@@ -139,12 +146,14 @@ namespace Nucleaire.Game.UI
             }
             if (placeable != null)
             {
-                if (ctx.Require(PlayerPermission.Place))
-                {
-                    ctx.Selection = null;
-                    ctx.BuildItem = r;
-                    Close();
-                }
+                // Objet posable : on le prend en main pour le ranger dans la barre rapide (Maj + clic : premier emplacement libre).
+                if (!shift) return false;
+                var bar = ctx.Hotbar;
+                int free = -1;
+                for (int i = 0; i < Hotbar.Size && free < 0; i++) if (bar[i] == null) free = i;
+                if (bar.IndexOf(r) >= 0) ctx.Notify($"{r.DisplayName} est déjà dans la barre rapide.", EventSeverity.Info);
+                else if (free < 0) ctx.Notify("Barre rapide pleine : glisse l'objet sur un emplacement pour le remplacer.", EventSeverity.Info);
+                else bar.Assign(free, r);
                 return true;
             }
             ctx.OpenRecipeBook(r, 1);

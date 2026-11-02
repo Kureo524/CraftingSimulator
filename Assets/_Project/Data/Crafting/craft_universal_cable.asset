@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6d1b13225ed3d4e87b8ba52793ea73eb, type: 3}
-  m_Name: craft_pressurized_tube
+  m_Name: craft_universal_cable
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.CraftingRecipe
   ingredients:
-  - resource: {fileID: 11400000, guid: fc885915ae8c3b666932eda0d82e1b84, type: 2}
+  - resource: {fileID: 11400000, guid: 3f0b419e6ab82ac4d8bbe9f0ac618990, type: 2}
     amount: 1
-  - resource: {fileID: 11400000, guid: 66a5c948967da3423a8be320e1ac840f, type: 2}
+  - resource: {fileID: 11400000, guid: d0acb630fec9ae07ba389a482eac3de3, type: 2}
     amount: 1
   result:
-    resource: {fileID: 11400000, guid: 87ecdaa353ab295299d5bfaba7b8ed04, type: 2}
+    resource: {fileID: 11400000, guid: eef29043dcd9b8ff5abe8d70452ffa8c, type: 2}
     amount: 8

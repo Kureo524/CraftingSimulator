@@ -26,7 +26,7 @@ namespace Nucleaire.Game.UI
 
             var head = Ui.El("row", panel);
             Ui.Text("Établi", "sheet-title grow", head);
-            Ui.Button("×", Close, "btn btn--ghost btn--icon", head);
+            Ui.Button("×", Close, "btn btn--ghost btn--icon", head).name = "workbench-close";
             Ui.Text("Fabrique ici machines, transmetteurs, composants et améliorations avec les objets de ton inventaire.", "text-2 wrap workbench__desc", panel);
             var bar = Ui.El("row workbench__bar", panel);
             filter = new SegmentedControl(Categories);

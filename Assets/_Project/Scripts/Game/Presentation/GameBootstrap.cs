@@ -193,6 +193,31 @@ namespace Nucleaire.Game
                     Click(uiDocument.rootVisualElement.Q("inspector").Q(className: "gdrop"));
                     yield return new WaitForSecondsRealtime(0.4f);
                     break;
+                case "quest-book":
+                    ui.CloseAll();
+                    while (ctx.Session.Tutorial.Index < 2) ctx.Session.Tutorial.Next();
+                    ctx.OpenRecipeBook(R("iron_ore"));
+                    yield return new WaitForSecondsRealtime(1f);
+                    break;
+                case "quest-solar":
+                    ui.CloseAll();
+                    while (ctx.Session.Tutorial.Index < 3) ctx.Session.Tutorial.Next();
+                    ctx.Selection = vault;
+                    yield return new WaitForSecondsRealtime(1f);
+                    break;
+                case "quest-hotbar":
+                    ui.CloseAll();
+                    ctx.Selection = null;
+                    yield return new WaitForSecondsRealtime(1f);
+                    break;
+                case "cable":
+                    ctx.Session.Tutorial.Skip();
+                    ui.CloseAll();
+                    yield return null;
+                    ctx.Hotbar.Select(ctx.Hotbar.IndexOf(R("item_universal_cable")));
+                    ctx.CableKind = ResourceKind.Gas;
+                    yield return new WaitForSecondsRealtime(0.5f);
+                    break;
                 case "skip":
                     ctx.Session.Tutorial.Skip();
                     break;
@@ -202,11 +227,11 @@ namespace Nucleaire.Game
                     inv.Add(R("item_solar_panel"), 4);
                     inv.Add(R("item_electrolyser"), 1);
                     inv.Add(R("item_fission_reactor"), 1);
-                    inv.Add(R("item_pressurized_tube"), 8);
+                    inv.Add(R("item_universal_cable"), 16);
                     inv.Add(R("item_crusher"), 1);
                     a.TryPlace(R("item_solar_panel"), origin, out _);
                     a.TryPlace(R("item_solar_panel"), origin + new Vector3Int(0, 1, 0), out _);
-                    for (int i = 1; i <= 3; i++) a.TryPlace(R("item_cable"), origin + new Vector3Int(i, 0, 0), out _);
+                    for (int i = 1; i <= 3; i++) a.TryPlace(R("item_universal_cable"), origin + new Vector3Int(i, 0, 0), out _, T(ResourceKind.Energy));
                     a.TryPlace(R("item_electric_furnace"), origin + new Vector3Int(4, 0, 0), out _);
                     // Broyeur posé au-dessus du four : il pousse vers le bas.
                     a.TryPlace(R("item_crusher"), origin + new Vector3Int(4, 0, 1), out _);
@@ -215,11 +240,11 @@ namespace Nucleaire.Game
                     crusher.Sides.SetMode(Direction.Down, SideMode.Output);
                     crusher.InsertManual(R("iron_ore"), 10);
                     vault.Sides.Set(Direction.East, SideMode.Output, R("iron_ore"));
-                    for (int i = 1; i <= 3; i++) a.TryPlace(R("item_conveyor"), vault.Position + new Vector3Int(i, 0, 0), out _);
+                    for (int i = 1; i <= 3; i++) a.TryPlace(R("item_universal_cable"), vault.Position + new Vector3Int(i, 0, 0), out _, T(ResourceKind.Item));
                     a.TryPlace(R("item_fission_reactor"), origin + new Vector3Int(-1, 4, 0), out _);
                     a.TryPlace(R("item_electrolyser"), origin + new Vector3Int(2, 4, 0), out _);
-                    for (int i = 0; i < 3; i++) a.TryPlace(R("item_pressurized_tube"), origin + new Vector3Int(3 + i, 4, 0), out _);
-                    a.TryPlace(R("item_pressurized_tube"), origin + new Vector3Int(5, 4, 1), out _);
+                    for (int i = 0; i < 3; i++) a.TryPlace(R("item_universal_cable"), origin + new Vector3Int(3 + i, 4, 0), out _, T(ResourceKind.Gas));
+                    a.TryPlace(R("item_universal_cable"), origin + new Vector3Int(5, 4, 1), out _, T(ResourceKind.Gas));
                     ctx.Runner.SetSpeedIndex(3);
                     yield return new WaitForSecondsRealtime(3f);
                     ctx.Selection = w.At(origin + new Vector3Int(4, 0, 0));
@@ -288,6 +313,8 @@ namespace Nucleaire.Game
             click.target = e;
             e.SendEvent(click);
         }
+
+        private TransmitterDef T(ResourceKind k) => database.Transmitters.First(t => t.Carries == k);
 
         private ResourceDef R(string id) => database.Resources.First(r => r.Id == id);
     }

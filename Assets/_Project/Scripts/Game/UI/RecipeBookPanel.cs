@@ -83,7 +83,7 @@ namespace Nucleaire.Game.UI
             if (r.IsBaseResource) Ui.Badge("Ressource de base · vault", "accent", badges).style.marginLeft = 6;
             var objective = ctx.Session.Objectives.Objectives.FirstOrDefault(o => o.Target.Resource == r);
             if (objective != null) Ui.Badge($"Objectif : {objective.Title}", ctx.Session.Objectives.IsCompleted(objective) ? "success" : "accent", badges).style.marginLeft = 6;
-            Ui.Button("Fermer", Close, "btn btn--small", top);
+            Ui.Button("Fermer", Close, "btn btn--small", top).name = "book-close";
 
             if (!string.IsNullOrEmpty(r.Description)) Ui.Text(r.Description, "text-2 wrap book__desc", header);
             long produced = ctx.World.Produced(r);

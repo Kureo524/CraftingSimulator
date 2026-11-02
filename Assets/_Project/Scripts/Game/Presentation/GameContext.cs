@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Nucleaire.Data;
 using Nucleaire.Simulation;
 
@@ -22,6 +23,33 @@ namespace Nucleaire.Game
                 if (contextTarget == e) ContextTarget = null;
             };
             session.BoardReset += () => { Selection = null; ContextTarget = null; BuildItem = null; MovingMachine = null; };
+            Hotbar = new Hotbar(this);
+        }
+
+        /// <summary>Barre rapide : l'objet équipé est celui qui se pose.</summary>
+        public Hotbar Hotbar { get; }
+
+        private ResourceKind cableKind = ResourceKind.Energy;
+
+        /// <summary>Type de câble posé avec le câble universel (électricité, liquide, gaz, objets).</summary>
+        public ResourceKind CableKind
+        {
+            get => cableKind;
+            set { if (cableKind == value) return; cableKind = value; CableKindChanged?.Invoke(value); }
+        }
+
+        public event Action<ResourceKind> CableKindChanged;
+
+        /// <summary>Ce qui sera réellement posé avec l'objet équipé (le bon câble pour le câble universel).</summary>
+        public PlaceableDef BuildPlaceable
+        {
+            get
+            {
+                if (buildItem == null) return null;
+                var variants = Db.TransmittersForItem(buildItem);
+                if (variants.Count > 1) return variants.FirstOrDefault(t => t.Carries == cableKind) ?? variants[0];
+                return Db.PlaceableForItem(buildItem);
+            }
         }
 
         public GameInput Input { get; }
