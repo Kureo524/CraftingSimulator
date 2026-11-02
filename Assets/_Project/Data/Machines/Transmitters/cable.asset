@@ -17,5 +17,5 @@ MonoBehaviour:
   item: {fileID: 11400000, guid: eef29043dcd9b8ff5abe8d70452ffa8c, type: 2}
   color: {r: 0.98039216, g: 0.8, b: 0.08235294, a: 1}
   carries: 3
-  throughputPerTick: 500
-  capacityPerSegment: 1000
+  throughputPerTick: 2000
+  capacityPerSegment: 4000

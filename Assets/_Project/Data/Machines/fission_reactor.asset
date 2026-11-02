@@ -31,7 +31,7 @@ MonoBehaviour:
     coolantPerFuel: 10
     heatedCoolantPerFuel: 10
     wastePerFuel: 1
-    heatPerFuel: 6
+    heatPerFuel: 2
     ambientHeat: 20
     passiveCooling: 3
     meltdownHeat: 1000
