@@ -118,9 +118,9 @@
 .craft-actions { margin-top: 6px; }
 
 /* Journal */
-.hud-log { position: absolute; left: 12px; bottom: 132px; width: 420px; }
+.hud-log { position: absolute; right: 12px; bottom: 120px; width: 400px; }
 .log-line { margin-top: 3px; }
-.log-text { font-size: 10px; color: var(--text-2); }
+.log-text { font-size: 10px; color: var(--text-2); -unity-text-align: upper-right; }
 
 /* Barre d'inventaire */
 .hud-bottom { position: absolute; left: 12px; right: 12px; bottom: 12px; align-items: center; }
@@ -298,3 +298,40 @@
 /* Tutoriel au-dessus des panneaux */
 #tutorial-layer .quest { position: absolute; left: 12px; top: 12px; width: 320px; }
 .quest--compact .quest__body, .quest--compact .rail, .quest--compact .quest__foot { display: none; }
+
+/* ---------- Liste déroulante de la DA ---------- */
+.gdrop { flex-direction: row; align-items: center; min-height: 26px; padding: 2px 8px 2px 10px; border-radius: 10px; border-width: 1px; border-color: var(--border); border-top-color: var(--rim); border-left-color: var(--rim); background-color: var(--input); transition-property: border-color; transition-duration: 0.12s; }
+.gdrop:hover { border-color: var(--border-strong); }
+.gdrop--open { border-color: var(--accent); }
+.gdrop__icon { position: relative; left: 0; top: 0; width: 16px; height: 16px; margin-right: 6px; flex-shrink: 0; }
+.gdrop__label { flex-grow: 1; flex-shrink: 1; font-size: 11px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0; margin: 0; }
+.gdrop__chevron { font-size: 10px; color: var(--text-3); margin-left: 4px; padding: 0; }
+.gdrop__catcher { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.gdrop__menu { position: absolute; max-height: 340px; padding: 4px; border-radius: 12px; border-width: 1px; border-color: var(--border-strong); border-top-color: var(--rim); border-left-color: var(--rim); background-color: rgba(23, 23, 30, 0.97); }
+.gdrop__scroll { max-height: 330px; }
+.gdrop__item { min-height: 28px; padding: 3px 10px 3px 6px; border-radius: 8px; align-items: center; }
+.gdrop__item:hover { background-color: var(--accent-soft); }
+.gdrop__item--active .gdrop__item-label { color: var(--accent-text); }
+.gdrop__check { width: 16px; color: var(--accent); font-size: 11px; padding: 0; margin: 0; }
+.gdrop__item-icon { position: relative; left: 0; top: 0; width: 20px; height: 20px; margin-right: 8px; flex-shrink: 0; }
+.gdrop__item-label { font-size: 12px; color: var(--text); white-space: nowrap; padding: 0; margin: 0; }
+.sides-cell .side-filter { width: 100%; }
+
+/* ---------- Filtre d'affichage (bas-gauche) ---------- */
+.view-filter { position: absolute; left: 12px; bottom: 12px; flex-direction: row; align-items: center; padding: 6px; border-radius: 16px; }
+.view-filter__toggle { margin: 0; }
+.view-filter--active .view-filter__toggle { border-color: var(--accent); background-color: var(--accent-soft); }
+.view-filter__body { align-items: center; margin-left: 8px; }
+.view-filter__label { margin: 0 4px 0 4px; }
+.view-filter__dropdown { width: 160px; }
+.view-filter__count { margin: 0 2px 0 6px; font-size: 10px; color: var(--text-3); }
+
+/* ---------- Tutoriel : lisibilité ---------- */
+#tutorial-layer .quest { width: 360px; background-color: rgba(18, 18, 26, 0.94); }
+.quest__body { font-size: 13px; color: var(--text); white-space: normal; margin-top: 12px; }
+.quest__objective { font-size: 13px; }
+.quest__status { font-size: 11px; }
+.scenario { background-color: rgba(18, 18, 26, 0.96); }
+.scenario__body { font-size: 14px; color: var(--text); }
+.scenario__rule .text-2 { font-size: 13px; color: var(--text); }
+.guide__tag { font-size: 12px; color: var(--text); background-color: rgba(14, 16, 26, 0.95); padding: 5px 12px; }

@@ -22,6 +22,7 @@ namespace Nucleaire.Game.UI
         private readonly CatalogPanel catalog;
         private readonly TutorialGuide guide;
         private readonly ItemTransfer transfer;
+        private readonly ViewFilterPanel viewFilter;
 
         public GameUI(GameContext ctx, UIDocument document, Camera cam, WorldView view)
         {
@@ -32,12 +33,14 @@ namespace Nucleaire.Game.UI
             foreach (var child in root.Children()) child.pickingMode = PickingMode.Ignore;
 
             new Tooltips(root.Q("tooltip-layer"));
+            GlassDropdown.Init(root.Q("popup-layer"));
             new GlassLight(root);
             overlay = new WorldOverlay(root.Q("overlay"), ctx.World, cam, view);
             hud = new HudPanel(ctx, root);
             new HotbarPanel(ctx, root);
             inspector = new InspectorPanel(ctx, root.Q("inspector"));
             contextMenu = new ContextMenuPanel(ctx, root, cam);
+            viewFilter = new ViewFilterPanel(ctx, root, view);
             inventory = new InventoryPanel(ctx, root);
             transfer = new ItemTransfer(ctx, root);
             // Ouvrir une machine ouvre l'écran machine + inventaire ; le fermer abandonne la sélection.
@@ -92,6 +95,7 @@ namespace Nucleaire.Game.UI
         /// <summary>Ferme le panneau du dessus. Renvoie faux s'il n'y avait rien à fermer.</summary>
         public bool CloseTopPanel()
         {
+            if (GlassDropdown.CloseOpen()) return true;
             if (options.IsOpen) { if (!options.JustRebound) options.Close(); return true; }
             if (Book.IsOpen) { Book.Close(); return true; }
             if (workbench.IsOpen) { workbench.Close(); return true; }
@@ -125,6 +129,7 @@ namespace Nucleaire.Game.UI
             tutorial.Compact = inventory.IsOpen || workbench.IsOpen || Book.IsOpen || options.IsOpen;
             tutorial.Update();
             transfer.Update();
+            viewFilter.Update();
             guide.Update();
             contextMenu.Update();
             catalog.SetVisible(inventory.IsOpen || Book.IsOpen);

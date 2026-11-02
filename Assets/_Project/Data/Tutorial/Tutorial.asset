@@ -13,71 +13,73 @@ MonoBehaviour:
   m_Name: Tutorial
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.TutorialDef
   steps:
-  - title: Bienvenue dans l'atelier
+  - title: "Bienvenue dans l'atelier"
     objective: 
-    body: "Ton but : fabriquer une pastille d'antimati\xE8re. Chaque ressource s'obtient
-      \xE0 partir d'autres ressources, avec des machines que tu fabriques et relies
-      entre elles. Suis les \xE9tapes : chacune d\xE9bloque de nouvelles actions. Tu
-      peux aussi passer le tutoriel \xE0 tout moment."
+    body: "Ton but : fabriquer une pastille d'antimatière. Chaque ressource se fabrique à partir d'autres, avec des machines que tu poses et relies entre elles.\nÀ chaque étape, un fil en pointillés part de cette carte et montre où cliquer ; l'étiquette au bout dit quoi faire. Le tutoriel se joue sur un atelier d'essai, remis à zéro à la fin."
     condition: 0
     resource: {fileID: 0}
     machine: {fileID: 0}
     amount: 1
     unlocks: 2048
-  - title: Le livre de recettes
+  - title: "Le livre de recettes"
     objective: "Ouvrir le livre de recettes"
-    body: "Ouvre le livre de recettes (touche B, ou le bouton Livre en bas).
-      Pour chaque ressource, il indique comment l'obtenir et \xE0 quoi elle sert.
-      Survole n'importe quelle ic\xF4ne (le nom s'affiche) : R montre sa recette,
-      U ses usages, y compris dans le livre. Le catalogue \xE0 droite liste tout le jeu."
+    body: "Le livre dit comment obtenir chaque ressource et à quoi elle sert. Ouvre-le avec B ou le bouton Livre en bas.\nAstuce : partout dans le jeu, survole une icône et appuie sur R (sa recette) ou U (ses usages)."
     condition: 1
     resource: {fileID: 0}
     machine: {fileID: 0}
     amount: 1
     unlocks: 1
-  - title: Le vault
+  - title: "Le vault"
     objective: "Prendre du minerai de fer"
-    body: "Clique sur le vault (le grand bloc gris) pour ouvrir son panneau, survole les ic\xF4nes pour lire leur nom, puis clique sur le minerai de fer (roche grise piquet\xE9e de brun) et choisis une quantit\xE9 (\xD710, \xD7100\u2026). Prends aussi du charbon. Ses ressources de base sont illimit\xE9es."
+    body: "Le vault, le grand bloc gris, fournit à l'infini les ressources de base : minerais, charbon, sable… Ouvre-le, clique sur le minerai de fer (roche grise piquetée de brun), puis choisis une quantité."
     condition: 2
     resource: {fileID: 11400000, guid: c7d4b147f2e7249c5838218055a46da9, type: 2}
     machine: {fileID: 0}
     amount: 1
     unlocks: 6
-  - title: "L'\xE9nergie"
+  - title: "L'énergie"
     objective: "Poser un panneau solaire"
-    body: "Les machines consomment de l'\xE9nergie. Clique sur le panneau solaire dans la barre du bas (ou dans l'inventaire, touche E), puis pose-le dans l'atelier (clic gauche). Clic droit ou \xC9chap pour arr\xEAter de poser."
+    body: "Les machines ont besoin d'énergie, et le panneau solaire en produit. Clique sur son icône dans la barre du bas, puis sur une case libre de l'atelier pour le poser. Clic droit ou Échap pour arrêter de poser."
     condition: 3
     resource: {fileID: 0}
     machine: {fileID: 11400000, guid: 681b14a83ac4035299db8e88780ae9b6, type: 2}
     amount: 1
     unlocks: 8
-  - title: "Le four \xE9lectrique"
-    objective: "Alimenter un four \xE9lectrique"
-    body: "Pose le four \xE9lectrique coll\xE9 au panneau solaire, \xE0 c\xF4t\xE9 ou au-dessus, ou relie-les avec des c\xE2bles. Le panneau pousse son \xE9nergie par ses faces de sortie (lavande) ; le four la re\xE7oit par ses faces d'entr\xE9e (bleu). Clic droit sur une machine : la d\xE9placer ou la supprimer."
+  - title: "Le four électrique"
+    objective: "Alimenter un four électrique"
+    body: "Le four électrique fond les minerais. Pose-le collé au panneau solaire, à côté ou au-dessus : l'énergie passe directement d'une machine à sa voisine. Plus tard, des câbles permettront de les éloigner."
     condition: 4
     resource: {fileID: 0}
     machine: {fileID: 11400000, guid: 53faf76fb2c81fef0ad8739f29d7f341, type: 2}
     amount: 1
     unlocks: 4608
-  - title: "Premi\xE8re fonte"
+  - title: "Première fonte"
     objective: "Fondre un lingot de fer"
-    body: "Ouvre le four : ton inventaire s'affiche dessous. Glisse le minerai de fer sur le four (ou clique-le, puis clique le four). Le four fond tout seul ce qu'on lui donne, comme dans Minecraft. Quand le lingot appara\xEEt en sortie, clique dessus pour le r\xE9cup\xE9rer. Le panneau indique toujours pourquoi une machine est bloqu\xE9e."
+    body: "Ouvre le four : ton inventaire s'affiche dessous. Glisse le minerai de fer sur le four, ou clique-le puis clique le four. Quand le lingot apparaît à droite, clique-le pour le récupérer."
     condition: 5
     resource: {fileID: 11400000, guid: d0acb630fec9ae07ba389a482eac3de3, type: 2}
     machine: {fileID: 0}
     amount: 1
     unlocks: 1072
-  - title: Automatiser avec les faces
-    objective: "Sortie filtr\xE9e sur le vault"
-    body: "Ouvre l'onglet Faces du vault : passe une face en Sortie et choisis une ressource. Colle une machine contre cette face (m\xEAme au-dessus, face Haut), ou relie-les avec des convoyeurs. Chaque machine se configure de la m\xEAme fa\xE7on."
+  - title: "Automatiser avec les faces"
+    objective: "Sortie filtrée sur le vault"
+    body: "Plutôt que de tout porter à la main, le vault peut pousser une ressource par une de ses faces. Ouvre-le, onglet Faces : passe une face en Sortie et choisis la ressource. Une machine collée à cette face la recevra toute seule."
     condition: 6
     resource: {fileID: 0}
     machine: {fileID: 0}
     amount: 1
     unlocks: 64
-  - title: "L'\xE9tabli"
+  - title: "Le cuivre"
+    objective: "Fondre 2 lingots de cuivre"
+    body: "Le circuit, qu'on fabrique juste après, demande du cuivre. Même chemin que le fer : prends du minerai de cuivre au vault, puis fonds-le au four, jusqu'à 2 lingots.\nPour vérifier une recette : survole le lingot de cuivre et appuie sur R."
+    condition: 5
+    resource: {fileID: 11400000, guid: 3f0b419e6ab82ac4d8bbe9f0ac618990, type: 2}
+    machine: {fileID: 0}
+    amount: 2
+    unlocks: 0
+  - title: "L'établi"
     objective: "Fabriquer un circuit"
-    body: "Toutes les machines, tuyaux et am\xE9liorations se fabriquent \xE0 l'\xE9tabli : ouvre-le avec la touche C ou le bouton en bas. Fabrique un circuit : il faut 2 lingots de cuivre et 1 lingot de fer."
+    body: "Machines, tuyaux et améliorations se fabriquent à l'établi, à partir de ton inventaire. Ouvre-le (C), va dans l'onglet Composants et fabrique un circuit : 2 lingots de cuivre et 1 lingot de fer."
     condition: 5
     resource: {fileID: 11400000, guid: 1c37ecbf66463ce199e3cf5a464cd092, type: 2}
     machine: {fileID: 0}

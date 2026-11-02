@@ -29,7 +29,7 @@ namespace Nucleaire.Game.UI
 
             var head = Ui.El("row", panel);
             Ui.Text("Inventaire", "sheet-title grow", head);
-            Ui.Button("×", Close, "btn btn--ghost btn--icon", head);
+            Ui.Button("×", Close, "btn btn--ghost btn--icon", head).name = "inventory-close";
             filter = new SegmentedControl(Categories);
             filter.AddToClassList("inventory__filter");
             filter.Changed += _ => Rebuild();

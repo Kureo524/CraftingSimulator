@@ -115,6 +115,12 @@ namespace Nucleaire.Game
                 sv.Go.GetComponent<TransmitterView>().Refresh();
         }
 
+        /// <summary>Filtre d'affichage choisi par le joueur (null = tout afficher).</summary>
+        public System.Func<IGridEntity, bool> Filter { get; set; }
+
+        public int VisibleCount { get; private set; }
+        public int TotalCount => views.Count;
+
         public bool IsVisible(IGridEntity e) => views.TryGetValue(e, out var v) && !v.Hidden;
 
         // ---------------- Vue en coupe ----------------
@@ -124,14 +130,18 @@ namespace Nucleaire.Game
         {
             CutawayActive = zoom < CutawayZoom;
             var f = new Vector3(horizontalForward.x, 0f, horizontalForward.z).normalized;
+            int visible = 0;
             foreach (var (e, v) in views)
             {
                 var c = GridMath.CellCenter(e.Position);
                 bool hide = CutawayActive && Vector3.Dot(new Vector3(c.x - focus.x, 0f, c.z - focus.z), f) < -CutawayMargin;
+                if (Filter != null && !Filter(e)) hide = true;
+                if (!hide) visible++;
                 if (hide == v.Hidden) continue;
                 v.Hidden = hide;
                 v.Go.SetActive(!hide);
             }
+            VisibleCount = visible;
             if (context.Selection != null && !IsVisible(context.Selection)) selection.gameObject.SetActive(false);
             else UpdateSelection();
         }

@@ -100,7 +100,7 @@ namespace Nucleaire.Game
         /// <summary>Échap : ferme ce qui est ouvert, du plus récent au plus général ; sinon ouvre les options.</summary>
         private void Cancel()
         {
-            if (ui.CancelTransfer()) { }
+            if (ui.CancelTransfer() || UI.GlassDropdown.CloseOpen()) { }
             else if (ctx.ContextTarget != null) ctx.ContextTarget = null;
             else if (ctx.MovingMachine != null) ctx.MovingMachine = null;
             else if (ctx.BuildItem != null) ctx.BuildItem = null;
@@ -148,7 +148,7 @@ namespace Nucleaire.Game
                     yield return new WaitForSecondsRealtime(2f);
                     break;
                 case "rules":
-                    while (ctx.Session.Tutorial.Index < 8) ctx.Session.Tutorial.Next();
+                    while (ctx.Session.Tutorial.Index < 9) ctx.Session.Tutorial.Next();
                     yield return new WaitForSecondsRealtime(1f);
                     break;
                 case "machine":
@@ -168,6 +168,30 @@ namespace Nucleaire.Game
                     var pick = uiDocument.rootVisualElement.Q("inspector").Query(className: "rslot--vault").AtIndex(3);
                     if (pick != null) using (var click = ClickEvent.GetPooled()) { click.target = pick; pick.SendEvent(click); }
                     yield return new WaitForSecondsRealtime(0.5f);
+                    break;
+                case "quest-craft":
+                    ui.CloseAll();
+                    ctx.Selection = null;
+                    while (ctx.Session.Tutorial.Index < 8) ctx.Session.Tutorial.Next();
+                    yield return new WaitForSecondsRealtime(0.5f);
+                    ctx.OpenWorkbench();
+                    yield return new WaitForSecondsRealtime(1f);
+                    break;
+                case "filter":
+                {
+                    ui.CloseAll();
+                    ctx.Selection = null;
+                    var root = uiDocument.rootVisualElement;
+                    var toggle = root.Q<Button>(className: "view-filter__toggle");
+                    using (var submit = NavigationSubmitEvent.GetPooled()) { submit.target = toggle; toggle.SendEvent(submit); }
+                    yield return null;
+                    Click(root.Q(className: "view-filter__dropdown"));
+                    yield return new WaitForSecondsRealtime(0.4f);
+                    break;
+                }
+                case "sides-dd":
+                    Click(uiDocument.rootVisualElement.Q("inspector").Q(className: "gdrop"));
+                    yield return new WaitForSecondsRealtime(0.4f);
                     break;
                 case "skip":
                     ctx.Session.Tutorial.Skip();
@@ -255,6 +279,14 @@ namespace Nucleaire.Game
                     break;
             }
             yield return null;
+        }
+
+        private static void Click(VisualElement e)
+        {
+            if (e == null) return;
+            using var click = ClickEvent.GetPooled();
+            click.target = e;
+            e.SendEvent(click);
         }
 
         private ResourceDef R(string id) => database.Resources.First(r => r.Id == id);

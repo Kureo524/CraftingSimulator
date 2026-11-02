@@ -74,15 +74,19 @@ namespace Nucleaire.Game.UI
         public void Close() => Ui.SetVisible(layer, false);
         public void Toggle() { if (IsOpen) Close(); else ctx.OpenWorkbench(); }
 
-        private int CategoryOf(CraftingRecipe c)
+        private int CategoryOf(CraftingRecipe c) => CategoryIndex(ctx.Db, c.Result.Resource);
+
+        private static int CategoryIndex(RecipeDatabase db, ResourceDef r)
         {
-            var r = c.Result.Resource;
-            var p = ctx.Db.PlaceableForItem(r);
+            var p = db.PlaceableForItem(r);
             if (p is MachineDef) return 0;
             if (p is TransmitterDef) return 1;
-            if (ctx.Db.UpgradeForItem(r) != null) return 3;
+            if (db.UpgradeForItem(r) != null) return 3;
             return 2;
         }
+
+        /// <summary>Nom de l'onglet de l'établi où se trouve la recette d'une ressource.</summary>
+        public static string CategoryLabel(RecipeDatabase db, ResourceDef r) => Categories[CategoryIndex(db, r)];
 
         private void Rebuild()
         {

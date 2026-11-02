@@ -24,6 +24,7 @@ namespace Nucleaire.Game.UI
 
         private bool hasTarget, targetIsRect;
         private VisualElement lastIcon;
+        private string hint;
         private Rect targetRect;
         private Vector2 targetPoint, anchor;
 
@@ -49,13 +50,14 @@ namespace Nucleaire.Game.UI
         {
             var card = panel.QuestCard;
             hasTarget = false;
+            hint = null;
             if (card != null && !panel.Celebrating && layer.panel != null) Resolve(tracker.Current);
 
             if (hasTarget)
             {
                 var cb = card.worldBound;
                 anchor = new Vector2(cb.xMax, cb.y + Mathf.Min(64f, cb.height / 2f));
-                tag.text = $"[{tracker.Current.objective}]";
+                tag.text = $"[{hint ?? tracker.Current.objective}]";
                 // Bouton ou icône : la consigne au-dessus ; machine : à droite de l'étoile.
                 var at = targetIsRect ? new Vector2(targetRect.center.x, targetRect.y - 10f) : targetPoint + new Vector2(26f, 0f);
                 bool flip = !targetIsRect && at.x + 260f > layer.layout.width;
@@ -80,19 +82,11 @@ namespace Nucleaire.Game.UI
             switch (s.condition)
             {
                 case TutorialCondition.OpenRecipeBook:
-                    PointUi(root.Q("hotbar-book"));
+                    PointUi(root.Q("hotbar-book"), $"Ouvre le livre ({ctx.Input.Display(GameInput.RecipeBook)})");
                     break;
 
                 case TutorialCondition.HaveItem:
-                    if (ctx.Selection is VaultMachine && PointIcon("inspector", s.resource))
-                    {
-                        // Ressource choisie : montrer le bouton de quantité.
-                        if (lastIcon != null && lastIcon.ClassListContains("rslot--picked"))
-                            PointUi(root.Q("inspector").Q(className: "vault-picker__btn"));
-                        break;
-                    }
-                    if (ctx.Selection is VaultMachine) { PointTab("Ressources"); break; }
-                    PointMachine(vault);
+                    GuideTake(s.resource, vault);
                     break;
 
                 case TutorialCondition.PlaceMachine:
@@ -104,78 +98,172 @@ namespace Nucleaire.Game.UI
                     {
                         if (ctx.BuildItem == item && item != null)
                         {
-                            // En mode pose : montrer à côté de quoi poser (la dernière machine posée, sinon le vault).
                             if (s.condition == TutorialCondition.MachinePowered)
-                                PointMachine(w.Machines.LastOrDefault(m => m is not VaultMachine) ?? vault);
+                                PointMachine(w.Machines.LastOrDefault(m => m is not VaultMachine) ?? vault, "Pose-le collé à cette machine (clic gauche)");
                             break;
                         }
-                        if (PointIcon("inventory", item)) break;
-                        PointIcon("hotbar", item);
+                        if (PointIcon("inventory", item, "Clique-le pour le poser")) break;
+                        if (ctx.Selection != null) { CloseHint(); break; }
+                        PointIcon("hotbar", item, $"Clique sur : {item?.DisplayName}");
                         break;
                     }
-                    PointMachine(placed);
+                    if (ctx.Selection != null) { CloseHint(); break; }
+                    PointMachine(placed, s.condition == TutorialCondition.MachinePowered
+                        ? "Pas d'énergie : colle-le au panneau solaire, ou relie-les par un câble"
+                        : placed.MachineDef.DisplayName);
                     break;
                 }
 
                 case TutorialCondition.Produce:
-                {
-                    bool atWorkbench = ctx.Db.RecipesProducing(s.resource).Any(e => e.Source == RecipeSource.Workbench);
-                    if (atWorkbench)
-                    {
-                        var craft = root.Q("craft-" + s.resource.Id);
-                        if (craft != null && IsShown(craft)) { PointUi(craft); break; }
-                        var fromBook = root.Q("book-craft-" + s.resource.Id);
-                        if (fromBook != null && IsShown(fromBook)) { PointUi(fromBook); break; }
-                        PointUi(root.Q("hotbar-workbench"));
-                        break;
-                    }
-                    var maker = w.Machines.OfType<ProcessorMachine>().FirstOrDefault(m => m.Recipes.Any(r => r.Outputs.Any(o => o.Resource == s.resource)));
-                    if (maker != null && ctx.Selection == maker)
-                    {
-                        // Panneau ouvert : la sortie si elle est prête, sinon l'ingrédient à déposer.
-                        if (PointIcon("inspector", s.resource)) break;
-                        var input = maker.Recipes.Where(r => r.Outputs.Any(o => o.Resource == s.resource)).SelectMany(r => r.Inputs).Select(i => i.Resource).Distinct();
-                        foreach (var r in input) if (PointIcon("inventory", r)) return;
-                        break;
-                    }
-                    PointMachine(maker);
+                    GuideProduce(s.resource, vault);
                     break;
-                }
 
                 case TutorialCondition.VaultOutputFiltered:
-                    if (ctx.Selection == vault)
-                    {
-                        PointTab("Faces");
-                        break;
-                    }
-                    PointMachine(vault);
+                    GuideVaultFaces(vault);
                     break;
 
                 case TutorialCondition.ConfigureOutputSide:
-                    PointMachine(w.Machines.OfType<ProcessorMachine>().FirstOrDefault(m => m.Recipes.Any(r => r.Inputs.Count > 0)));
+                    PointMachine(w.Machines.OfType<ProcessorMachine>().FirstOrDefault(m => m.Recipes.Any(r => r.Inputs.Count > 0)), "Ouvre la machine, onglet Faces");
                     break;
             }
         }
 
-        private void PointTab(string label)
+        /// <summary>Prendre une ressource de base dans le vault : ouvrir le vault, choisir la ressource, puis la quantité.</summary>
+        private void GuideTake(ResourceDef r, VaultMachine vault)
         {
-            var tab = root.Q("inspector")?.Query<Button>(className: "segmented__item").Where(b => b.text == label).First();
-            if (tab != null && !tab.ClassListContains("segmented__item--active")) PointUi(tab);
+            if (r == null) return;
+            if (ctx.Selection is VaultMachine)
+            {
+                if (PointIcon("inspector", r, $"Clique sur : {r.DisplayName}"))
+                {
+                    if (lastIcon != null && lastIcon.ClassListContains("rslot--picked"))
+                        PointUi(root.Q("inspector").Query(className: "vault-picker__btn").AtIndex(1), "Choisis une quantité, ×10 par exemple");
+                    return;
+                }
+                PointTab("inspector", "Ressources", "Onglet Ressources");
+                return;
+            }
+            if (ctx.Selection != null) { CloseHint("Ferme ce panneau, puis ouvre le vault"); return; }
+            PointMachine(vault, $"Clique sur le vault pour prendre : {r.DisplayName}");
+        }
+
+        /// <summary>Produire une ressource : à l'établi, ou dans une machine (avec ses ingrédients d'abord).</summary>
+        private void GuideProduce(ResourceDef r, VaultMachine vault)
+        {
+            if (r == null) return;
+            if (ctx.Db.RecipesProducing(r).Any(e => e.Source == RecipeSource.Workbench)) { GuideCraft(r); return; }
+
+            var inv = ctx.Session.Inventory;
+            var maker = ctx.World.Machines.OfType<ProcessorMachine>().FirstOrDefault(m => m.Recipes.Any(x => x.Outputs.Any(o => o.Resource == r)));
+            if (maker == null) return;
+            var recipes = maker.Recipes.Where(x => x.Outputs.Any(o => o.Resource == r)).ToList();
+            var recipe = recipes.FirstOrDefault(x => x.Inputs.All(i => inv.Count(i.Resource) > 0 || Loaded(maker, i.Resource)))
+                         ?? recipes.FirstOrDefault(x => x.Inputs.All(i => i.Resource.IsBaseResource))
+                         ?? recipes[0];
+            var input = recipe.Inputs.Select(i => i.Resource).FirstOrDefault(x => !Loaded(maker, x)) ?? recipe.Inputs[0].Resource;
+            bool loaded = recipe.Inputs.All(i => Loaded(maker, i.Resource));
+            bool have = inv.Count(input) > 0;
+            string machine = maker.MachineDef.DisplayName.ToLowerInvariant();
+
+            if (ctx.Selection == maker)
+            {
+                if (PointIcon("inspector", r, $"Clique pour récupérer : {r.DisplayName}")) return;
+                if (loaded)
+                {
+                    if (maker.Status is MachineStatus.NoPower or MachineStatus.LowPower) PointIcon("inspector", input, "Pas assez d'énergie : relie la machine au panneau solaire");
+                    else PointIcon("inspector", input, "En cours… le produit apparaîtra à droite");
+                    return;
+                }
+                if (have) { PointIcon("inventory", input, $"Glisse ceci sur le {machine} : {input.DisplayName}"); return; }
+                CloseHint($"Il te faut : {input.DisplayName}. Ferme, puis va au vault");
+                return;
+            }
+            if (ctx.Selection is VaultMachine && !have && !loaded) { GuideTake(input, vault); return; }
+            if (ctx.Selection != null) { CloseHint(); return; }
+            if (have || loaded || maker.Outputs.Slots.Any(x => x.Resource == r && x.Amount > 0))
+                PointMachine(maker, $"Ouvre le {machine}");
+            else
+                PointMachine(vault, $"Prends au vault : {input.DisplayName}");
+        }
+
+        private static bool Loaded(Machine m, ResourceDef r) => m.Inputs != null && m.Inputs.Slots.Any(x => x.Resource == r && x.Amount > 0);
+
+        /// <summary>Fabriquer à l'établi : l'ouvrir, aller au bon onglet, puis cliquer « Fabriquer » (ou dire ce qu'il manque).</summary>
+        private void GuideCraft(ResourceDef r)
+        {
+            var wb = ctx.Session.Workbench;
+            var recipe = wb.Recipes.FirstOrDefault(c => c.Result.Resource == r);
+            bool can = recipe != null && wb.CanCraft(recipe, out _);
+            string missing = recipe == null ? null : Missing(recipe);
+
+            var layerWb = root.Q("workbench-layer");
+            if (layerWb != null && !layerWb.ClassListContains("hidden"))
+            {
+                var craft = root.Q("craft-" + r.Id);
+                if (craft != null && IsShown(craft))
+                {
+                    if (can) PointUi(craft, "Clique sur Fabriquer");
+                    else PointUi(root.Q("card-" + r.Id), "Il manque : " + missing);
+                    return;
+                }
+                PointTab("workbench", WorkbenchPanel.CategoryLabel(ctx.Db, r), $"Onglet {WorkbenchPanel.CategoryLabel(ctx.Db, r)}");
+                return;
+            }
+            var fromBook = root.Q("book-craft-" + r.Id);
+            if (fromBook != null && IsShown(fromBook)) { PointUi(fromBook, "Ouvre l'établi sur cette recette"); return; }
+            if (ModalOpen()) { CloseHint($"Ferme, puis ouvre l'établi ({ctx.Input.Display(GameInput.Workbench)})"); return; }
+            PointUi(root.Q("hotbar-workbench"), can ? $"Ouvre l'établi ({ctx.Input.Display(GameInput.Workbench)})" : "Il manque : " + missing);
+        }
+
+        private string Missing(CraftingRecipe c)
+        {
+            var inv = ctx.Session.Inventory;
+            var parts = c.Ingredients.Where(i => i.IsValid && inv.Count(i.Resource) < i.Amount)
+                .Select(i => $"{i.Amount - inv.Count(i.Resource)} × {i.Resource.DisplayName.ToLowerInvariant()}").ToList();
+            return parts.Count == 0 ? "rien" : string.Join(", ", parts);
+        }
+
+        /// <summary>Mettre une face du vault en sortie filtrée : onglet Faces, une face en Sortie, puis la ressource.</summary>
+        private void GuideVaultFaces(VaultMachine vault)
+        {
+            if (vault == null) return;
+            if (ctx.Selection == vault)
+            {
+                if (PointTab("inspector", "Faces", "Onglet Faces")) return;
+                var output = DirectionExtensions.All.Where(d => vault.Sides[d].Mode == SideMode.Output).ToList();
+                if (output.Count == 0) { PointUi(root.Q("side-" + Direction.East), "Clique jusqu'à « Sortie »"); return; }
+                PointUi(root.Q("side-filter-" + output[0]), "Choisis la ressource qui sortira");
+                return;
+            }
+            if (ctx.Selection != null) { CloseHint("Ferme, puis ouvre le vault"); return; }
+            PointMachine(vault, "Ouvre le vault");
+        }
+
+        private void CloseHint(string text = "Ferme ce panneau") => PointUi(root.Q("inventory-close"), text);
+
+        /// <summary>Montre un onglet s'il n'est pas déjà actif. Renvoie vrai s'il a fallu le montrer.</summary>
+        private bool PointTab(string container, string label, string text)
+        {
+            var tab = root.Q(container)?.Query<Button>(className: "segmented__item").Where(b => b.text == label).First();
+            if (tab == null || tab.ClassListContains("segmented__item--active")) return false;
+            PointUi(tab, text);
+            return hasTarget;
         }
 
         /// <summary>Un panneau plein écran couvre le monde : inutile d'y montrer une machine.</summary>
         private bool ModalOpen() => new[] { "inventory-layer", "workbench-layer", "book-layer", "options-layer" }
             .Any(n => root.Q(n) is { } l && !l.ClassListContains("hidden"));
 
-        private void PointUi(VisualElement e)
+        private void PointUi(VisualElement e, string text = null)
         {
             if (e == null || !IsShown(e)) return;
             hasTarget = true;
             targetIsRect = true;
             targetRect = e.worldBound;
+            hint = text;
         }
 
-        private bool PointIcon(string container, ResourceDef r)
+        private bool PointIcon(string container, ResourceDef r, string text = null)
         {
             if (r == null) return false;
             var c = root.Q(container);
@@ -183,13 +271,14 @@ namespace Nucleaire.Game.UI
             var e = c.Query<VisualElement>().Where(x => x.userData is Func<ResourceDef> f && f() == r && IsShown(x)).First();
             if (e == null) return false;
             lastIcon = e;
-            PointUi(e);
+            PointUi(e, text);
             return hasTarget;
         }
 
-        private void PointMachine(Machine m)
+        private void PointMachine(Machine m, string text = null)
         {
             if (m == null || !view.IsVisible(m) || ModalOpen()) return;
+            hint = text;
             var p3 = GridMath.CellCenter(m.Position, 0.55f);
             if (cam.WorldToViewportPoint(p3).z <= 0) return;
             hasTarget = true;

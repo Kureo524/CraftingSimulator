@@ -14,6 +14,7 @@
             <ui:Label name="mode-hint" class="system mode-hint hidden" picking-mode="Ignore" />
             <ui:VisualElement name="hotbar" class="glass glass--light hotbar" />
         </ui:VisualElement>
+        <ui:VisualElement name="view-filter" class="glass glass--light view-filter" />
         <ui:VisualElement name="context-layer" class="layer-fill" picking-mode="Ignore" />
         <ui:VisualElement name="inventory-layer" class="modal-layer modal-layer--with-catalog hidden">
             <ui:VisualElement name="inventory-column" class="inventory-column">
@@ -38,6 +39,7 @@
             <ui:VisualElement name="options" class="glass glass--light options" />
         </ui:VisualElement>
         <ui:VisualElement name="tutorial-guide" class="layer-fill" picking-mode="Ignore" />
+        <ui:VisualElement name="popup-layer" class="layer-fill" picking-mode="Ignore" />
         <ui:VisualElement name="drag-layer" class="layer-fill" picking-mode="Ignore" />
         <ui:VisualElement name="tooltip-layer" class="tooltip-layer" picking-mode="Ignore" />
     </ui:VisualElement>

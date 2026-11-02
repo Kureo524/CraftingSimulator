@@ -347,6 +347,7 @@ namespace Nucleaire.Game.UI
                 m.Sides.Cycle(d);
                 RebuildTab();
             }, "btn btn--small side-mode side-mode--" + setting.Mode.ToString().ToLowerInvariant(), cell);
+            mode.name = "side-" + d;
             Tooltips.Register(mode, $"Face {d.DisplayName()}", "Clic : Fermée → Entrée → Sortie.");
 
             var neighbour = ctx.World.At(m.Position + d.Offset());
@@ -355,17 +356,16 @@ namespace Nucleaire.Game.UI
             if (setting.Mode == SideMode.None) return;
             var options = FilterOptions(m, setting.Mode);
             bool vault = m is VaultMachine;
-            var names = new List<string> { vault ? "Choisir…" : "Tout" };
-            names.AddRange(options.Select(r => r.DisplayName));
+            var choices = new List<GlassDropdown.Option> { new(vault ? "Choisir une ressource…" : "Tout") };
+            choices.AddRange(options.Select(r => new GlassDropdown.Option(r.DisplayName, r)));
             int index = setting.Filter == null ? 0 : options.IndexOf(setting.Filter) + 1;
-            var dd = new DropdownField(names, Mathf.Max(0, index));
+            var dd = new GlassDropdown(choices, Mathf.Max(0, index)) { name = "side-filter-" + d };
             dd.AddToClassList("side-filter");
-            dd.RegisterValueChangedCallback(evt =>
+            dd.Changed += i =>
             {
-                if (!ctx.Require(PlayerPermission.Sides)) { dd.SetValueWithoutNotify(evt.previousValue); return; }
-                int i = names.IndexOf(evt.newValue);
+                if (!ctx.Require(PlayerPermission.Sides)) { dd.Select(setting.Filter == null ? 0 : options.IndexOf(setting.Filter) + 1, notify: false); return; }
                 m.Sides.SetFilter(d, i <= 0 ? null : options[i - 1]);
-            });
+            };
             cell.Add(dd);
         }
 
