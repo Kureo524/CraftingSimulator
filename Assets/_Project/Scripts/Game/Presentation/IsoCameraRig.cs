@@ -16,6 +16,11 @@ namespace Nucleaire.Game
         [SerializeField] private float smoothing = 12f;
         [Tooltip("Degrés de rotation par unité de défilement horizontal.")]
         [SerializeField] private float freeRotateSpeed = 3f;
+        [Tooltip("Élan (°/s) donné par degré de défilement, et amortissement de cet élan.")]
+        [SerializeField] private float freeRotateImpulse = 9f, freeRotateDamping = 7f, maxFreeRotateSpeed = 360f;
+        [Tooltip("Lissage propre à l'angle (plus bas = plus doux).")]
+        [SerializeField] private float yawSmoothing = 7f;
+        private float yawVelocity;
 
         private Vector3 target, smoothTarget;
         private float zoom = 7.5f, smoothZoom = 7.5f;
@@ -112,18 +117,19 @@ namespace Nucleaire.Game
         /// <summary>R : aller au quart de tour suivant (45°, 135°, 225°, 315°), même après une rotation libre.</summary>
         public void Rotate(int dir)
         {
+            yawVelocity = 0f;
             float steps = (yaw - 45f) / 90f;
             float next = dir > 0 ? Mathf.Floor(steps + 1e-3f) + 1f : Mathf.Ceil(steps - 1e-3f) - 1f;
             yaw = 45f + next * 90f;
             Rotated?.Invoke();
         }
 
-        /// <summary>Rotation libre (défilement horizontal), suivie sans lissage pour rester sous le doigt.</summary>
+        /// <summary>Rotation libre (défilement horizontal) : chaque cran donne un élan qui s'amortit,
+        /// puis l'angle affiché rejoint l'angle visé en douceur.</summary>
         public void RotateFree(float degrees)
         {
-            degrees = Mathf.Clamp(degrees, -20f, 20f);
-            yaw += degrees;
-            smoothYaw += degrees;
+            yawVelocity += Mathf.Clamp(degrees, -20f, 20f) * freeRotateImpulse;
+            yawVelocity = Mathf.Clamp(yawVelocity, -maxFreeRotateSpeed, maxFreeRotateSpeed);
             Rotated?.Invoke();
         }
 
@@ -137,7 +143,15 @@ namespace Nucleaire.Game
             float k = instant ? 1f : 1f - Mathf.Exp(-smoothing * Time.unscaledDeltaTime);
             smoothTarget = Vector3.Lerp(smoothTarget, target, k);
             smoothZoom = Mathf.Lerp(smoothZoom, zoom, k);
-            smoothYaw = Mathf.Lerp(smoothYaw, yaw, k);
+            // Élan de la rotation libre : il fait avancer l'angle visé puis s'éteint progressivement.
+            if (!instant && Mathf.Abs(yawVelocity) > 0.01f)
+            {
+                yaw += yawVelocity * Time.unscaledDeltaTime;
+                yawVelocity *= Mathf.Exp(-freeRotateDamping * Time.unscaledDeltaTime);
+                if (Mathf.Abs(yawVelocity) < 0.5f) yawVelocity = 0f;
+            }
+            float ky = instant ? 1f : 1f - Mathf.Exp(-yawSmoothing * Time.unscaledDeltaTime);
+            smoothYaw = Mathf.Lerp(smoothYaw, yaw, ky);
 
             transform.position = smoothTarget;
             transform.rotation = Quaternion.Euler(pitch, smoothYaw, 0f);
