@@ -52,6 +52,7 @@ namespace Nucleaire.Game
         /// <summary>Équipe un emplacement ; le rééquiper le range (mains vides).</summary>
         public void Select(int index)
         {
+            if (ctx.Deletion.Active) return;
             if (index == Selected) index = -1;
             if (index >= 0 && slots[index] != null && !ctx.Require(PlayerPermission.Place)) return;
             Equip(index);

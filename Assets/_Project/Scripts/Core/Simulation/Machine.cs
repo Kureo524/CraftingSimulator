@@ -24,6 +24,9 @@ namespace Nucleaire.Simulation
         public PlaceableDef Def => MachineDef;
         public World World { get; }
         public Vector3Int Position { get; internal set; }
+
+        /// <summary>Orientation choisie à la pose (Nord, Est, Sud ou Ouest) : l'avant de la machine.</summary>
+        public Direction Facing { get; internal set; } = Direction.North;
         public SideConfig Sides { get; }
 
         public ResourceStorage Inputs { get; protected set; }

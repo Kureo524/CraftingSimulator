@@ -25,7 +25,10 @@ namespace Nucleaire.Game
             machine = m;
             transform.localPosition = GridMath.CellCenter(m.Position);
             accentColor = Palette.Muted(m.MachineDef.Color);
-            BuildShape(m.MachineDef);
+            var model = BuildModel(transform, m.MachineDef, m.Facing);
+            accent = model.accent;
+            rotor = model.rotor;
+            accentRenderer = accent.GetComponent<Renderer>();
             topY = ComputeTop();
 
             foreach (var d in DirectionExtensions.Horizontal)
@@ -53,8 +56,17 @@ namespace Nucleaire.Game
             if (machine != null) machine.Sides.Changed -= RefreshSides;
         }
 
-        private void BuildShape(MachineDef def)
+        /// <summary>Modèle 3D d'une machine (corps, plaque d'identité, avant), tourné selon son orientation.
+        /// Sert aussi à l'aperçu de pose.</summary>
+        public static (Transform root, Transform accent, Transform rotor) BuildModel(Transform parent, MachineDef def, Direction facing)
         {
+            var root = new GameObject("Model").transform;
+            root.SetParent(parent, false);
+            var dir = GridMath.DirectionVector(facing.IsVertical() ? Direction.North : facing);
+            root.localRotation = Quaternion.LookRotation(dir);
+            var accentColor = Palette.Muted(def.Color);
+            Transform accent, rotor = null;
+            var transform = root;
             var body = Palette.MachineBody;
             switch (def.Id)
             {
@@ -93,10 +105,17 @@ namespace Nucleaire.Game
                     break;
                 default:
                     Shapes.Box(transform, new Vector3(0, BodyHeight / 2f, 0), new Vector3(0.84f, BodyHeight, 0.84f), body, "Body");
-                    accent = Shapes.Box(transform, new Vector3(0, BodyHeight + 0.02f, 0), new Vector3(0.6f, 0.04f, 0.6f), accentColor, "Accent");
+                    accent = Shapes.Box(transform, new Vector3(0, BodyHeight + 0.02f, -0.06f), new Vector3(0.6f, 0.04f, 0.48f), accentColor, "Accent");
                     break;
             }
-            accentRenderer = accent.GetComponent<Renderer>();
+            // L'avant : un bandeau clair en façade et un repère sur le dessus, pour voir l'orientation.
+            if (def.Id is not ("vault" or "battery"))
+            {
+                Shapes.Box(transform, new Vector3(0, 0.44f, 0.425f), new Vector3(0.52f, 0.07f, 0.02f), Color.Lerp(accentColor, Palette.Text, 0.35f), "Front");
+                if (def.Id is not ("solar_panel" or "fission_reactor" or "turbine" or "electric_pump" or "supercritical_shifter"))
+                    Shapes.Box(transform, new Vector3(0, BodyHeight + 0.03f, 0.3f), new Vector3(0.22f, 0.04f, 0.1f), Palette.Text2, "Front mark");
+            }
+            return (root, accent, rotor);
         }
 
         private void RefreshSides()

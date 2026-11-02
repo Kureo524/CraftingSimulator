@@ -12,8 +12,6 @@ namespace Nucleaire.Game
         private TransmitterSegment segment;
         private World world;
         private readonly Transform[] arms = new Transform[6];
-        private Color color;
-        private float thickness, height;
 
         public TransmitterSegment Segment => segment;
 
@@ -22,18 +20,30 @@ namespace Nucleaire.Game
             segment = seg;
             world = w;
             transform.localPosition = GridMath.CellCenter(seg.Position);
-            color = Palette.Muted(seg.TransmitterDef.Color, 0.25f);
-            (thickness, height) = seg.TransmitterDef.Carries switch
+            BuildGeometry(transform, seg.TransmitterDef, arms);
+
+            var col = gameObject.AddComponent<BoxCollider>();
+            col.center = new Vector3(0, 0.2f, 0);
+            col.size = new Vector3(0.8f, 0.4f, 0.8f);
+            gameObject.AddComponent<EntityRef>().Entity = seg;
+            Refresh();
+        }
+
+        /// <summary>Nœud central et bras (un par direction, à activer selon les connexions). Sert aussi à l'aperçu de pose.</summary>
+        public static void BuildGeometry(Transform transform, TransmitterDef def, Transform[] arms)
+        {
+            var color = Palette.Muted(def.Color, 0.25f);
+            var (thickness, height) = def.Carries switch
             {
                 ResourceKind.Energy => (0.09f, 0.12f),
                 ResourceKind.Item => (0.38f, 0.06f),
                 _ => (0.17f, 0.16f),
             };
-
-            float node = seg.TransmitterDef.Carries == ResourceKind.Item ? thickness : thickness * 1.5f;
-            float nodeH = seg.TransmitterDef.Carries == ResourceKind.Item ? thickness * 0.2f : thickness * 1.5f;
+            bool item = def.Carries == ResourceKind.Item;
+            float node = item ? thickness : thickness * 1.5f;
+            float nodeH = item ? thickness * 0.2f : thickness * 1.5f;
             Shapes.Box(transform, Vector3.up * height, new Vector3(node, nodeH, node), color, "Node");
-            float thick = seg.TransmitterDef.Carries == ResourceKind.Item ? thickness * 0.2f : thickness;
+            float thick = item ? thickness * 0.2f : thickness;
             foreach (var d in DirectionExtensions.Horizontal)
             {
                 var dir = GridMath.DirectionVector(d);
@@ -42,17 +52,9 @@ namespace Nucleaire.Game
                 arms[(int)d] = arm;
             }
             // Bras verticaux : vers l'étage du dessus et vers le sol de la case.
-            float vThick = seg.TransmitterDef.Carries == ResourceKind.Item ? thickness * 0.5f : thickness;
-            var up = Shapes.Box(transform, new Vector3(0, height + (GridMath.LevelHeight - height) / 2f, 0), new Vector3(vThick, GridMath.LevelHeight - height, vThick), color, "Arm Up");
-            arms[(int)Direction.Up] = up;
-            var down = Shapes.Box(transform, new Vector3(0, height / 2f, 0), new Vector3(vThick, height, vThick), color, "Arm Down");
-            arms[(int)Direction.Down] = down;
-
-            var col = gameObject.AddComponent<BoxCollider>();
-            col.center = new Vector3(0, 0.2f, 0);
-            col.size = new Vector3(0.8f, 0.4f, 0.8f);
-            gameObject.AddComponent<EntityRef>().Entity = seg;
-            Refresh();
+            float vThick = item ? thickness * 0.5f : thickness;
+            arms[(int)Direction.Up] = Shapes.Box(transform, new Vector3(0, height + (GridMath.LevelHeight - height) / 2f, 0), new Vector3(vThick, GridMath.LevelHeight - height, vThick), color, "Arm Up");
+            arms[(int)Direction.Down] = Shapes.Box(transform, new Vector3(0, height / 2f, 0), new Vector3(vThick, height, vThick), color, "Arm Down");
         }
 
         public void Refresh()

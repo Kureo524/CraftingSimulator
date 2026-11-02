@@ -23,7 +23,7 @@ namespace Nucleaire.Crafting
 
         /// <summary>Pose un objet. <paramref name="variant"/> choisit ce qui est posé quand l'objet en permet plusieurs
         /// (câble universel : électrique, à liquide, à gaz ou à objets).</summary>
-        public bool TryPlace(ResourceDef item, Vector3Int pos, out string error, PlaceableDef variant = null)
+        public bool TryPlace(ResourceDef item, Vector3Int pos, out string error, PlaceableDef variant = null, Direction facing = Direction.North)
         {
             if (!Gate.Check(PlayerPermission.Place, out error)) return false;
             var def = variant != null && variant.Item == item ? variant : world.Db.PlaceableForItem(item);
@@ -31,7 +31,7 @@ namespace Nucleaire.Crafting
             if (Inventory.Count(item) <= 0) { error = $"Plus de {item.DisplayName} dans l'inventaire."; return false; }
             if (!world.CanPlace(def, pos, out error)) return false;
             Inventory.Remove(item, 1);
-            world.Place(def, pos);
+            world.Place(def, pos, facing);
             return true;
         }
 

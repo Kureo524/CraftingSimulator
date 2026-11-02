@@ -53,7 +53,7 @@ namespace Nucleaire.Simulation
             return reason == null;
         }
 
-        public IGridEntity Place(PlaceableDef def, Vector3Int p)
+        public IGridEntity Place(PlaceableDef def, Vector3Int p, Direction facing = Direction.North)
         {
             if (!CanPlace(def, p, out var reason)) throw new InvalidOperationException(reason);
             IGridEntity entity;
@@ -61,6 +61,7 @@ namespace Nucleaire.Simulation
             {
                 case MachineDef md:
                     var m = MachineFactory.Create(md, this, p);
+                    m.Facing = facing.IsVertical() ? Direction.North : facing;
                     machines.Add(m);
                     grid[p] = m;
                     entity = m;

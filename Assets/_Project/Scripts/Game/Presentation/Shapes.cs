@@ -46,5 +46,12 @@ namespace Nucleaire.Game
         }
 
         public static void SetColor(Transform t, Color c) => SetColor(t.GetComponent<Renderer>(), c);
+
+        public static Color GetColor(Renderer r)
+        {
+            block ??= new MaterialPropertyBlock();
+            r.GetPropertyBlock(block);
+            return block.GetColor(BaseColor);
+        }
     }
 }

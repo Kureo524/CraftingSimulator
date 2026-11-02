@@ -183,5 +183,16 @@ namespace Nucleaire.Tests
             World.Step(1);
             Assert.Greater(furnace.Energy, 0);
         }
+
+        [Test]
+        public void Machine_KeepsChosenFacing_WhenMoved()
+        {
+            Session.Inventory.Add(R("item_electric_furnace"), 1);
+            Assert.IsTrue(Session.Actions.TryPlace(R("item_electric_furnace"), new Vector3Int(2, 2, 0), out var err, null, Simulation.Direction.East), err);
+            var m = (Simulation.Machine)World.At(new Vector3Int(2, 2, 0));
+            Assert.AreEqual(Simulation.Direction.East, m.Facing);
+            Assert.IsTrue(Session.Actions.TryMove(m.Position, new Vector3Int(4, 2, 0), out err), err);
+            Assert.AreEqual(Simulation.Direction.East, m.Facing);
+        }
     }
 }

@@ -43,6 +43,8 @@ namespace Nucleaire.Game.UI
             contextMenu = new ContextMenuPanel(ctx, root, cam);
             viewFilter = new ViewFilterPanel(ctx, root, view);
             cablePicker = new CablePicker(ctx, root);
+            new ModePanels(ctx, root);
+            ctx.Deletion.Changed += () => { if (ctx.Deletion.Active) CloseAll(); };
             inventory = new InventoryPanel(ctx, root);
             transfer = new ItemTransfer(ctx, root);
             // Ouvrir une machine ouvre l'écran machine + inventaire ; le fermer abandonne la sélection.
@@ -118,7 +120,7 @@ namespace Nucleaire.Game.UI
         /// <summary>Touches 1 à 9 : équiper un emplacement ; inventaire ouvert et objet survolé : l'y ranger.</summary>
         private void UpdateHotbarKeys()
         {
-            if (IsTyping || options.IsOpen || ctx.Input.IsRebinding) return;
+            if (IsTyping || options.IsOpen || ctx.Input.IsRebinding || ctx.Deletion.Active) return;
             for (int i = 0; i < Hotbar.Size; i++)
             {
                 if (!ctx.Input.Pressed(GameInput.HotbarSlot(i))) continue;
@@ -156,7 +158,7 @@ namespace Nucleaire.Game.UI
             catalog.SetVisible(inventory.IsOpen || Book.IsOpen);
 
             // R / U sur n'importe quelle icône survolée (inventaire, catalogue, livre, machine, vault…).
-            if (!IsTyping && !options.IsOpen && !ctx.Input.IsRebinding)
+            if (!IsTyping && !options.IsOpen && !ctx.Input.IsRebinding && !ctx.Deletion.Active)
             {
                 bool recipe = ctx.Input.Pressed(GameInput.ShowRecipe), usage = ctx.Input.Pressed(GameInput.ShowUsage);
                 if (recipe || usage)

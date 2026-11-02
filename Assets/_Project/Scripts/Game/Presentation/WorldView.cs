@@ -25,8 +25,7 @@ namespace Nucleaire.Game
         private World world;
         private GameContext context;
         private readonly Dictionary<IGridEntity, View> views = new();
-        private Transform ghost, selection, hoverFrame;
-        private Renderer ghostRenderer;
+        private Transform selection, hoverFrame;
 
         public bool CutawayActive { get; private set; }
 
@@ -35,16 +34,6 @@ namespace Nucleaire.Game
             context = ctx;
             world = ctx.World;
             BuildFloor();
-
-            ghost = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-            ghost.name = "Ghost";
-            Destroy(ghost.GetComponent<Collider>());
-            ghost.SetParent(transform, false);
-            ghost.localScale = new Vector3(0.9f, 0.9f, 0.9f);
-            ghostRenderer = ghost.GetComponent<Renderer>();
-            ghostRenderer.sharedMaterial = TransparentMaterial;
-            ghostRenderer.shadowCastingMode = ShadowCastingMode.Off;
-            ghost.gameObject.SetActive(false);
 
             selection = MakeFrame("Selection", Palette.Accent);
             hoverFrame = MakeFrame("Hover", Palette.WithAlpha(Palette.Text, 1f));
@@ -147,15 +136,6 @@ namespace Nucleaire.Game
         }
 
         // ---------------- Surbrillances ----------------
-
-        /// <summary>Fantôme de la case où l'objet sera posé (bleu : possible, rouge : impossible).</summary>
-        public void SetGhost(Vector3Int? cell, bool valid)
-        {
-            ghost.gameObject.SetActive(cell != null);
-            if (cell == null) return;
-            ghost.position = GridMath.CellCenter(cell.Value, 0.46f);
-            Shapes.SetColor(ghostRenderer, Palette.WithAlpha(valid ? Palette.Accent : Palette.Danger, 0.32f));
-        }
 
         public void SetHoverEntity(IGridEntity e)
         {

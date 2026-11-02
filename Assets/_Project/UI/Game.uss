@@ -166,7 +166,7 @@
 
 /* ---------- Couches ---------- */
 .layer-fill { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
-.cutaway-hint { position: absolute; top: 70px; left: 30%; right: 30%; -unity-text-align: middle-center; padding: 4px 12px; border-radius: 12px; background-color: rgba(16, 20, 32, 0.7); }
+.cutaway-hint { position: absolute; bottom: 150px; left: 30%; right: 30%; -unity-text-align: middle-center; padding: 4px 12px; border-radius: 12px; background-color: rgba(16, 20, 32, 0.7); }
 .hotbar__top { justify-content: center; margin-bottom: 6px; }
 .hotbar__top .hotbar__filter { margin: 0 0 0 10px; }
 
@@ -350,10 +350,30 @@
 .inventory__hotbar .hotbar-slot { margin: 0 6px 6px 0; }
 
 /* ---------- Choix du câble ---------- */
-.cable-picker { position: absolute; top: 12px; left: 50%; translate: -50% 0; padding: 8px 10px; align-items: center; border-radius: 18px; }
+.cable-picker { padding: 8px 10px; align-items: center; border-radius: 18px; margin-bottom: 8px; }
 .cable-picker__title { margin-bottom: 6px; }
 .cable-picker__option { align-items: center; padding: 5px 12px 5px 8px; margin: 0 3px; border-radius: 12px; border-width: 1px; border-color: var(--border); background-color: var(--surface-raised); transition-property: border-color, background-color; transition-duration: 0.12s; }
 .cable-picker__option:hover { border-color: var(--border-strong); }
 .cable-picker__option--active { border-color: var(--accent); background-color: var(--accent-soft); }
 .cable-picker__icon { position: relative; left: 0; top: 0; width: 20px; height: 20px; margin-right: 6px; }
 .cable-picker__hint { margin-top: 6px; }
+
+/* ---------- Panneaux de mode (haut de l'écran) ---------- */
+.top-center { position: absolute; top: 12px; left: 0; right: 0; align-items: center; }
+.mode-panel { width: 460px; padding: 12px 14px; border-radius: 18px; background-color: rgba(18, 18, 26, 0.94); margin-bottom: 8px; }
+.mode-panel--danger { border-color: rgba(224, 96, 106, 0.45); border-top-color: rgba(224, 96, 106, 0.6); border-left-color: rgba(224, 96, 106, 0.6); }
+.mode-panel__head { align-items: center; margin-bottom: 8px; }
+.mode-panel__line { align-items: center; margin-bottom: 4px; }
+.mode-panel__ok { color: var(--success); }
+.mode-panel__missing { color: var(--danger); }
+.mode-panel__danger { color: var(--danger); }
+.mode-panel__label { margin: 2px 0 4px 0; }
+.mode-panel__refund { flex-wrap: wrap; margin-bottom: 4px; }
+.mode-panel__refund .rslot--small { margin: 0 4px 4px 0; }
+.mode-panel__hint { margin-top: 6px; white-space: normal; }
+.mode-panel__actions { margin-top: 10px; }
+
+/* Mode suppression : HUD masqué, cadre rouge discret */
+.delete-frame { position: absolute; left: 0; top: 0; right: 0; bottom: 0; border-width: 2px; border-color: rgba(224, 96, 106, 0.55); display: none; }
+.delete-mode .delete-frame { display: flex; }
+.delete-mode .hud-top-left, .delete-mode .hud-bottom, .delete-mode #view-filter, .delete-mode #tutorial-layer, .delete-mode .hud-log { display: none; }

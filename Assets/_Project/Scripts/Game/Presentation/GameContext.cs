@@ -24,7 +24,25 @@ namespace Nucleaire.Game
             };
             session.BoardReset += () => { Selection = null; ContextTarget = null; BuildItem = null; MovingMachine = null; };
             Hotbar = new Hotbar(this);
+            Plan = new BuildPlan(this);
+            Deletion = new DeleteMode(this);
         }
+
+        /// <summary>Pose multiple en attente de validation.</summary>
+        public BuildPlan Plan { get; }
+        /// <summary>Mode suppression (touche A).</summary>
+        public DeleteMode Deletion { get; }
+
+        private Direction buildFacing = Direction.North;
+
+        /// <summary>Orientation des machines posées (R pendant la pose).</summary>
+        public Direction BuildFacing
+        {
+            get => buildFacing;
+            set { if (buildFacing == value) return; buildFacing = value; BuildFacingChanged?.Invoke(value); }
+        }
+
+        public event Action<Direction> BuildFacingChanged;
 
         /// <summary>Barre rapide : l'objet équipé est celui qui se pose.</summary>
         public Hotbar Hotbar { get; }
@@ -80,8 +98,8 @@ namespace Nucleaire.Game
         public event Action<ResourceDef> WorkbenchRequested;
         public event Action InventoryRequested;
 
-        public void OpenWorkbench(ResourceDef focus = null) { if (Require(PlayerPermission.Craft)) WorkbenchRequested?.Invoke(focus); }
-        public void OpenInventory() => InventoryRequested?.Invoke();
+        public void OpenWorkbench(ResourceDef focus = null) { if (!Deletion.Active && Require(PlayerPermission.Craft)) WorkbenchRequested?.Invoke(focus); }
+        public void OpenInventory() { if (!Deletion.Active) InventoryRequested?.Invoke(); }
 
         public GameSession Session { get; }
         public SimulationRunner Runner { get; }
@@ -116,7 +134,7 @@ namespace Nucleaire.Game
 
         public void OpenRecipeBook(ResourceDef r = null, int tab = 0)
         {
-            if (Require(PlayerPermission.RecipeBook)) RecipeBookRequested?.Invoke(r, tab);
+            if (!Deletion.Active && Require(PlayerPermission.RecipeBook)) RecipeBookRequested?.Invoke(r, tab);
         }
 
         /// <summary>Vérifie qu'une action est permise (tutoriel) ; sinon prévient le joueur.</summary>

@@ -92,13 +92,15 @@ namespace Nucleaire.Game.UI
         {
             layer.EnableInClassList("inventory-layer--machine", MachineMode);
             hint.text = OpenMachine != null && OpenMachine is not VaultMachine
-                ? "[Glisse un objet sur la machine, ou clique-le puis clique la machine (clic droit : une unité). Maj + clic : tout déposer.]"
+                ? "[Glisse un objet sur la machine, ou clique-le puis clique la machine. Clic droit sur une case : la moitié du stack ; clic droit sur la machine : une unité. Maj + clic : tout déposer.]"
                 : "[Range les machines et câbles dans la barre rapide : glisse-les dessus (Maj + clic : place libre). Survol + touche 1–9 : ranger à cet emplacement. R / U : recette / usages.]";
 
             grid.Clear();
             int f = filter.Selected;
             var inv = ctx.Session.Inventory;
-            var items = inv.Items.Where(kv => f == 0 || CategoryOf(kv.Key) == f)
+            // Ce qui est rangé dans la barre rapide n'apparaît pas aussi dans la grille (comme dans Minecraft).
+            var items = inv.Items.Where(kv => ctx.Hotbar.IndexOf(kv.Key) < 0)
+                .Where(kv => f == 0 || CategoryOf(kv.Key) == f)
                 .OrderBy(kv => CategoryOf(kv.Key)).ThenBy(kv => kv.Key.Kind).ThenBy(kv => kv.Key.DisplayName).ToList();
 
             int used = 0;

@@ -101,6 +101,7 @@ namespace Nucleaire.Game.UI
             bool shift = Keyboard.current?.shiftKey.isPressed == true;
             bool leftDown = mouse.leftButton.wasPressedThisFrame, rightDown = mouse.rightButton.wasPressedThisFrame;
 
+            bool wasHeld = Held != null;
             if (Held != null && (leftDown || rightDown))
             {
                 var el = panel.Pick(pos);
@@ -117,6 +118,20 @@ namespace Nucleaire.Game.UI
                 {
                     Held = null;
                     if (rightDown) leftDown = false;
+                }
+            }
+
+            // Clic droit sur une case, mains vides : prendre la moitié du stack (comme dans Minecraft).
+            if (rightDown && !wasHeld && press == null)
+            {
+                var (s, _) = FindSource(panel.Pick(pos));
+                var payload = s?.Payload();
+                if (payload != null && payload.Amount > 0)
+                {
+                    int half = payload.Resource.Kind == ResourceKind.Item
+                        ? (payload.Amount + 1) / 2
+                        : Mathf.Max(1, payload.Amount / 2);
+                    Held = payload.With(half);
                 }
             }
 

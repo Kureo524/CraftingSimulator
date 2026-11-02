@@ -12,7 +12,7 @@ namespace Nucleaire.Game
         public const string CameraForward = "camera_forward", CameraBack = "camera_back", CameraLeft = "camera_left", CameraRight = "camera_right";
         public const string RotateCamera = "rotate_camera", Inventory = "inventory", Workbench = "workbench", RecipeBook = "recipe_book";
         public const string ShowRecipe = "show_recipe", ShowUsage = "show_usage", Pause = "pause", Cancel = "cancel";
-        public const string CycleCable = "cycle_cable";
+        public const string CycleCable = "cycle_cable", RotatePiece = "rotate_piece", DeleteToggle = "delete_mode";
 
         /// <summary>Identifiant de la touche d'un emplacement de la barre rapide (0 à 8).</summary>
         public static string HotbarSlot(int i) => "hotbar_" + (i + 1);
@@ -34,6 +34,9 @@ namespace Nucleaire.Game
             (Pause, "Pause / reprise", "<Keyboard>/space"),
             (Cancel, "Annuler / fermer / options", "<Keyboard>/escape"),
             (CycleCable, "Câble universel : changer de type", "<Keyboard>/t"),
+            (RotatePiece, "Tourner la machine à poser", "<Keyboard>/r"),
+            // Position physique de Q en QWERTY = touche A sur un clavier AZERTY.
+            (DeleteToggle, "Mode suppression", "<Keyboard>/q"),
             ("hotbar_1", "Barre rapide : emplacement 1", "<Keyboard>/1"),
             ("hotbar_2", "Barre rapide : emplacement 2", "<Keyboard>/2"),
             ("hotbar_3", "Barre rapide : emplacement 3", "<Keyboard>/3"),

@@ -56,7 +56,8 @@ namespace Nucleaire.Game
             ui = new GameUI(ctx, uiDocument, rig.Camera, worldView);
             input.Suspended = () => ui.IsTyping;
             rig.PointerOverUI = () => Mouse.current != null && ui.IsPointerOverUI(Mouse.current.position.ReadValue());
-            rig.RotationAllowed = () => !ui.CapturesKeys;
+            // Pendant la pose d'une machine, R la tourne (et ne tourne plus la caméra).
+            rig.RotationAllowed = () => !ui.CapturesKeys && !(ctx.BuildItem != null && ctx.BuildPlaceable is MachineDef);
 
             var build = gameObject.AddComponent<BuildController>();
             build.Init(ctx, rig, worldView);
@@ -83,6 +84,19 @@ namespace Nucleaire.Game
 
         private void Update()
         {
+            if (input.Pressed(GameInput.DeleteToggle) && !ui.IsTyping)
+            {
+                ui.CloseAll();
+                ctx.Deletion.Toggle();
+            }
+            if (ctx.Deletion.Active)
+            {
+                // Mode suppression : aucun panneau, seulement l'aperçu et sa validation.
+                if (input.Pressed(GameInput.Cancel)) ctx.Deletion.Exit();
+                worldView.UpdateCutaway(rig.Zoom, rig.Focus3, rig.HorizontalForward);
+                ui.Update(rig.Yaw, worldView.CutawayActive);
+                return;
+            }
             if (input.Pressed(GameInput.Inventory)) ui.ToggleInventory();
             if (input.Pressed(GameInput.Workbench)) ui.ToggleWorkbench();
             if (input.Pressed(GameInput.RecipeBook))
@@ -101,6 +115,7 @@ namespace Nucleaire.Game
         private void Cancel()
         {
             if (ui.CancelTransfer() || UI.GlassDropdown.CloseOpen()) { }
+            else if (ctx.Plan.Active) ctx.Plan.Clear();
             else if (ctx.ContextTarget != null) ctx.ContextTarget = null;
             else if (ctx.MovingMachine != null) ctx.MovingMachine = null;
             else if (ctx.BuildItem != null) ctx.BuildItem = null;
@@ -218,6 +233,55 @@ namespace Nucleaire.Game
                     ctx.CableKind = ResourceKind.Gas;
                     yield return new WaitForSecondsRealtime(0.5f);
                     break;
+                case "build-preview":
+                    ctx.Session.Tutorial.Skip();
+                    ui.CloseAll();
+                    yield return null;
+                    ctx.Hotbar.Select(ctx.Hotbar.IndexOf(R("item_electric_furnace")));
+                    ctx.BuildFacing = Direction.East;
+                    for (int i = 0; i < 8; i++) { Mouse.current?.WarpCursorPosition(new Vector2(Screen.width * 0.42f, Screen.height * 0.45f)); yield return null; }
+                    yield return new WaitForSecondsRealtime(0.4f);
+                    break;
+                case "plan":
+                {
+                    ctx.Hotbar.Select(ctx.Hotbar.IndexOf(R("item_universal_cable")));
+                    ctx.CableKind = ResourceKind.Fluid;
+                    var start = vault.Position + new Vector3Int(-3, 2, 0);
+                    for (int i = 0; i < 6; i++) ctx.Plan.Add(start + new Vector3Int(i, 0, 0));
+                    for (int i = 1; i < 4; i++) ctx.Plan.Add(start + new Vector3Int(5, -i, 0));
+                    yield return new WaitForSecondsRealtime(0.5f);
+                    break;
+                }
+                case "delete":
+                {
+                    ctx.Plan.Confirm();
+                    ctx.BuildItem = null;
+                    ctx.Session.Inventory.Add(R("item_crusher"), 1);
+                    ctx.Session.Actions.TryPlace(R("item_crusher"), vault.Position + new Vector3Int(2, 0, 0), out _, null, Direction.South);
+                    ctx.Deletion.Toggle();
+                    foreach (var e in w.Entities.Where(e => e.Position.y == vault.Position.y + 2).Take(3).ToList()) ctx.Deletion.Mark(e, true);
+                    ctx.Deletion.Mark(w.At(vault.Position + new Vector3Int(2, 0, 0)), true);
+                    yield return new WaitForSecondsRealtime(0.5f);
+                    break;
+                }
+                case "facings":
+                {
+                    ctx.Session.Tutorial.Skip();
+                    ui.CloseAll();
+                    yield return null;
+                    ctx.Session.Inventory.Add(R("item_crusher"), 4);
+                    int k = 0;
+                    foreach (var d in DirectionExtensions.Horizontal)
+                        ctx.Session.Actions.TryPlace(R("item_crusher"), vault.Position + new Vector3Int(-3 + 2 * k++, 3, 0), out _, null, d);
+                    ctx.Hotbar.Select(ctx.Hotbar.IndexOf(R("item_electric_furnace")));
+                    ctx.BuildFacing = Direction.West;
+                    ctx.Plan.Add(vault.Position + new Vector3Int(-2, -2, 0));
+                    ctx.Plan.Add(vault.Position + new Vector3Int(0, -2, 0));
+                    rig.SetZoomForTests(5f);
+                    rig.Focus(GridMath.CellCenter(vault.Position));
+                    yield return new WaitForSecondsRealtime(0.6f);
+                    break;
+                }
                 case "skip":
                     ctx.Session.Tutorial.Skip();
                     break;
