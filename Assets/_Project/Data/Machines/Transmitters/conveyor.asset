@@ -15,7 +15,7 @@ MonoBehaviour:
   displayName: "C\xE2ble \xE0 objets"
   description: Transporte les solides.
   item: {fileID: 11400000, guid: eef29043dcd9b8ff5abe8d70452ffa8c, type: 2}
-  color: {r: 0.41960785, g: 0.44705883, b: 0.5019608, a: 1}
+  color: {r: 0.8627451, g: 0.52156866, b: 0.29803923, a: 1}
   carries: 0
   throughputPerTick: 1
   capacityPerSegment: 4

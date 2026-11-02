@@ -33,28 +33,23 @@ namespace Nucleaire.Game
         public static void BuildGeometry(Transform transform, TransmitterDef def, Transform[] arms)
         {
             var color = Palette.Muted(def.Color, 0.25f);
+            // Même forme pour tous les câbles (tube à nœud carré) ; seuls l'épaisseur et la couleur changent.
             var (thickness, height) = def.Carries switch
             {
                 ResourceKind.Energy => (0.09f, 0.12f),
-                ResourceKind.Item => (0.38f, 0.06f),
                 _ => (0.17f, 0.16f),
             };
-            bool item = def.Carries == ResourceKind.Item;
-            float node = item ? thickness : thickness * 1.5f;
-            float nodeH = item ? thickness * 0.2f : thickness * 1.5f;
-            Shapes.Box(transform, Vector3.up * height, new Vector3(node, nodeH, node), color, "Node");
-            float thick = item ? thickness * 0.2f : thickness;
+            Shapes.Box(transform, Vector3.up * height, Vector3.one * thickness * 1.5f, color, "Node");
             foreach (var d in DirectionExtensions.Horizontal)
             {
                 var dir = GridMath.DirectionVector(d);
                 var arm = Shapes.Box(transform, dir * 0.25f + Vector3.up * height, Vector3.one, color, "Arm " + d);
-                arm.localScale = dir.x != 0 ? new Vector3(0.5f, thick, thickness) : new Vector3(thickness, thick, 0.5f);
+                arm.localScale = dir.x != 0 ? new Vector3(0.5f, thickness, thickness) : new Vector3(thickness, thickness, 0.5f);
                 arms[(int)d] = arm;
             }
             // Bras verticaux : vers l'étage du dessus et vers le sol de la case.
-            float vThick = item ? thickness * 0.5f : thickness;
-            arms[(int)Direction.Up] = Shapes.Box(transform, new Vector3(0, height + (GridMath.LevelHeight - height) / 2f, 0), new Vector3(vThick, GridMath.LevelHeight - height, vThick), color, "Arm Up");
-            arms[(int)Direction.Down] = Shapes.Box(transform, new Vector3(0, height / 2f, 0), new Vector3(vThick, height, vThick), color, "Arm Down");
+            arms[(int)Direction.Up] = Shapes.Box(transform, new Vector3(0, height + (GridMath.LevelHeight - height) / 2f, 0), new Vector3(thickness, GridMath.LevelHeight - height, thickness), color, "Arm Up");
+            arms[(int)Direction.Down] = Shapes.Box(transform, new Vector3(0, height / 2f, 0), new Vector3(thickness, height, thickness), color, "Arm Down");
         }
 
         private readonly Transform[] markers = new Transform[6];
