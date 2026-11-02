@@ -151,6 +151,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Nucleaire.Game::Nucleaire.Game.GameBootstrap
   database: {fileID: 11400000, guid: d0a872838a7eff616b4d5c24e004083a, type: 2}
   settings: {fileID: 11400000, guid: daaa57f616ae9a1679d8f88ff6a27003, type: 2}
+  tutorial: {fileID: 11400000, guid: 2eb0c84475085b547aa6bc10e90b9b8f, type: 2}
   uiDocument: {fileID: 1059833482}
   litMaterial: {fileID: 2100000, guid: 158d96515df81d62f886ce5ba3bbbf35, type: 2}
   unlitMaterial: {fileID: 2100000, guid: d2916dee59f63b99f98b34d33f1a3b13, type: 2}

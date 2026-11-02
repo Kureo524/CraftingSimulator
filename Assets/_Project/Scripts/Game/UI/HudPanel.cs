@@ -41,25 +41,52 @@ namespace Nucleaire.Game.UI
 
         // ---------------- Objectifs ----------------
 
+        private Label goalPercent, goalSteps;
+        private VisualElement goalFill, goalNext;
+        private int lastGoalDone = -1;
+
         private void BuildObjectives()
         {
             objectives.Clear();
             var header = Ui.El("row", objectives);
-            Ui.Text("Objectifs", "title grow", header);
+            Ui.Text("Objectif final", "title grow", header);
             var book = Ui.Button("Livre de recettes", () => ctx.OpenRecipeBook(), "btn btn--small", header);
             Tooltips.Register(book, "Livre de recettes (B)", "Toutes les façons d'obtenir chaque ressource, et ce qu'elle permet de fabriquer.");
 
+            var goal = ctx.Session.Goal;
+            if (goal != null)
+            {
+                var card = Ui.El("goal", objectives);
+                var name = Ui.El("row goal__name", card);
+                Ui.Swatch(Palette.Muted(goal.Goal.Color), name);
+                Ui.Text(goal.Goal.DisplayName, "bold grow", name);
+                name.RegisterCallback<ClickEvent>(_ => ctx.OpenRecipeBook(goal.Goal));
+
+                var numbers = Ui.El("row goal__numbers", card);
+                goalPercent = Ui.Text("0 %", "number", numbers);
+                Ui.El("spacer", numbers);
+                goalSteps = Ui.Text("", "meta", numbers);
+                Ui.Gauge(card, out goalFill, thick: true);
+                Tooltips.Register(card, "Progression", "Part des étapes de l'arbre de fabrication de l'antimatière que tu as déjà obtenues (ressources intermédiaires et machines nécessaires).");
+
+                Ui.Text("Prochaines étapes possibles", "text-3", card).style.marginTop = 6;
+                goalNext = Ui.El("row recipe-flow", card);
+            }
+
+            var milestones = Ui.El("milestones", objectives);
+            Ui.Text("Jalons", "text-3", milestones).style.marginBottom = 4;
             foreach (var o in ctx.Session.Objectives.Objectives)
             {
-                var row = Ui.El("objective", objectives);
+                var row = Ui.El("objective", milestones);
                 var line = Ui.El("row", row);
                 Ui.Swatch(Palette.Muted(o.Target.Resource.Color), line);
-                Ui.Text(o.Title, "bold grow", line);
+                Ui.Text(o.Title, "grow", line);
+                var amount = Ui.Text("", "mono", line);
                 var badge = Ui.Badge("", null, line);
+                badge.style.marginLeft = 6;
                 Ui.Gauge(row, out var fill);
-                var amount = Ui.Text("", "meta", row);
                 row.RegisterCallback<ClickEvent>(_ => ctx.OpenRecipeBook(o.Target.Resource));
-                Tooltips.Register(row, () => (o.Title, $"{o.Description}\nClique pour voir la recette."));
+                Tooltips.Register(row, () => (o.Title, $"{o.Description}\n{Ui.Amount(o.Target.Resource, ctx.Session.Objectives.Progress(o))} / {Ui.Amount(o.Target.Resource, o.Target.Amount)}\nClique pour voir la recette."));
                 rows.Add((o, fill, amount, badge));
             }
             var hint = Ui.El("status-window objective-hint", objectives);
@@ -75,10 +102,28 @@ namespace Nucleaire.Game.UI
             {
                 bool done = tracker.IsCompleted(o);
                 bool current = tracker.Current == o;
-                Ui.SetGauge(fill, tracker.Ratio(o), done ? "success" : null);
-                amount.text = $"{Ui.Amount(o.Target.Resource, tracker.Progress(o))} / {Ui.Amount(o.Target.Resource, o.Target.Amount)}";
+                float ratio = tracker.Ratio(o);
+                Ui.SetGauge(fill, ratio, done ? "success" : null);
+                amount.text = $"{ratio * 100f:0} %";
                 Ui.SetBadge(badge, done ? "Réussi" : current ? "En cours" : "À venir", done ? "success" : current ? "accent" : null);
             }
+
+            var goal = ctx.Session.Goal;
+            if (goal != null)
+            {
+                goalPercent.text = $"{goal.Ratio * 100f:0} %";
+                goalSteps.text = $"{goal.Done} / {goal.Steps.Count} étapes de l'arbre";
+                Ui.SetGauge(goalFill, goal.Ratio, goal.Ratio >= 1f ? "success" : null);
+                if (goal.Done != lastGoalDone)
+                {
+                    lastGoalDone = goal.Done;
+                    goalNext.Clear();
+                    foreach (var r in goal.Frontier.Take(4))
+                        Ui.Chip(r, null, () => ctx.OpenRecipeBook(r), goalNext);
+                    if (goalNext.childCount == 0) Ui.System(goal.Ratio >= 1f ? "Arbre complet !" : "Termine les étapes en cours.", goalNext);
+                }
+            }
+
             var hint = objectives.Q("objective-hint");
             var cur = tracker.Current;
             hint.Q<Label>().text = cur == null
@@ -91,9 +136,7 @@ namespace Nucleaire.Game.UI
         private Label BuildControls(VisualElement parent, out VisualElement needle)
         {
             var compass = Ui.El("glass glass--light compass", parent);
-            needle = Ui.El("compass__needle", compass);
-            Ui.Text("N", "compass__label", needle);
-            Ui.El("compass__tick", needle);
+            needle = Ui.Text("N", "compass__label", compass);
             Tooltips.Register(compass, "Boussole", "Les faces des machines sont orientées Nord/Est/Sud/Ouest. Tourne la caméra avec Q/E (A/E en AZERTY).");
 
             speed = new SegmentedControl(new[] { "Pause", "×1", "×2", "×4" }, ctx.Runner.SpeedIndex);
@@ -148,7 +191,10 @@ namespace Nucleaire.Game.UI
         public void Update(float cameraYaw)
         {
             clock.text = $"{Ui.Seconds(ctx.World.CurrentTick, ctx.World.Settings.ticksPerSecond)}  ·  tick {ctx.World.CurrentTick}";
-            compassNeedle.style.rotate = new Rotate(new Angle(-cameraYaw, AngleUnit.Degree));
+            // Le « N » se place sur le bord de la boussole, dans la direction du nord à l'écran.
+            float a = -cameraYaw * Mathf.Deg2Rad;
+            compassNeedle.style.left = 19f - 7f + Mathf.Sin(a) * 11f;
+            compassNeedle.style.top = 19f - 8f - Mathf.Cos(a) * 11f;
             if (Time.frameCount % 15 == 0) { RefreshObjectives(); RefreshModeHint(); }
         }
     }

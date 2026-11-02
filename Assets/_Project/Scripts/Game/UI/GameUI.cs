@@ -10,8 +10,9 @@ namespace Nucleaire.Game.UI
         private readonly HudPanel hud;
         private readonly InspectorPanel inspector;
         private readonly WorldOverlay overlay;
+        private readonly TutorialPanel tutorial;
 
-        public GameUI(GameContext ctx, UIDocument document, Camera cam)
+        public GameUI(GameContext ctx, UIDocument document, Camera cam, Objectives.TutorialTracker tutorialTracker)
         {
             this.document = document;
             var root = document.rootVisualElement;
@@ -25,6 +26,7 @@ namespace Nucleaire.Game.UI
             new HotbarPanel(ctx, root);
             inspector = new InspectorPanel(ctx, root.Q("inspector"));
             Book = new RecipeBookPanel(ctx, root);
+            tutorial = new TutorialPanel(ctx, tutorialTracker, root);
         }
 
         public RecipeBookPanel Book { get; }
@@ -46,6 +48,7 @@ namespace Nucleaire.Game.UI
             hud.Update(cameraYaw);
             inspector.Update();
             overlay.Update();
+            tutorial.Update();
         }
     }
 }

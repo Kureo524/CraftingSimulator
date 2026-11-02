@@ -81,8 +81,15 @@ namespace Nucleaire.Simulation
             float factor = 1f;
             if (cost > 0)
             {
+                int required = Mathf.CeilToInt(cost * current.MinPowerRatio);
+                if (Energy == 0 || Energy < required)
+                {
+                    SetStatus(MachineStatus.NoPower, required > 0
+                        ? $"Exige {required} J/tick sans interruption (disponible : {Energy} J). Il faut plus de production ou une batterie."
+                        : $"Besoin de {cost} J/tick. Relie un câble à une face d'entrée.");
+                    return;
+                }
                 int got = ConsumeEnergy(cost);
-                if (got == 0) { SetStatus(MachineStatus.NoPower, $"Besoin de {cost} J/tick. Relie un câble à une face d'entrée."); return; }
                 factor = (float)got / cost;
             }
 

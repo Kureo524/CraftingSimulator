@@ -218,6 +218,8 @@ namespace Nucleaire.Game.UI
                 Ui.Chip(o.Resource, Ui.Amount(o.Resource, o.Amount), () => Navigate(o.Resource), flow, o.Resource == focus ? "ok" : null);
 
             if (!string.IsNullOrEmpty(e.Note)) Ui.System(e.Note, card).style.marginTop = 4;
+            if (e.Origin is ProcessRecipe minP && minP.MinPowerRatio > 0f)
+                Ui.System($"Exige {minP.MinPowerRatio:P0} de sa puissance à chaque tick : sinon, elle ne progresse pas du tout.", card).style.marginTop = 4;
             if (e.Source == RecipeSource.Process && e.Origin is ProcessRecipe p && p.Outputs.Count > 1)
                 Ui.System("Plusieurs produits : chacun doit être évacué, sinon la machine se bloque.", card).style.marginTop = 4;
         }

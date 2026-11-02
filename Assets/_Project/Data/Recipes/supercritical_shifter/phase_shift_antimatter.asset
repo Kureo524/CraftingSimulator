@@ -22,3 +22,4 @@ MonoBehaviour:
     amount: 10
   durationTicks: 100
   energyPerTick: 600
+  minPowerRatio: 1

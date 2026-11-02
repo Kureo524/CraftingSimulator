@@ -25,6 +25,9 @@ namespace Nucleaire
                 World.Place(placed[i], center + new Vector2Int(i * 2 - placed.Count + 1, -2));
 
             foreach (var s in db.StartingInventory.Where(s => s.IsValid)) Inventory.Add(s.Resource, s.Amount);
+
+            var finalGoal = Objectives.Objectives.LastOrDefault()?.Target.Resource;
+            if (finalGoal != null) Goal = new GoalProgress(World, Inventory, finalGoal);
             World.Log(EventSeverity.Info, "Bienvenue dans l'atelier. Ouvre le livre de recettes pour voir comment fabriquer l'antimatière.");
         }
 
@@ -33,5 +36,7 @@ namespace Nucleaire
         public PlayerActions Actions { get; }
         public WorkbenchService Workbench { get; }
         public ObjectiveTracker Objectives { get; }
+        /// <summary>Progression dans l'arbre de l'objectif final (le dernier objectif).</summary>
+        public GoalProgress Goal { get; }
     }
 }

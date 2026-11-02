@@ -19,7 +19,6 @@ namespace Nucleaire.Game
             context = ctx;
             world = ctx.World;
             BuildFloor(unlit);
-            BuildNorthMarker();
 
             hover = MakeFlatQuad("Hover", unlit, new Color(0.54f, 0.66f, 0.88f, 0.35f));
             hoverRenderer = hover.GetComponent<Renderer>();
@@ -139,18 +138,6 @@ namespace Nucleaire.Game
             // Socle sombre sous le sol pour donner de l'épaisseur à la plaque.
             var slab = Shapes.Box(transform, new Vector3(size.x / 2f, -0.26f, size.y / 2f), new Vector3(size.x + 0.2f, 0.5f, size.y + 0.2f), Palette.MachineBodyDark, "Slab");
             slab.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        }
-
-        private void BuildNorthMarker()
-        {
-            var size = world.Settings.gridSize;
-            var root = new GameObject("North").transform;
-            root.SetParent(transform, false);
-            root.localPosition = new Vector3(size.x / 2f, 0.02f, size.y + 0.7f);
-            var a = Shapes.Box(root, new Vector3(-0.18f, 0, 0), new Vector3(0.5f, 0.03f, 0.08f), Palette.Lavender, "Chevron L");
-            a.localRotation = Quaternion.Euler(0, -35f, 0);
-            var b = Shapes.Box(root, new Vector3(0.18f, 0, 0), new Vector3(0.5f, 0.03f, 0.08f), Palette.Lavender, "Chevron R");
-            b.localRotation = Quaternion.Euler(0, 35f, 0);
         }
 
         private Transform MakeFlatQuad(string name, Material unlit, Color c)

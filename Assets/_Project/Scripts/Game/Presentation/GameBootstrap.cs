@@ -15,6 +15,7 @@ namespace Nucleaire.Game
         [Header("Données")]
         [SerializeField] private RecipeDatabase database;
         [SerializeField] private SimulationSettings settings;
+        [SerializeField] private TutorialDef tutorial;
 
         [Header("Rendu")]
         [SerializeField] private UIDocument uiDocument;
@@ -47,7 +48,7 @@ namespace Nucleaire.Game
             worldView = new GameObject("World").AddComponent<WorldView>();
             worldView.Init(ctx, unlitMaterial);
 
-            ui = new GameUI(ctx, uiDocument, rig.Camera);
+            ui = new GameUI(ctx, uiDocument, rig.Camera, new Objectives.TutorialTracker(session, tutorial));
             rig.PointerOverUI = () => Mouse.current != null && ui.IsPointerOverUI(Mouse.current.position.ReadValue());
             rig.IsTyping = () => ui.IsTyping;
 
@@ -147,6 +148,10 @@ namespace Nucleaire.Game
                     break;
                 case "workbench":
                     ctx.Selection = w.FirstMachine<WorkbenchMachine>();
+                    break;
+                case "tutorial":
+                    ui.Book.Close();
+                    ctx.Selection = null;
                     break;
                 case "book":
                     ctx.Selection = null;

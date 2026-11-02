@@ -13,8 +13,7 @@ MonoBehaviour:
   m_Name: item_turbine
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.ResourceDef
   displayName: Turbine
-  description: "Convertit la vapeur en \xE9nergie et r\xE9cup\xE8re une partie de
-    l'eau."
+  description: "Convertit la vapeur du r\xE9acteur en \xE9nergie."
   kind: 0
   color: {r: 0.5803922, g: 0.6392157, b: 0.72156864, a: 1}
   isBaseResource: 0

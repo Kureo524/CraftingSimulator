@@ -20,7 +20,5 @@ MonoBehaviour:
   outputs:
   - resource: {fileID: 11400000, guid: 1c39f5ddf14790113bb580a4a3e22ae5, type: 2}
     amount: 1000
-  - resource: {fileID: 11400000, guid: baf9e81b3d74299078a59ff7c6f7f438, type: 2}
-    amount: 50
   durationTicks: 5
   energyPerTick: 0

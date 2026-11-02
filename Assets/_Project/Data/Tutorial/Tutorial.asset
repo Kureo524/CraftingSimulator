@@ -1,0 +1,97 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4afc1b988bfcff7c7b3f8bfd6197c2b1, type: 3}
+  m_Name: Tutorial
+  m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.TutorialDef
+  steps:
+  - title: Bienvenue dans l'atelier
+    body: "Ton but : fabriquer une pastille d'antimati\xE8re. Chaque ressource s'obtient
+      \xE0 partir d'autres ressources, avec des machines que tu fabriques et relies
+      entre elles. Le panneau \xAB Objectif final \xBB montre ta progression dans
+      l'arbre et les prochaines \xE9tapes possibles."
+    condition: 0
+    resource: {fileID: 0}
+    machine: {fileID: 0}
+    amount: 1
+  - title: Le livre de recettes
+    body: "Ouvre le livre de recettes (touche B, ou le bouton en haut \xE0 gauche).
+      Pour chaque ressource, il indique comment l'obtenir et \xE0 quoi elle sert.
+      Clique sur un ingr\xE9dient pour remonter l'arbre."
+    condition: 1
+    resource: {fileID: 0}
+    machine: {fileID: 0}
+    amount: 1
+  - title: Le vault
+    body: "Clique sur le vault (le grand bloc gris) et prends du minerai de fer et
+      du charbon. Ses ressources de base sont illimit\xE9es."
+    condition: 2
+    resource: {fileID: 11400000, guid: c7d4b147f2e7249c5838218055a46da9, type: 2}
+    machine: {fileID: 0}
+    amount: 1
+  - title: "L'\xE9nergie"
+    body: "Les machines consomment de l'\xE9nergie. Clique sur le panneau solaire
+      dans l'inventaire en bas, puis pose-le dans l'atelier (clic gauche). Clic droit
+      ou \xC9chap pour arr\xEAter de poser."
+    condition: 3
+    resource: {fileID: 0}
+    machine: {fileID: 11400000, guid: 681b14a83ac4035299db8e88780ae9b6, type: 2}
+    amount: 1
+  - title: "Le four \xE9lectrique"
+    body: "Pose le four \xE9lectrique coll\xE9 au panneau solaire, ou relie-les avec
+      des c\xE2bles. Le panneau pousse son \xE9nergie par toutes ses faces de sortie
+      (lavande) ; le four la re\xE7oit par ses faces d'entr\xE9e (bleu)."
+    condition: 4
+    resource: {fileID: 0}
+    machine: {fileID: 11400000, guid: 53faf76fb2c81fef0ad8739f29d7f341, type: 2}
+    amount: 1
+  - title: "Premi\xE8re fonte"
+    body: "S\xE9lectionne le four : dans l'onglet \xC9tat, d\xE9pose ton minerai
+      de fer. Quand le lingot est pr\xEAt, r\xE9cup\xE8re-le avec \xAB Prendre \xBB.
+      Le panneau indique toujours pourquoi une machine est bloqu\xE9e."
+    condition: 5
+    resource: {fileID: 11400000, guid: d0acb630fec9ae07ba389a482eac3de3, type: 2}
+    machine: {fileID: 0}
+    amount: 1
+  - title: Automatiser avec les faces
+    body: "Ouvre l'onglet Faces du vault : passe une face en Sortie et choisis une
+      ressource. Colle une machine contre cette face, ou relie-les avec des convoyeurs.
+      Chaque machine se configure de la m\xEAme fa\xE7on."
+    condition: 6
+    resource: {fileID: 0}
+    machine: {fileID: 0}
+    amount: 1
+  - title: "L'\xE9tabli"
+    body: "Toutes les machines, tuyaux et am\xE9liorations se fabriquent \xE0 l'\xE9tabli
+      (le bloc dor\xE9). Fabrique un circuit : il faut 2 lingots de cuivre et 1 lingot
+      de fer."
+    condition: 5
+    resource: {fileID: 11400000, guid: 1c37ecbf66463ce199e3cf5a464cd092, type: 2}
+    machine: {fileID: 0}
+    amount: 1
+  - title: "Les r\xE8gles de l'atelier"
+    body: "1) Une machine sans assez d'\xE9nergie ralentit ; le d\xE9phaseur, lui,
+      exige toute sa puissance. 2) Une sortie pleine arr\xEAte la machine : \xE9vacue
+      chaque sous-produit (l'\xE9lectrolyseur donne de l'hydrog\xE8ne ET de l'oxyg\xE8ne).
+      3) Le r\xE9acteur doit \xEAtre refroidi \xE0 l'eau : s'il en manque, ou si
+      la vapeur n'est pas \xE9vacu\xE9e, il surchauffe et perd son combustible."
+    condition: 0
+    resource: {fileID: 0}
+    machine: {fileID: 0}
+    amount: 1
+  - title: "\xC0 toi de jouer"
+    body: "Premier jalon : 4 lingots d'acier (fer + charbon au four). Ensuite, le
+      combustible fissile, puis l'antimati\xE8re. Si tu es perdu, clique sur une
+      \xAB prochaine \xE9tape \xBB du panneau Objectif."
+    condition: 0
+    resource: {fileID: 0}
+    machine: {fileID: 0}
+    amount: 1

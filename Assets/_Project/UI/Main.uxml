@@ -5,6 +5,7 @@
         <ui:VisualElement name="overlay" class="world-overlay" picking-mode="Ignore" />
         <ui:VisualElement name="top-left" class="hud-top-left" picking-mode="Ignore">
             <ui:VisualElement name="objectives" class="glass glass--light hud-objectives" />
+            <ui:VisualElement name="tutorial" class="glass hud-tutorial" />
         </ui:VisualElement>
         <ui:VisualElement name="top-right" class="hud-top-right" picking-mode="Ignore" />
         <ui:VisualElement name="toasts" class="toasts" picking-mode="Ignore" />
