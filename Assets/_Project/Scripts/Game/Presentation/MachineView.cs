@@ -31,17 +31,18 @@ namespace Nucleaire.Game
             accentRenderer = accent.GetComponent<Renderer>();
             topY = ComputeTop();
 
-            float plateOffset = IsFullCell(m.MachineDef) ? 0.5f : 0.43f;
+            float plateOffset = PlateOffset(m.MachineDef);
             foreach (var d in DirectionExtensions.Horizontal)
             {
                 var dir = GridMath.DirectionVector(d);
-                var plate = Shapes.Box(transform, dir * plateOffset + Vector3.up * 0.26f, Vector3.one, Palette.SideInput, "Side " + d);
+                // Bas de la carrosserie : les détails de façade restent visibles au-dessus.
+                var plate = Shapes.Box(transform, dir * plateOffset + Vector3.up * 0.19f, Vector3.one, Palette.SideInput, "Side " + d);
                 plate.localRotation = Quaternion.LookRotation(dir);
-                plate.localScale = new Vector3(0.34f, 0.2f, 0.04f);
+                plate.localScale = new Vector3(0.34f, 0.14f, 0.04f);
                 sidePlates[(int)d] = plate;
             }
             // Haut : petite plaque sur le dessus. Bas : liseré coloré à la base.
-            sidePlates[(int)Direction.Up] = Shapes.Box(transform, new Vector3(0.28f, topY + 0.015f, 0.28f), new Vector3(0.2f, 0.03f, 0.2f), Palette.SideInput, "Side Up");
+            sidePlates[(int)Direction.Up] = Shapes.Box(transform, new Vector3(0.28f, TopAt(0.28f, 0.28f) + 0.015f, 0.28f), new Vector3(0.2f, 0.03f, 0.2f), Palette.SideInput, "Side Up");
             sidePlates[(int)Direction.Down] = Shapes.Box(transform, new Vector3(0, 0.012f, 0), new Vector3(0.94f, 0.024f, 0.94f), Palette.SideInput, "Side Down");
 
             var col = gameObject.AddComponent<BoxCollider>();
@@ -109,76 +110,20 @@ namespace Nucleaire.Game
         /// <summary>Blocs de multi-bloc (contrôleurs, ports) : ils occupent toute la case, comme la paroi.</summary>
         public static bool IsFullCell(MachineDef def) => def.IsMultiblockController || def.Behaviour == MachineBehaviour.MultiblockPort;
 
-        /// <summary>Modèle 3D d'une machine (corps, plaque d'identité, avant), tourné selon son orientation.
-        /// Sert aussi à l'aperçu de pose.</summary>
+        /// <summary>Modèle 3D d'une machine (voir <see cref="MachineModels"/>), tourné selon son orientation.
+        /// Sert aussi à l'aperçu de pose et aux icônes.</summary>
         public static (Transform root, Transform accent, Transform rotor) BuildModel(Transform parent, MachineDef def, Direction facing)
         {
             var root = new GameObject("Model").transform;
             root.SetParent(parent, false);
             var dir = GridMath.DirectionVector(facing.IsVertical() ? Direction.North : facing);
             root.localRotation = Quaternion.LookRotation(dir);
-            var accentColor = Palette.Muted(def.Color);
-            Transform accent, rotor = null;
-            var transform = root;
-            var body = Palette.MachineBody;
-            if (def.IsMultiblockController || def.Behaviour == MachineBehaviour.MultiblockPort)
-            {
-                // Contrôleur : bloc plein avec un écran ; port : bloc plein avec des plaques sur chaque côté.
-                Shapes.Box(transform, new Vector3(0, 0.5f, 0), new Vector3(0.96f, 0.96f, 0.96f), body, "Body");
-                if (def.Behaviour == MachineBehaviour.MultiblockPort)
-                {
-                    accent = Shapes.Box(transform, new Vector3(0, 0.985f, 0), new Vector3(0.5f, 0.03f, 0.5f), accentColor, "Top");
-                    foreach (var dd in DirectionExtensions.Horizontal)
-                    {
-                        var dv = GridMath.DirectionVector(dd);
-                        var ring = Shapes.Box(transform, dv * 0.485f + Vector3.up * 0.5f, Vector3.one, Palette.MachineBodyDark, "Port " + dd);
-                        ring.localRotation = Quaternion.LookRotation(dv);
-                        ring.localScale = new Vector3(0.56f, 0.56f, 0.03f);
-                    }
-                }
-                else
-                {
-                    Shapes.Box(transform, new Vector3(0, 0.55f, 0.485f), new Vector3(0.66f, 0.46f, 0.03f), Palette.MachineBodyDark, "Screen frame");
-                    accent = Shapes.Box(transform, new Vector3(0, 0.55f, 0.5f), new Vector3(0.56f, 0.36f, 0.02f), accentColor, "Screen");
-                }
-                return (root, accent, rotor);
-            }
-            switch (def.Id)
-            {
-                case "solar_panel":
-                    Shapes.Box(transform, new Vector3(0, 0.08f, 0), new Vector3(0.84f, 0.16f, 0.84f), Palette.MachineBodyDark, "Base");
-                    accent = Shapes.Box(transform, new Vector3(0, 0.3f, 0), new Vector3(0.8f, 0.04f, 0.8f), accentColor, "Panel");
-                    accent.localRotation = Quaternion.Euler(-18f, 0, 0);
-                    break;
-                case "turbine":
-                case "electric_pump":
-                    Shapes.Box(transform, new Vector3(0, 0.08f, 0), new Vector3(0.86f, 0.16f, 0.86f), Palette.MachineBodyDark, "Base");
-                    Shapes.Cylinder(transform, new Vector3(0, 0.38f, 0), 0.7f, 0.46f, body, "Body");
-                    accent = Shapes.Cylinder(transform, new Vector3(0, 0.63f, 0), 0.5f, 0.04f, accentColor, "Accent");
-                    rotor = Shapes.Box(transform, new Vector3(0, 0.68f, 0), new Vector3(0.56f, 0.03f, 0.08f), Palette.Text2, "Rotor");
-                    break;
-                case "vault":
-                    Shapes.Box(transform, new Vector3(0, 0.36f, 0), new Vector3(0.92f, 0.72f, 0.92f), body, "Body");
-                    accent = Shapes.Box(transform, new Vector3(0, 0.73f, 0), new Vector3(0.7f, 0.03f, 0.7f), accentColor, "Lid");
-                    break;
-                case "workbench":
-                    Shapes.Box(transform, new Vector3(0, 0.22f, 0), new Vector3(0.9f, 0.44f, 0.7f), body, "Legs");
-                    accent = Shapes.Box(transform, new Vector3(0, 0.47f, 0), new Vector3(0.96f, 0.06f, 0.76f), accentColor, "Top");
-                    break;
-                default:
-                    Shapes.Box(transform, new Vector3(0, BodyHeight / 2f, 0), new Vector3(0.84f, BodyHeight, 0.84f), body, "Body");
-                    accent = Shapes.Box(transform, new Vector3(0, BodyHeight + 0.02f, -0.06f), new Vector3(0.6f, 0.04f, 0.48f), accentColor, "Accent");
-                    break;
-            }
-            // L'avant : un bandeau clair en façade et un repère sur le dessus, pour voir l'orientation.
-            if (def.Id is not ("vault" or "battery" or "sorter"))
-            {
-                Shapes.Box(transform, new Vector3(0, 0.44f, 0.425f), new Vector3(0.52f, 0.07f, 0.02f), Color.Lerp(accentColor, Palette.Text, 0.35f), "Front");
-                if (def.Id is not ("solar_panel" or "fission_reactor" or "turbine" or "electric_pump" or "supercritical_shifter"))
-                    Shapes.Box(transform, new Vector3(0, BodyHeight + 0.03f, 0.3f), new Vector3(0.22f, 0.04f, 0.1f), Palette.Text2, "Front mark");
-            }
-            return (root, accent, rotor);
+            var parts = MachineModels.Build(root, def);
+            return (root, parts.Accent, parts.Rotor);
         }
+
+        /// <summary>Distance du centre aux plaques de faces latérales (juste devant la carrosserie).</summary>
+        private static float PlateOffset(MachineDef def) => IsFullCell(def) ? 0.5f : def.Id == "vault" ? 0.47f : 0.43f;
 
         private void RefreshSides()
         {
@@ -191,11 +136,21 @@ namespace Nucleaire.Game
             }
         }
 
-        private float ComputeTop()
+        private float ComputeTop() => TopAt(0f, 0f);
+
+        /// <summary>Hauteur du modèle à la verticale d'un point (repère local de la case) : la plaque « dessus »
+        /// et le trieur du dessus s'y posent, au lieu de flotter au niveau d'une cheminée.</summary>
+        private float TopAt(float x, float z)
         {
+            var p = transform.TransformPoint(new Vector3(x, 0f, z));
             float top = 0f;
-            foreach (var r in GetComponentsInChildren<Renderer>()) top = Mathf.Max(top, r.bounds.max.y - transform.position.y);
-            return top;
+            foreach (var r in GetComponentsInChildren<Renderer>())
+            {
+                var b = r.bounds;
+                if (p.x < b.min.x || p.x > b.max.x || p.z < b.min.z || p.z > b.max.z) continue;
+                top = Mathf.Max(top, b.max.y - transform.position.y);
+            }
+            return top > 0f ? top : BodyHeight;
         }
 
         /// <summary>Repositionne la vue après un déplacement de la machine.</summary>

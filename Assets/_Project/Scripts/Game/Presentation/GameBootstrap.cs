@@ -44,9 +44,12 @@ namespace Nucleaire.Game
 
             BuildLight();
             rig = new GameObject("Camera Rig").AddComponent<IsoCameraRig>();
-            rig.Init(settings.gridSize);
+            rig.Init(session.World.Area);
+            session.World.AreaChanged += () => rig.SetBounds(session.World.Area);
             rig.Input = input;
             rig.gameObject.AddComponent<SkyBackdrop>().Init(rig.Camera, unlitMaterial);
+            ModelIcons.Init(database, rig.Camera);
+            ResourceIcon.ModelIcon = ModelIcons.For;
             var vault = session.World.FirstMachine<VaultMachine>();
             if (vault != null) rig.Focus(GridMath.CellCenter(vault.Position) + new Vector3(0.5f, 0, 1.5f));
 
@@ -62,7 +65,7 @@ namespace Nucleaire.Game
 
             var build = gameObject.AddComponent<BuildController>();
             build.Init(ctx, rig, worldView);
-            build.PointerOverUI = rig.PointerOverUI;
+            build.PointerOverUI = () => BuildController.DebugPointer == null && rig.PointerOverUI();
 
             gameObject.AddComponent<AutoScreenshot>().Scenario = DemoScenario;
         }
@@ -368,6 +371,55 @@ namespace Nucleaire.Game
                     yield return new WaitForSecondsRealtime(1f);
                     break;
                 }
+                case "multiblock-hover":
+                case "side-hover":
+                case "plan-wall":
+                {
+                    var inner = DemoScenario("multiblock");
+                    while (inner.MoveNext()) yield return inner.Current;
+                    var o = w.FirstMachine<VaultMachine>().Position + new Vector3Int(-6, 2, 0);
+                    Vector3 aim;
+                    if (name == "multiblock-hover") aim = GridMath.CellCenter(o + new Vector3Int(2, 2, 2), 1f);
+                    else
+                    {
+                        ctx.Session.Inventory.Add(R("item_structural_frame"), 64);
+                        ctx.BuildItem = R("item_structural_frame");
+                        // Face ouest du bloc (o.x, o.y + 3, étage 2) : la caméra la voit.
+                        aim = GridMath.CellCenter(o + new Vector3Int(0, 3, 2), 0.5f) - new Vector3(0.5f, 0f, 0f);
+                        if (name == "plan-wall")
+                            for (int dy = 0; dy < 4; dy++)
+                            for (int dz = 0; dz < 3; dz++)
+                                ctx.Plan.Add(o + new Vector3Int(-1, 1 + dy, dz), Direction.West);
+                    }
+                    BuildController.DebugPointer = rig.Camera.WorldToScreenPoint(aim);
+                    for (int i = 0; i < 8; i++) yield return null;
+                    yield return new WaitForSecondsRealtime(0.4f);
+                    break;
+                }
+                case "gallery":
+                {
+                    // Toutes les machines côte à côte (vérification des modèles).
+                    ctx.Session.Tutorial.Skip();
+                    ui.CloseAll();
+                    yield return null;
+                    w.Expand(); w.Expand();
+                    var area = w.Area;
+                    var defs = database.Machines.Where(m => m != null).ToList();
+                    for (int i = 0; i < defs.Count; i++)
+                    {
+                        var c = new Vector3Int(area.xMin + 2 + (i % 6) * 2, area.yMin + 2 + (i / 6) * 2, 0);
+                        if (w.At(c) != null) w.Remove(c);
+                        w.Place(defs[i], c, Direction.South);
+                    }
+                    rig.SetZoomForTests(7f);
+                    rig.Focus(GridMath.CellCenter(new Vector3Int(area.xMin + 7, area.yMin + 4, 0)));
+                    yield return new WaitForSecondsRealtime(1f);
+                    break;
+                }
+                case "gallery-back":
+                    rig.Rotate(1); rig.Rotate(1);
+                    yield return new WaitForSecondsRealtime(1.2f);
+                    break;
                 case "multiblock-ui":
                     ctx.Selection = w.Entities.OfType<StructureBlock>().First(b => b.Role == StructureRole.Frame);
                     yield return null;
@@ -446,6 +498,22 @@ namespace Nucleaire.Game
                     ui.CloseAll();
                     ctx.OpenWorkbench();
                     break;
+                case "tooltip-edge":
+                {
+                    // Survol de l'emplacement le plus à droite du catalogue : l'infobulle doit rester dans l'écran.
+                    ctx.Creative = true;
+                    ui.CloseAll();
+                    ui.ToggleInventory();
+                    yield return new WaitForSecondsRealtime(0.5f);
+                    var slots = uiDocument.rootVisualElement.Q("catalog").Query(className: "rslot").ToList();
+                    var right = slots.OrderByDescending(e => e.worldBound.xMax).ThenBy(e => e.worldBound.y).First();
+                    var c = right.worldBound.center;
+                    var sys = new Event { type = EventType.MouseMove, mousePosition = c };
+                    using (var enter = PointerEnterEvent.GetPooled(sys)) { enter.target = right; right.SendEvent(enter); }
+                    using (var move = PointerMoveEvent.GetPooled(sys)) { move.target = right; right.SendEvent(move); }
+                    yield return new WaitForSecondsRealtime(0.8f);
+                    break;
+                }
                 case "inventory":
                     ui.CloseAll();
                     ui.ToggleInventory();

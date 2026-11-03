@@ -15,5 +15,5 @@ MonoBehaviour:
   displayName: "G\xE9n\xE9rateur \xE0 charbon"
   description: "Br\xFBle du charbon pour produire de l'\xE9nergie."
   kind: 0
-  color: {r: 0.21568628, g: 0.25490198, b: 0.31764707, a: 1}
+  color: {r: 0.6039216, g: 0.20392157, b: 0.07058824, a: 1}
   isBaseResource: 0

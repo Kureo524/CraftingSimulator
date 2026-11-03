@@ -20,6 +20,8 @@ namespace Nucleaire.Tests
         {
             Db = RecipeDatabaseSync.FindDatabase();
             Settings = ScriptableObject.CreateInstance<SimulationSettings>();
+            // Les tests posent leurs machines près de l'origine : atelier entièrement agrandi d'emblée.
+            Settings.startSize = Settings.gridSize.x;
             Session = new GameSession(Db, Settings);
         }
 

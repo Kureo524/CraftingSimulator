@@ -13,13 +13,13 @@ namespace Nucleaire.Simulation
         Multiblock Structure { get; }
     }
 
-    /// <summary>Forme d'un multi-bloc : une boîte creuse (de 3×3×3 à 7×7×4) dont la paroi est faite de cadres structurels.
+    /// <summary>Forme d'un multi-bloc : une boîte creuse (de 3×3×3 à 7×7×9) dont la paroi est faite de cadres structurels.
     /// Le verre (décoratif) peut remplacer un cadre partout sauf sur les arêtes ; les ports (au moins un) et le contrôleur
     /// (un seul) peuvent remplacer n'importe quel cadre de la paroi. L'intérieur est vide ou contient les composants du type.
     /// La structure se revérifie dès que l'atelier change.</summary>
     public sealed class Multiblock
     {
-        public const int MinSize = 3, MaxSize = 7, MaxHeight = 4;
+        public const int MinSize = 3, MaxSize = 7, MaxHeight = 9;
 
         private readonly Machine controller;
         private readonly Dictionary<StructureRole, int> components = new();

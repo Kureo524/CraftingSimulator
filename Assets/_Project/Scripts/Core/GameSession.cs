@@ -47,6 +47,7 @@ namespace Nucleaire
         {
             BoardWasReset = true;
             World.Clear();
+            World.ResetArea();
             World.ResetProduction();
             Inventory.Clear();
             Objectives.Reset();

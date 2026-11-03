@@ -17,3 +17,4 @@ MonoBehaviour:
   kind: 2
   color: {r: 0.61960787, g: 0.8392157, b: 0.3529412, a: 1}
   isBaseResource: 0
+  symbol: "UF\u2086"

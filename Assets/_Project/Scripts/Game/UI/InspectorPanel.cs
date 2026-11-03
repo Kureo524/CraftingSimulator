@@ -562,7 +562,7 @@ namespace Nucleaire.Game.UI
             Ui.Text(Effects(m), "text-2 wrap", comp).style.marginTop = 6;
 
             var rules = Ui.Section("Comment le construire", content);
-            Ui.Text("• Une boîte creuse de 3×3×3 à 7×7×4.", "text-2 wrap", rules);
+            Ui.Text("• Une boîte creuse de 3×3×3 à 7×7×9.", "text-2 wrap", rules);
             Ui.Text("• La paroi : des cadres structurels. Le verre (décoratif) peut en remplacer partout sauf sur les arêtes. Les ports (au moins un) et ce contrôleur (un seul) peuvent remplacer n'importe quel cadre.", "text-2 wrap", rules);
             Ui.Text("• L'intérieur : vide, ou les composants ci-dessus. Plus il y en a, plus la machine produit… et plus elle consomme.", "text-2 wrap", rules);
             Ui.Text("• Les ports font entrer et sortir : règle leurs faces (entrée / sortie) comme celles d'une machine. Les cubes lavande dans l'atelier montrent les blocs de paroi qui manquent.", "text-2 wrap", rules);

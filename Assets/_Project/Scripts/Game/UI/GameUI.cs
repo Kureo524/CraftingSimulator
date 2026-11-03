@@ -47,6 +47,7 @@ namespace Nucleaire.Game.UI
             cablePicker = new CablePicker(ctx, root);
             new ModePanels(ctx, root);
             new CreativeToggle(ctx, root);
+            new WorkshopSizePanel(ctx, root);
             configure = new ConfigureOverlay(ctx, root, cam);
             levelTag = new LevelTag(ctx, root, cam);
             ctx.Deletion.Changed += () => { if (ctx.Deletion.Active) CloseAll(); };

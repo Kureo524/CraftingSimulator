@@ -20,6 +20,7 @@ namespace Nucleaire.Simulation
             Db = db ? db : throw new ArgumentNullException(nameof(db));
             Settings = settings ? settings : throw new ArgumentNullException(nameof(settings));
             Logistics = new LogisticsSystem(this);
+            UpdateArea();
         }
 
         public RecipeDatabase Db { get; }
@@ -46,7 +47,57 @@ namespace Nucleaire.Simulation
 
         // ---------------- Grille ----------------
 
-        public bool InBounds(Vector3Int p) => p.x >= 0 && p.y >= 0 && p.z >= 0 && p.x < Settings.gridSize.x && p.y < Settings.gridSize.y && p.z < Settings.levels;
+        /// <summary>Partie constructible de l'atelier (centrée dans <see cref="SimulationSettings.gridSize"/>) :
+        /// elle grandit à chaque agrandissement, les coordonnées des entités ne bougent jamais.</summary>
+        public RectInt Area { get; private set; }
+        /// <summary>Nombre d'agrandissements déjà faits.</summary>
+        public int Expansions { get; private set; }
+        public int MaxExpansions
+        {
+            get
+            {
+                int max = Mathf.Min(Settings.gridSize.x, Settings.gridSize.y);
+                int start = Mathf.Min(Settings.startSize, max);
+                return Mathf.CeilToInt((max - start) / (2f * Settings.expansionStep));
+            }
+        }
+        public bool CanExpand => Expansions < MaxExpansions;
+        public event Action AreaChanged;
+
+        /// <summary>Coût du prochain agrandissement (le n-ième coûte n fois le coût de base).</summary>
+        public IEnumerable<ResourceStack> NextExpansionCost()
+        {
+            int k = Expansions + 1;
+            foreach (var s in Settings.expansionCost)
+                if (s.IsValid) yield return new ResourceStack(s.Resource, s.Amount * k);
+        }
+
+        /// <summary>Agrandit l'atelier d'un cran (sans payer : voir <see cref="Crafting.PlayerActions.TryExpandWorkshop"/>).</summary>
+        public bool Expand()
+        {
+            if (!CanExpand) return false;
+            Expansions++;
+            UpdateArea();
+            return true;
+        }
+
+        /// <summary>Revient à la taille de départ (l'atelier doit être vide hors de cette zone).</summary>
+        public void ResetArea()
+        {
+            Expansions = 0;
+            UpdateArea();
+        }
+
+        private void UpdateArea()
+        {
+            var g = Settings.gridSize;
+            int side = Mathf.Min(Settings.startSize + 2 * Settings.expansionStep * Expansions, Mathf.Max(g.x, g.y));
+            int w = Mathf.Min(side, g.x), h = Mathf.Min(side, g.y);
+            Area = new RectInt((g.x - w) / 2, (g.y - h) / 2, w, h);
+            AreaChanged?.Invoke();
+        }
+
+        public bool InBounds(Vector3Int p) => p.x >= Area.xMin && p.y >= Area.yMin && p.z >= 0 && p.x < Area.xMax && p.y < Area.yMax && p.z < Settings.levels;
         public IGridEntity At(Vector3Int p) => grid.TryGetValue(p, out var e) ? e : null;
         public bool IsFree(Vector3Int p) => InBounds(p) && !grid.ContainsKey(p);
 

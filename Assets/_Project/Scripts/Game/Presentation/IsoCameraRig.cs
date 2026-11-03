@@ -11,7 +11,7 @@ namespace Nucleaire.Game
     {
         [SerializeField] private float pitch = 32f;
         [SerializeField] private float distance = 40f;
-        [SerializeField] private float minZoom = 3.5f, maxZoom = 16f;
+        [SerializeField] private float minZoom = 3.5f, maxZoom = 26f;
         [SerializeField] private float panSpeed = 1.1f;   // en « tailles d'écran » par seconde
         [SerializeField] private float smoothing = 12f;
         [Tooltip("Degrés de rotation par unité de défilement horizontal.")]
@@ -25,7 +25,7 @@ namespace Nucleaire.Game
         private Vector3 target, smoothTarget;
         private float zoom = 7.5f, smoothZoom = 7.5f;
         private float yaw = 45f, smoothYaw = 45f;
-        private Vector2 bounds;
+        private Rect bounds;
 
         public Camera Camera { get; private set; }
         public GameInput Input { get; set; }
@@ -41,10 +41,18 @@ namespace Nucleaire.Game
         public float Yaw => smoothYaw;
         public event Action Rotated;
 
-        public void Init(Vector2Int gridSize)
+        /// <summary>Zone où le point visé peut aller (l'atelier constructible, avec une petite marge).</summary>
+        public void SetBounds(RectInt area)
         {
-            bounds = gridSize;
-            target = smoothTarget = new Vector3(gridSize.x / 2f, 0f, gridSize.y / 2f - 2f);
+            bounds = new Rect(area.xMin - 2f, area.yMin - 2f, area.width + 4f, area.height + 4f);
+            target.x = Mathf.Clamp(target.x, bounds.xMin, bounds.xMax);
+            target.z = Mathf.Clamp(target.z, bounds.yMin, bounds.yMax);
+        }
+
+        public void Init(RectInt area)
+        {
+            SetBounds(area);
+            target = smoothTarget = new Vector3(area.center.x, 0f, area.center.y - 2f);
 
             Camera = GetComponentInChildren<Camera>();
             if (Camera == null)
@@ -110,8 +118,8 @@ namespace Nucleaire.Game
             var right = Quaternion.Euler(0, yaw, 0) * Vector3.right;
             var forward = Quaternion.Euler(0, yaw, 0) * Vector3.forward;
             target += right * screenMove.x + forward * screenMove.y / Mathf.Sin(pitch * Mathf.Deg2Rad) * 0.5f;
-            target.x = Mathf.Clamp(target.x, 0f, bounds.x);
-            target.z = Mathf.Clamp(target.z, 0f, bounds.y);
+            target.x = Mathf.Clamp(target.x, bounds.xMin, bounds.xMax);
+            target.z = Mathf.Clamp(target.z, bounds.yMin, bounds.yMax);
         }
 
         /// <summary>R : aller au quart de tour suivant (45°, 135°, 225°, 315°), même après une rotation libre.</summary>

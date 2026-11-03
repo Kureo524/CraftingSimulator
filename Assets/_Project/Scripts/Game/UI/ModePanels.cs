@@ -39,7 +39,7 @@ namespace Nucleaire.Game.UI
             var item = ctx.BuildItem;
             int need = p.ValidCount, have = p.Available, ignored = p.Cells.Count - need;
             var head = Ui.El("row mode-panel__head", plan);
-            Ui.Text($"Pose multiple · étage {p.Layer + 1}", "bold grow", head);
+            Ui.Text($"Pose multiple · {p.PlaneLabel}", "bold grow", head);
             Ui.Text($"{p.Cells.Count} case(s)", "meta", head);
 
             var line = Ui.El("row mode-panel__line", plan);

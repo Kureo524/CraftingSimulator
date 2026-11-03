@@ -21,6 +21,22 @@ namespace Nucleaire.Tests
         }
 
         [Test]
+        public void FissionReactor_7x7x9_FillsTheWholeHeight_AndForms()
+        {
+            Assert.AreEqual(9, Settings.levels);
+            var c = BuildMultiblock<FissionReactor>("fission_reactor", O, new Vector3Int(7, 7, 9), "fuel_assembly", 5 * 5 * 7);
+            Assert.IsTrue(c.Structure.Formed, c.Structure.Problem);
+            Assert.AreEqual(new Vector3Int(7, 7, 9), c.Structure.Size);
+            Assert.AreEqual(175, c.Structure.Count(StructureRole.FuelAssembly));
+        }
+
+        [Test]
+        public void TallerThan9_IsImpossible_TheWorkshopStopsAt9Levels()
+        {
+            Assert.IsFalse(World.InBounds(new Vector3Int(3, 3, 9)));
+        }
+
+        [Test]
         public void CompleteBox_IsFormed_AndLinksItsPorts()
         {
             var port = O + new Vector3Int(2, 1, 1);

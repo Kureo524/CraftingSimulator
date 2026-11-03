@@ -13,7 +13,17 @@ MonoBehaviour:
   m_Name: SimulationSettings
   m_EditorClassIdentifier: Nucleaire.Core::Nucleaire.Data.SimulationSettings
   ticksPerSecond: 10
-  gridSize: {x: 24, y: 24}
+  gridSize: {x: 39, y: 39}
+  startSize: 15
+  expansionStep: 2
+  expansionCost:
+  - resource: {fileID: 11400000, guid: d0acb630fec9ae07ba389a482eac3de3, type: 2}
+    amount: 12
+  - resource: {fileID: 11400000, guid: fc885915ae8c3b666932eda0d82e1b84, type: 2}
+    amount: 6
+  - resource: {fileID: 11400000, guid: 1c37ecbf66463ce199e3cf5a464cd092, type: 2}
+    amount: 2
+  levels: 9
   directItemTransfer: 2
   directFluidTransfer: 1000
   directEnergyTransfer: 50000

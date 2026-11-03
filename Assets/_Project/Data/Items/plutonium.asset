@@ -17,3 +17,4 @@ MonoBehaviour:
   kind: 2
   color: {r: 0.1764706, g: 0.83137256, b: 0.7490196, a: 1}
   isBaseResource: 0
+  symbol: "Pu"

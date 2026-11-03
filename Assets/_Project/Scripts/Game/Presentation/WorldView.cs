@@ -34,6 +34,7 @@ namespace Nucleaire.Game
             context = ctx;
             world = ctx.World;
             BuildFloor();
+            world.AreaChanged += BuildFloor;
 
             selection = MakeFrame("Selection", Palette.Accent);
             hoverFrame = MakeFrame("Hover", Palette.WithAlpha(Palette.Text, 1f));
@@ -55,6 +56,7 @@ namespace Nucleaire.Game
             world.EntityPlaced -= OnPlaced;
             world.EntityRemoved -= OnRemoved;
             world.EntityMoved -= OnMoved;
+            world.AreaChanged -= BuildFloor;
         }
 
         // ---------------- Entités ----------------
@@ -146,71 +148,135 @@ namespace Nucleaire.Game
         public void SetHoverEntity(IGridEntity e)
         {
             hoverFrame.gameObject.SetActive(e != null && e != context.Selection);
-            if (e != null) hoverFrame.position = GridMath.CellCenter(e.Position, 0.015f);
+            if (e != null) Fit(hoverFrame, e, 0.015f);
         }
 
         private void UpdateSelection()
         {
             var e = context.Selection;
             selection.gameObject.SetActive(e != null && IsVisible(e));
-            if (e != null) selection.position = GridMath.CellCenter(e.Position, 0.02f);
+            if (e != null) Fit(selection, e, 0.02f);
+        }
+
+        /// <summary>Cases couvertes par la surbrillance : le multi-bloc complet dont l'entité fait partie
+        /// (contrôleur, port, paroi ou intérieur), sinon sa seule case.</summary>
+        private (Vector3Int min, Vector3Int max) Footprint(IGridEntity e)
+        {
+            var p = e.Position;
+            foreach (var m in world.Machines)
+            {
+                if (m is not IMultiblockController c) continue;
+                var s = c.Structure;
+                s.Refresh();
+                if (!s.Formed) continue;
+                if (p.x >= s.Min.x && p.x <= s.Max.x && p.y >= s.Min.y && p.y <= s.Max.y && p.z >= s.Min.z && p.z <= s.Max.z)
+                    return (s.Min, s.Max);
+            }
+            return (p, p);
+        }
+
+        /// <summary>Cadre (et voile) au pied de l'entité, ou de tout son multi-bloc s'il est complet.</summary>
+        private void Fit(Transform frame, IGridEntity e, float lift)
+        {
+            var (lo, hi) = Footprint(e);
+            float w = hi.x - lo.x + 1, d = hi.y - lo.y + 1;
+            frame.position = new Vector3(lo.x + w / 2f, lo.z * GridMath.LevelHeight + lift, lo.y + d / 2f);
+            // Un multi-bloc couvre toute sa base : le cadre déborde autour pour rester visible.
+            bool multi = lo != hi;
+            float t = multi ? 0.07f : 0.05f, pad = multi ? 0.5f : 0.02f;
+            float lw = w + pad, ld = d + pad;
+            Edge(frame, 0, new Vector3(0, 0, ld / 2f), new Vector3(lw, 0.02f, t));
+            Edge(frame, 1, new Vector3(0, 0, -ld / 2f), new Vector3(lw, 0.02f, t));
+            Edge(frame, 2, new Vector3(lw / 2f, 0, 0), new Vector3(t, 0.02f, ld));
+            Edge(frame, 3, new Vector3(-lw / 2f, 0, 0), new Vector3(t, 0.02f, ld));
+            // Voile : seulement pour un multi-bloc, pour que toute sa base s'allume.
+            var fill = frame.GetChild(4);
+            fill.gameObject.SetActive(multi);
+            fill.localScale = new Vector3(lw, 1f, ld);
+        }
+
+        private static void Edge(Transform frame, int i, Vector3 pos, Vector3 scale)
+        {
+            var t = frame.GetChild(i);
+            t.localPosition = pos;
+            t.localScale = scale;
         }
 
         // ---------------- Décor ----------------
 
+        private GameObject floor, slab;
+        private Texture2D floorTex;
+
+        /// <summary>Sol : une dalle flottant dans le vide, de la taille de la zone constructible.
+        /// Elle est reconstruite (plus grande) à chaque agrandissement de l'atelier.</summary>
         private void BuildFloor()
         {
-            var size = world.Settings.gridSize;
+            var area = world.Area;
             const int cellPx = 32;
-            var tex = new Texture2D(size.x * cellPx, size.y * cellPx, TextureFormat.RGBA32, true)
+            if (floor == null)
+            {
+                floor = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                floor.name = "Floor";
+                Destroy(floor.GetComponent<Collider>());
+                floor.transform.SetParent(transform, false);
+                floor.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                var mat = new Material(UnlitMaterial);
+                mat.SetColor("_BaseColor", Color.white);
+                floor.GetComponent<MeshRenderer>().sharedMaterial = mat;
+                var col = floor.AddComponent<BoxCollider>();
+                col.size = new Vector3(1f, 1f, 0.01f);
+                floor.AddComponent<FloorMarker>();
+                slab = Shapes.Box(transform, Vector3.zero, Vector3.one, Palette.MachineBodyDark, "Slab").gameObject;
+                slab.GetComponent<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
+            }
+
+            if (floorTex != null) Destroy(floorTex);
+            floorTex = new Texture2D(area.width * cellPx, area.height * cellPx, TextureFormat.RGBA32, true)
             {
                 name = "FloorGrid", filterMode = FilterMode.Trilinear, anisoLevel = 4, wrapMode = TextureWrapMode.Clamp,
             };
-            var px = new Color32[tex.width * tex.height];
-            Color32 floor = Palette.Floor;
+            var px = new Color32[floorTex.width * floorTex.height];
+            Color32 ground = Palette.Floor;
             Color32 line = Color.Lerp(Palette.Floor, Color.white, Palette.FloorLine.a);
             Color32 edge = Color.Lerp(Palette.Floor, Color.white, Palette.FloorEdge.a);
-            for (int y = 0; y < tex.height; y++)
-            for (int x = 0; x < tex.width; x++)
+            for (int y = 0; y < floorTex.height; y++)
+            for (int x = 0; x < floorTex.width; x++)
             {
-                bool border = x < 2 || y < 2 || x >= tex.width - 2 || y >= tex.height - 2;
+                bool border = x < 2 || y < 2 || x >= floorTex.width - 2 || y >= floorTex.height - 2;
                 bool grid = x % cellPx == 0 || y % cellPx == 0;
-                px[y * tex.width + x] = border ? edge : grid ? line : floor;
+                px[y * floorTex.width + x] = border ? edge : grid ? line : ground;
             }
-            tex.SetPixels32(px);
-            tex.Apply(true);
+            floorTex.SetPixels32(px);
+            floorTex.Apply(true);
+            var m = floor.GetComponent<MeshRenderer>().sharedMaterial;
+            m.SetTexture("_BaseMap", floorTex);
+            m.mainTexture = floorTex;
 
-            var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            go.name = "Floor";
-            Destroy(go.GetComponent<Collider>());
-            go.transform.SetParent(transform, false);
-            go.transform.localPosition = new Vector3(size.x / 2f, 0f, size.y / 2f);
-            go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            go.transform.localScale = new Vector3(size.x, size.y, 1f);
-            var mat = new Material(UnlitMaterial);
-            mat.SetTexture("_BaseMap", tex);
-            mat.mainTexture = tex;
-            mat.SetColor("_BaseColor", Color.white);
-            go.GetComponent<MeshRenderer>().sharedMaterial = mat;
-            var col = go.AddComponent<BoxCollider>();
-            col.size = new Vector3(1f, 1f, 0.01f);
-            go.AddComponent<FloorMarker>();
-
-            var slab = Shapes.Box(transform, new Vector3(size.x / 2f, -0.26f, size.y / 2f), new Vector3(size.x + 0.2f, 0.5f, size.y + 0.2f), Palette.MachineBodyDark, "Slab");
-            slab.GetComponent<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
+            floor.transform.localPosition = new Vector3(area.center.x, 0f, area.center.y);
+            floor.transform.localScale = new Vector3(area.width, area.height, 1f);
+            slab.transform.localPosition = new Vector3(area.center.x, -0.26f, area.center.y);
+            slab.transform.localScale = new Vector3(area.width + 0.2f, 0.5f, area.height + 0.2f);
         }
 
         private Transform MakeFrame(string name, Color c)
         {
             var root = new GameObject(name).transform;
             root.SetParent(transform, false);
-            const float t = 0.05f, l = 1.02f;
-            foreach (var (pos, scale) in new[]
-                     {
-                         (new Vector3(0, 0, l / 2f), new Vector3(l, 0.02f, t)), (new Vector3(0, 0, -l / 2f), new Vector3(l, 0.02f, t)),
-                         (new Vector3(l / 2f, 0, 0), new Vector3(t, 0.02f, l)), (new Vector3(-l / 2f, 0, 0), new Vector3(t, 0.02f, l)),
-                     })
-                Shapes.Box(root, pos, scale, c, "Edge").GetComponent<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
+            for (int i = 0; i < 4; i++)
+                Shapes.Box(root, Vector3.zero, Vector3.one, c, "Edge").GetComponent<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
+            var fill = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            fill.name = "Fill";
+            Destroy(fill.GetComponent<Collider>());
+            fill.transform.SetParent(root, false);
+            var holder = new GameObject("FillPivot").transform;
+            holder.SetParent(root, false);
+            fill.transform.SetParent(holder, false);
+            fill.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            var r = fill.GetComponent<Renderer>();
+            r.sharedMaterial = TransparentMaterial;
+            r.shadowCastingMode = ShadowCastingMode.Off;
+            Shapes.SetColor(r, Palette.WithAlpha(c, 0.22f));
+            holder.gameObject.SetActive(false);
             return root;
         }
 

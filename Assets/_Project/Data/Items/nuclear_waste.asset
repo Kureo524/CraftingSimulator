@@ -17,3 +17,4 @@ MonoBehaviour:
   kind: 2
   color: {r: 0.39607844, g: 0.6392157, b: 0.050980393, a: 1}
   isBaseResource: 0
+  symbol: "NW"

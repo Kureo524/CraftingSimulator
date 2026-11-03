@@ -34,6 +34,7 @@ Ajouter une recette = créer un asset `ProcessRecipe` dans `Data/Recipes`, sans 
 | Annuler la pose | Clic droit ou Échap |
 | Démonter | Clic droit sur un élément (les liquides/gaz qu'il contient sont perdus) |
 | Livre de recettes | B |
+| Agrandir l'atelier | Bouton « Agrandir » en bas à gauche (15×15 au départ, jusqu'à 39×39 ; 9 étages) |
 | Pause / reprise | Espace (vitesses ×1, ×2, ×4 en haut à droite) |
 
 ## Vérification

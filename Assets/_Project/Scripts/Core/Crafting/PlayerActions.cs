@@ -35,6 +35,27 @@ namespace Nucleaire.Crafting
             return true;
         }
 
+        /// <summary>Agrandit l'atelier en payant le prochain palier depuis l'inventaire (gratuit si <paramref name="free"/>).</summary>
+        public bool TryExpandWorkshop(out string error, bool free = false)
+        {
+            error = null;
+            if (!world.CanExpand) { error = "L'atelier a déjà sa taille maximale."; return false; }
+            var cost = world.NextExpansionCost().ToList();
+            if (!free)
+            {
+                var lacking = cost.FirstOrDefault(c => !Inventory.Has(c));
+                if (lacking.IsValid)
+                {
+                    error = $"Il manque {lacking.Resource.Format(lacking.Amount - Inventory.Count(lacking.Resource))} pour agrandir l'atelier.";
+                    return false;
+                }
+                Inventory.RemoveAll(cost);
+            }
+            world.Expand();
+            world.Log(EventSeverity.Info, $"Atelier agrandi : {world.Area.width}×{world.Area.height}.");
+            return true;
+        }
+
         /// <summary>Démonte l'élément : il revient dans l'inventaire avec les solides qu'il contenait.
         /// Les liquides et gaz qu'il contenait sont perdus.</summary>
         /// <summary>Déplace une machine (contenu, faces et améliorations conservés).</summary>
