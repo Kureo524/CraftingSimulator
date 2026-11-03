@@ -23,6 +23,7 @@
         </ui:VisualElement>
         <ui:VisualElement name="creative-toggle" class="glass glass--light creative-toggle" />
         <ui:VisualElement name="view-filter" class="glass glass--light view-filter" />
+        <ui:VisualElement name="workshop-size" class="glass glass--light workshop-size" />
         <ui:VisualElement name="context-layer" class="layer-fill" picking-mode="Ignore" />
         <ui:VisualElement name="inventory-layer" class="modal-layer modal-layer--with-catalog hidden">
             <ui:VisualElement name="inventory-column" class="inventory-column">

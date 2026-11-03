@@ -17,3 +17,4 @@ MonoBehaviour:
   kind: 2
   color: {r: 0.65882355, g: 0.6039216, b: 0.22745098, a: 1}
   isBaseResource: 0
+  symbol: "SO\u2083"

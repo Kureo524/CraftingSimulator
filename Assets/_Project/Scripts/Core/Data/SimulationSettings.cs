@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Nucleaire.Data
@@ -7,9 +8,18 @@ namespace Nucleaire.Data
     public sealed class SimulationSettings : ScriptableObject
     {
         [Min(1)] public int ticksPerSecond = 10;
-        public Vector2Int gridSize = new(24, 24);
+
+        [Header("Atelier")]
+        [Tooltip("Taille maximale de l'atelier, une fois entièrement agrandi (cases).")]
+        public Vector2Int gridSize = new(39, 39);
+        [Tooltip("Côté de l'atelier en début de partie (centré dans la taille maximale).")]
+        [Min(3)] public int startSize = 15;
+        [Tooltip("Cases gagnées de chaque côté à chaque agrandissement.")]
+        [Min(1)] public int expansionStep = 2;
+        [Tooltip("Coût du premier agrandissement ; le n-ième coûte n fois plus.")]
+        public List<ResourceStack> expansionCost = new();
         [Tooltip("Nombre d'étages constructibles.")]
-        [Min(1)] public int levels = 4;
+        [Min(1)] public int levels = 9;
         [Tooltip("Contenance d'une bonbonne de l'inventaire (liquide ou gaz), en mB.")]
         [Min(100)] public int canisterCapacity = 4000;
 

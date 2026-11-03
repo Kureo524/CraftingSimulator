@@ -17,19 +17,50 @@ namespace Nucleaire.Game.UI
     {
         private ResourceDef resource;
 
+        /// <summary>Icône rendue depuis le modèle 3D (objets posables), fournie par la présentation ; null = dessin vectoriel.</summary>
+        public static Func<ResourceDef, Texture2D> ModelIcon;
+
+        private readonly Label symbolLabel;
+
         public ResourceIcon(ResourceDef r = null)
         {
             AddToClassList("ricon");
             pickingMode = PickingMode.Ignore;
             generateVisualContent += Draw;
+            symbolLabel = new Label { pickingMode = PickingMode.Ignore };
+            symbolLabel.AddToClassList("ricon__symbol");
+            Add(symbolLabel);
+            RegisterCallback<GeometryChangedEvent>(_ => FitSymbol());
             Resource = r;
+            Refresh();
+        }
+
+        private Texture2D modelTexture;
+
+        /// <summary>Image du modèle 3D ou formule chimique, selon la ressource.</summary>
+        private void Refresh()
+        {
+            modelTexture = resource != null && !canister ? ModelIcon?.Invoke(resource) : null;
+            style.backgroundImage = modelTexture != null ? new StyleBackground(modelTexture) : new StyleBackground(StyleKeyword.None);
+            string sym = resource != null && resource.Kind is ResourceKind.Fluid or ResourceKind.Gas ? resource.Symbol : null;
+            symbolLabel.text = sym ?? "";
+            symbolLabel.style.display = string.IsNullOrEmpty(sym) ? DisplayStyle.None : DisplayStyle.Flex;
+            FitSymbol();
+        }
+
+        private void FitSymbol()
+        {
+            float side = Mathf.Min(contentRect.width, contentRect.height);
+            if (float.IsNaN(side) || side < 4f) return;
+            int len = symbolLabel.text.Length;
+            symbolLabel.style.fontSize = side * (len <= 2 ? 0.46f : len <= 3 ? 0.38f : len <= 4 ? 0.3f : 0.23f);
         }
 
         /// <summary>Affiche la ressource dans un contenant (bonbonne de gaz, jerrican de liquide) rempli à <see cref="Level"/>.</summary>
         public bool Canister
         {
             get => canister;
-            set { if (canister == value) return; canister = value; MarkDirtyRepaint(); }
+            set { if (canister == value) return; canister = value; Refresh(); MarkDirtyRepaint(); }
         }
 
         /// <summary>Remplissage du contenant, de 0 à 1.</summary>
@@ -45,7 +76,7 @@ namespace Nucleaire.Game.UI
         public ResourceDef Resource
         {
             get => resource;
-            set { if (resource == value) return; resource = value; MarkDirtyRepaint(); }
+            set { if (resource == value) return; resource = value; Refresh(); MarkDirtyRepaint(); }
         }
 
         // ---------------- Forme ----------------
@@ -79,7 +110,7 @@ namespace Nucleaire.Game.UI
 
         private void Draw(MeshGenerationContext mgc)
         {
-            if (resource == null) return;
+            if (resource == null || modelTexture != null) return;
             var rect = contentRect;
             float side = Mathf.Min(rect.width, rect.height);
             if (side < 2f) return;
@@ -196,6 +227,15 @@ namespace Nucleaire.Game.UI
         // --- Gaz : plein cadre, translucide, volutes et bulles ---
         private void Gas(Painter2D p, Color c)
         {
+            if (!string.IsNullOrEmpty(resource.Symbol))
+            {
+                // Avec une formule : volutes discrètes, la formule (étiquette) se lit par-dessus.
+                RoundRect(p, 0.08f, 0.08f, 0.92f, 0.92f, 0.3f, A(c, 0.3f), A(Light(c, 0.4f), 0.85f), S(0.045f));
+                Circle(p, 0.36f, 0.62f, 0.2f, A(Light(c, 0.3f), 0.28f));
+                Circle(p, 0.64f, 0.42f, 0.22f, A(Light(c, 0.3f), 0.28f));
+                Circle(p, 0.76f, 0.24f, 0.04f, A(Color.white, 0.12f), A(Color.white, 0.7f), S(0.025f));
+                return;
+            }
             RoundRect(p, 0.08f, 0.08f, 0.92f, 0.92f, 0.3f, A(c, 0.22f), A(Light(c, 0.4f), 0.75f), S(0.04f));
             var puff = A(Light(c, 0.3f), 0.5f);
             Circle(p, 0.38f, 0.58f, 0.2f, puff);
@@ -376,11 +416,36 @@ namespace Nucleaire.Game.UI
             RoundRect(p, 0.78f, 0.3f, 0.92f, 0.7f, 0.04f, Shade(c, 0.75f), Outline, S(0.035f));
         }
 
+        /// <summary>Module d'amélioration : même plaquette, symbole propre à chaque effet.</summary>
         private void Upgrade(Painter2D p, Color c)
         {
             RoundRect(p, 0.16f, 0.16f, 0.84f, 0.84f, 0.18f, Shade(c, 0.45f), Light(c, 0.2f), S(0.045f));
-            Line(p, Light(c, 0.3f), S(0.08f), 0.32f, 0.5f, 0.5f, 0.34f, 0.68f, 0.5f);
-            Line(p, Light(c, 0.3f), S(0.08f), 0.32f, 0.7f, 0.5f, 0.54f, 0.68f, 0.7f);
+            var ink = Light(c, 0.3f);
+            string id = resource.Id;
+            if (id.Contains("energy"))
+                Poly(p, ink, Outline, S(0.025f), 0.56f, 0.24f, 0.32f, 0.54f, 0.48f, 0.54f, 0.42f, 0.78f, 0.68f, 0.44f, 0.52f, 0.44f);
+            else if (id.Contains("capacity"))
+            {
+                for (int i = 0; i < 3; i++)
+                    RoundRect(p, 0.3f, 0.28f + i * 0.15f, 0.7f, 0.38f + i * 0.15f, 0.03f, i == 2 ? ink : A(ink, 0.55f + i * 0.2f));
+            }
+            else if (id.Contains("heat"))
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    float x = 0.34f + i * 0.16f;
+                    p.BeginPath();
+                    p.MoveTo(P(x, 0.28f));
+                    p.BezierCurveTo(P(x + 0.07f, 0.38f), P(x - 0.07f, 0.48f), P(x, 0.56f));
+                    p.BezierCurveTo(P(x + 0.07f, 0.64f), P(x - 0.05f, 0.7f), P(x, 0.74f));
+                    p.strokeColor = ink; p.lineWidth = S(0.06f); p.Stroke();
+                }
+            }
+            else
+            {
+                Line(p, ink, S(0.08f), 0.32f, 0.5f, 0.5f, 0.34f, 0.68f, 0.5f);
+                Line(p, ink, S(0.08f), 0.32f, 0.7f, 0.5f, 0.54f, 0.68f, 0.7f);
+            }
         }
     }
 

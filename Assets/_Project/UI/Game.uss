@@ -213,7 +213,8 @@
 .sides-cell--vertical { border-color: rgba(165, 151, 192, 0.3); }
 
 /* ---------- Icônes de ressources (à la JEI) ---------- */
-.ricon { position: absolute; left: 3px; top: 3px; right: 3px; bottom: 3px; }
+.ricon { position: absolute; left: 3px; top: 3px; right: 3px; bottom: 3px; -unity-background-scale-mode: scale-to-fit; }
+.ricon__symbol { position: absolute; left: 0; top: 0; right: 0; bottom: 0; margin: 0; padding: 0; -unity-text-align: middle-center; -unity-font-definition: url("Fonts/IBMPlexMono-Regular.ttf"); -unity-font-style: bold; color: rgb(244, 247, 255); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9); -unity-text-outline-width: 0.4px; -unity-text-outline-color: rgba(6, 6, 10, 0.85); white-space: nowrap; }
 .rslot { width: 44px; height: 44px; margin: 0 4px 4px 0; border-radius: 8px; border-width: 1px; border-color: var(--border); border-top-color: var(--rim); border-left-color: var(--rim); background-color: rgba(10, 10, 15, 0.55); transition-property: border-color, background-color, scale; transition-duration: 0.1s; }
 .rslot:hover { border-color: var(--accent); background-color: var(--accent-soft); }
 .rslot__count { position: absolute; right: 3px; bottom: 0; padding: 0; margin: 0; font-size: 11px; -unity-font-definition: url("Fonts/BarlowCondensed-SemiBold.ttf"); color: var(--text); text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.9); }
@@ -406,3 +407,8 @@
 .creative-toggle { position: absolute; right: 12px; bottom: 34px; flex-direction: row; align-items: center; padding: 4px 4px 4px 12px; border-radius: 16px; }
 .creative-toggle__label { margin-right: 8px; }
 .delete-mode .creative-toggle { display: none; }
+.workshop-size { position: absolute; left: 12px; bottom: 62px; flex-direction: row; align-items: center; padding: 4px 4px 4px 12px; border-radius: 16px; }
+.workshop-size__label { margin-right: 6px; }
+.workshop-size__value { margin-right: 8px; font-size: 11px; color: var(--text-2); }
+.workshop-size__button { margin: 0; }
+.delete-mode .workshop-size { display: none; }

@@ -14,6 +14,8 @@ namespace Nucleaire.Data
         [SerializeField] private bool isBaseResource;
         [Tooltip("Forme de l'icône dans l'interface. Auto : déduite de l'identifiant (minerai, poudre, lingot…). Les liquides et gaz ont toujours leur rendu propre.")]
         [SerializeField] private IconShape iconShape = IconShape.Auto;
+        [Tooltip("Formule ou symbole affiché sur l'icône des liquides et des gaz (H₂, UF₆…), pour les distinguer d'un coup d'œil.")]
+        [SerializeField] private string symbol;
 
         /// <summary>Identifiant stable = nom de l'asset.</summary>
         public string Id => name;
@@ -23,6 +25,7 @@ namespace Nucleaire.Data
         public Color Color => color;
         public bool IsBaseResource => isBaseResource;
         public IconShape IconShape => iconShape;
+        public string Symbol => symbol;
 
         public string Format(int amount) => $"{amount}{kind.Unit()} {displayName}";
 

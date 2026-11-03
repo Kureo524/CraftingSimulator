@@ -42,36 +42,7 @@ namespace Nucleaire.Game.UI
         }
 
         /// <summary>Un emplacement de barre rapide (en bas de l'écran ou dans l'inventaire).</summary>
-        public static VisualElement BuildSlot(VisualElement parent, GameContext ctx, int i, bool inInventory)
-        {
-            var bar = ctx.Hotbar;
-            var r = bar[i];
-            int count = r != null ? ctx.Session.Inventory.Count(r) : 0;
-            var slot = Ui.El("slot hotbar-slot" + (inInventory ? " rslot rslot--inv" : ""), parent);
-            slot.name = (inInventory ? "inv-hotbar-" : "hotbar-slot-") + i;
-            slot.EnableInClassList("slot--active", !inInventory && bar.Selected == i);
-            slot.EnableInClassList("hotbar-slot--empty", r == null);
-            slot.EnableInClassList("hotbar-slot--out", r != null && count == 0);
-            Ui.Text(ctx.Input.Display(GameInput.HotbarSlot(i)), "hotbar-slot__key", slot).pickingMode = PickingMode.Ignore;
-            if (r != null)
-            {
-                slot.Add(new ResourceIcon(r));
-                Ui.Text(count.ToString(), "rslot__count", slot).pickingMode = PickingMode.Ignore;
-                IconSlot.Bind(slot, () => r, () => $"×{count} · " + (inInventory
-                    ? "glisse un autre objet ici pour le remplacer"
-                    : $"touche {ctx.Input.Display(GameInput.HotbarSlot(i))} ou clic : l'équiper pour le poser"));
-            }
-            else Tooltips.Register(slot, $"Emplacement {i + 1}", "Vide. Ouvre l'inventaire et glisses-y une machine ou un câble.");
-
-            // Ranger : lâcher un objet posable de l'inventaire sur l'emplacement.
-            ItemTransfer.RegisterTarget(slot, p => p.From == null && bar.CanHold(p.Resource), p =>
-            {
-                bar.Assign(i, p.Resource);
-                return p.Amount; // l'objet n'est plus « en main »
-            });
-            if (!inInventory) slot.RegisterCallback<ClickEvent>(_ => bar.Select(i));
-            else if (r != null) ItemTransfer.RegisterSource(slot, () => new Payload(r, ctx.Session.Inventory.Count(r), null, i), _ => false);
-            return slot;
-        }
+        public static VisualElement BuildSlot(VisualElement parent, GameContext ctx, int i, bool inInventory) =>
+            InventorySlotView.Build(parent, ctx, i, !inInventory);
     }
 }

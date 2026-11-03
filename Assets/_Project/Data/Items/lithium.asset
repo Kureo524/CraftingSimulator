@@ -18,3 +18,4 @@ MonoBehaviour:
   color: {r: 0.9500, g: 0.7000, b: 0.8000, a: 1}
   isBaseResource: 0
   iconShape: 0
+  symbol: "Li"

@@ -11,7 +11,8 @@ namespace Nucleaire.Game
     /// <list type="bullet">
     /// <item>Sans objet équipé : clic gauche = ouvrir une machine, clic droit = menu contextuel.</item>
     /// <item>Objet équipé : clic = poser contre la face visée ; R = tourner la machine.
-    /// Rester appuyé et changer de case = pose multiple : un aperçu sur l'étage de la première case,
+    /// Rester appuyé et changer de case = pose multiple : un aperçu dans le plan de la face du premier clic
+    /// (sol ou dessus d'un bloc : un étage ; côté d'un bloc : un mur vertical),
     /// à compléter (clic ou glisser sur une case vide) ou à retoucher (clic ou glisser sur une case prévue), puis à valider.</item>
     /// <item>Mode suppression (A) : clic ou glisser pour marquer / démarquer, puis valider.</item>
     /// </list></summary>
@@ -23,6 +24,7 @@ namespace Nucleaire.Game
         private BuildPreview preview;
 
         private Vector3Int? pressCell, lastPaint;
+        private Direction pressFace = Direction.Up;
         private Vector2 pressScreen;
         private const float DragThreshold = 8f;
         private bool dragging, erasing;
@@ -30,8 +32,13 @@ namespace Nucleaire.Game
         private bool deleteErasing;
 
         public Func<bool> PointerOverUI { get; set; } = () => false;
+        /// <summary>Position écran imposée (captures de vérification) à la place de la souris.</summary>
+        public static Vector2? DebugPointer;
+        private static Vector2 Pointer(Mouse m) => DebugPointer ?? m.position.ReadValue();
         public IGridEntity HoveredEntity { get; private set; }
         public Vector3Int? TargetCell { get; private set; }
+        /// <summary>Face par laquelle on pose sur <see cref="TargetCell"/> (de la case d'appui vers elle ; le sol donne Haut).</summary>
+        public Direction TargetFace { get; private set; } = Direction.Up;
         /// <summary>Trieur (plaque) sous le curseur.</summary>
         public FaceSorter HoveredSorter { get; private set; }
         /// <summary>Face de l'entité visée (machine : face touchée ; câble : côté le plus proche du point touché).</summary>
@@ -63,7 +70,8 @@ namespace Nucleaire.Game
             HoveredSorter = null;
             HoveredFace = null;
             TargetCell = null;
-            var ray = rig.Camera.ScreenPointToRay(mouse.position.ReadValue());
+            TargetFace = Direction.Up;
+            var ray = rig.Camera.ScreenPointToRay(Pointer(mouse));
             if (!overUI) Pick(ray);
 
             ctx.Hover = (HoveredEntity, HoveredFace, HoveredSorter);
@@ -122,9 +130,9 @@ namespace Nucleaire.Game
                 preview.SetHover(moving.MachineDef, moving.Facing, TargetCell, ok);
                 return;
             }
-            // Pendant une pose multiple, l'aperçu suit le curseur sur l'étage de la pose.
+            // Pendant une pose multiple, l'aperçu suit le curseur dans le plan de la pose.
             Vector3Int? cell = TargetCell;
-            if (ctx.Plan.Active || dragging) cell = LayerCell(rig.Camera.ScreenPointToRay(Mouse.current.position.ReadValue()), ctx.Plan.Active ? ctx.Plan.Layer : pressCell?.z ?? 0);
+            if (ctx.Plan.Active || dragging) cell = DragCell(rig.Camera.ScreenPointToRay(Pointer(Mouse.current)));
             if (cell is { } c && ctx.Plan.Contains(c)) cell = null;
             bool valid = cell is { } v && ctx.World.CanPlace(ctx.BuildPlaceable, v, out _) && ctx.Session.Inventory.Count(ctx.BuildItem) > 0;
             preview.SetHover(ctx.BuildItem != null && !PointerOverUI() ? ctx.BuildPlaceable : null, ctx.BuildFacing, cell, valid);
@@ -146,25 +154,26 @@ namespace Nucleaire.Game
             {
                 if (plan.Active)
                 {
-                    pressCell = LayerCell(ray, plan.Layer);
+                    pressCell = PlaneCell(ray, plan.Origin, plan.Face);
                     erasing = pressCell is { } p && plan.Contains(p);
                 }
                 else
                 {
                     pressCell = TargetCell;
+                    pressFace = TargetFace;
                     erasing = false;
                 }
                 lastPaint = pressCell;
-                pressScreen = mouse.position.ReadValue();
+                pressScreen = Pointer(mouse);
                 dragging = false;
             }
             if (pressCell is not { } start) return;
 
-            int layer = plan.Active ? plan.Layer : start.z;
+            int fixedAxis = BuildPlan.AxisOf(plan.Active ? plan.Face : pressFace);
             if (mouse.leftButton.isPressed)
             {
-                var cell = LayerCell(ray, layer);
-                bool moved = dragging || Vector2.Distance(mouse.position.ReadValue(), pressScreen) > DragThreshold;
+                var cell = DragCell(ray);
+                bool moved = dragging || Vector2.Distance(Pointer(mouse), pressScreen) > DragThreshold;
                 if (moved && cell is { } c && c != lastPaint)
                 {
                     if (!dragging)
@@ -172,7 +181,7 @@ namespace Nucleaire.Game
                         dragging = true;
                         Paint(start);
                     }
-                    foreach (var step in Line(lastPaint ?? start, c)) Paint(step);
+                    foreach (var step in Line(lastPaint ?? start, c, fixedAxis)) Paint(step);
                     lastPaint = c;
                 }
             }
@@ -183,7 +192,7 @@ namespace Nucleaire.Game
                 {
                     if (plan.Active)
                     {
-                        if (erasing) plan.Remove(start); else plan.Add(start);
+                        if (erasing) plan.Remove(start); else plan.Add(start, pressFace);
                     }
                     else PlaceOne(start);
                 }
@@ -194,7 +203,7 @@ namespace Nucleaire.Game
         private void Paint(Vector3Int c)
         {
             if (erasing) ctx.Plan.Remove(c);
-            else ctx.Plan.Add(c);
+            else ctx.Plan.Add(c, pressFace);
         }
 
         private void PlaceOne(Vector3Int cell)
@@ -204,19 +213,20 @@ namespace Nucleaire.Game
             if (ctx.Session.Inventory.Count(ctx.BuildItem) == 0) ctx.BuildItem = null;
         }
 
-        /// <summary>Cases entre deux cases d'un même étage (sans trou, en escalier).</summary>
-        private static IEnumerable<Vector3Int> Line(Vector3Int a, Vector3Int b)
+        /// <summary>Cases entre deux cases d'un même plan (sans trou, en escalier). <paramref name="fixedAxis"/> : l'axe fixé par le plan.</summary>
+        private static IEnumerable<Vector3Int> Line(Vector3Int a, Vector3Int b, int fixedAxis)
         {
-            int x = a.x, y = a.y;
-            int dx = Math.Abs(b.x - a.x), dy = Math.Abs(b.y - a.y);
-            int sx = Math.Sign(b.x - a.x), sy = Math.Sign(b.y - a.y);
-            int err = dx - dy;
-            while (x != b.x || y != b.y)
+            int u = fixedAxis == 0 ? 1 : 0, v = fixedAxis == 2 ? 1 : 2;
+            var p = a;
+            int du = Math.Abs(b[u] - a[u]), dv = Math.Abs(b[v] - a[v]);
+            int su = Math.Sign(b[u] - a[u]), sv = Math.Sign(b[v] - a[v]);
+            int err = du - dv;
+            while (p[u] != b[u] || p[v] != b[v])
             {
                 int e2 = 2 * err;
-                if (e2 > -dy) { err -= dy; x += sx; }
-                else { err += dx; y += sy; }
-                yield return new Vector3Int(x, y, b.z);
+                if (e2 > -dv) { err -= dv; p[u] += su; }
+                else { err += du; p[v] += sv; }
+                yield return p;
             }
         }
 
@@ -330,7 +340,7 @@ namespace Nucleaire.Game
                 {
                     HoveredFace = face;
                     var cell = HoveredEntity.Position + face.Offset();
-                    if (ctx.World.InBounds(cell)) TargetCell = cell;
+                    if (ctx.World.InBounds(cell)) { TargetCell = cell; TargetFace = face; }
                 }
                 if (HoveredEntity is Logistics.TransmitterSegment seg) HoveredFace = CableSideAt(seg, hit);
                 return;
@@ -354,15 +364,30 @@ namespace Nucleaire.Game
             return d;
         }
 
-        /// <summary>Case sous le curseur sur un étage donné (plan horizontal à la base de l'étage).</summary>
-        private Vector3Int? LayerCell(Ray ray, int z)
+        /// <summary>Case visée pendant une pose multiple : dans le plan de la pose en cours, sinon celui du premier clic.</summary>
+        private Vector3Int? DragCell(Ray ray)
         {
-            float h = z * GridMath.LevelHeight;
-            if (Mathf.Abs(ray.direction.y) < 1e-4f) return null;
-            float t = (h - ray.origin.y) / ray.direction.y;
+            if (ctx.Plan.Active) return PlaneCell(ray, ctx.Plan.Origin, ctx.Plan.Face);
+            return pressCell is { } start ? PlaneCell(ray, start, pressFace) : null;
+        }
+
+        /// <summary>Case sous le curseur dans le plan de pose passant par <paramref name="origin"/> :
+        /// le rayon coupe la face d'appui du premier clic (sol, dessus ou côté d'un bloc), prolongée.</summary>
+        private Vector3Int? PlaneCell(Ray ray, Vector3Int origin, Direction face)
+        {
+            int axis = BuildPlan.AxisOf(face);
+            var o = face.Offset();
+            // Face d'appui : côté « bas » de la case posée si on pose vers le +, côté « haut » sinon.
+            float bound = origin[axis] + (o.x + o.y + o.z > 0 ? 0 : 1);
+            // Axe de grille → axe monde (x → x, y → z, étage → y).
+            int worldAxis = axis switch { 0 => 0, 1 => 2, _ => 1 };
+            if (axis == 2) bound *= GridMath.LevelHeight;
+            float dir = ray.direction[worldAxis];
+            if (Mathf.Abs(dir) < 1e-4f) return null;
+            float t = (bound - ray.origin[worldAxis]) / dir;
             if (t <= 0f) return null;
-            var p = ray.origin + ray.direction * t;
-            var cell = new Vector3Int(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.z), z);
+            var cell = GridMath.WorldToCell(ray.origin + ray.direction * t);
+            cell[axis] = origin[axis];
             return ctx.World.InBounds(cell) ? cell : null;
         }
     }

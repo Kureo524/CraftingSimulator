@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Nucleaire.Data;
 using Nucleaire.Simulation;
 using UnityEngine;
@@ -22,20 +23,24 @@ namespace Nucleaire.Game
         public static void BuildModel(Transform t, StructureDef def)
         {
             var c = Palette.Muted(def.Color, 0.2f);
-            var frame = Color.Lerp(Palette.MachineBody, Palette.Text2, 0.18f);
             switch (def.Role)
             {
                 case StructureRole.Frame:
-                    Shapes.Box(t, new Vector3(0, 0.5f, 0), new Vector3(0.96f, 0.96f, 0.96f), Palette.MachineBody, "Body");
-                    Posts(t, frame, 0.14f);
+                    MachineModels.WallBlock(t, Palette.MachineBody, MachineModels.WallEdge);
+                    // Croisillon léger en relief sur les faces latérales et le dessus.
+                    foreach (var (pos, rot) in FaceCenters())
+                    {
+                        var plate = Shapes.Box(t, pos, new Vector3(0.5f, 0.5f, 0.02f), Color.Lerp(Palette.MachineBody, Palette.MachineBodyDark, 0.6f), "Panel");
+                        plate.localRotation = rot;
+                    }
                     break;
                 case StructureRole.Glass:
                 {
-                    var pane = Shapes.Box(t, new Vector3(0, 0.5f, 0), new Vector3(0.94f, 0.94f, 0.94f), Palette.WithAlpha(Color.Lerp(c, Color.white, 0.2f), 0.22f), "Glass");
+                    MachineModels.WallBlock(t, default, MachineModels.WallEdge, 0.07f, solid: false);
+                    var pane = Shapes.Box(t, new Vector3(0, 0.5f, 0), new Vector3(0.9f, 0.9f, 0.9f), Palette.WithAlpha(Color.Lerp(c, Color.white, 0.2f), 0.2f), "Glass");
                     var r = pane.GetComponent<Renderer>();
                     r.sharedMaterial = WorldView.TransparentMaterial;
                     r.shadowCastingMode = ShadowCastingMode.Off;
-                    Posts(t, frame, 0.08f);
                     break;
                 }
                 case StructureRole.FuelAssembly:
@@ -71,14 +76,15 @@ namespace Nucleaire.Game
             }
         }
 
-        private static void Posts(Transform t, Color color, float w)
+        /// <summary>Centres des faces visibles d'un bloc (4 côtés et dessus), juste devant la carrosserie de 0,98.</summary>
+        private static IEnumerable<(Vector3 pos, Quaternion rot)> FaceCenters()
         {
-            for (int i = 0; i < 4; i++)
-            {
-                var p = new Vector3(i % 2 == 0 ? -0.48f + w / 2 : 0.48f - w / 2, 0.5f, i < 2 ? -0.48f + w / 2 : 0.48f - w / 2);
-                Shapes.Box(t, p, new Vector3(w, 0.98f, w), color, "Post");
-            }
-            Shapes.Box(t, new Vector3(0, 0.98f - w / 4, 0), new Vector3(0.98f, w / 2, 0.98f), color, "Rim");
+            const float d = 0.5f;
+            yield return (new Vector3(0, 0.5f, d), Quaternion.identity);
+            yield return (new Vector3(0, 0.5f, -d), Quaternion.identity);
+            yield return (new Vector3(d, 0.5f, 0), Quaternion.Euler(0, 90f, 0));
+            yield return (new Vector3(-d, 0.5f, 0), Quaternion.Euler(0, 90f, 0));
+            yield return (new Vector3(0, 0.5f + d, 0), Quaternion.Euler(90f, 0, 0));
         }
     }
 }

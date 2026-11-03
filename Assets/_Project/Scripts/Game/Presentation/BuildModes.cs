@@ -7,8 +7,9 @@ using UnityEngine;
 
 namespace Nucleaire.Game
 {
-    /// <summary>Pose multiple : les cases prévues (toutes sur le même étage), affichées en aperçu,
-    /// posées seulement quand le joueur valide.</summary>
+    /// <summary>Pose multiple : les cases prévues (toutes dans un même plan), affichées en aperçu,
+    /// posées seulement quand le joueur valide. Le plan dépend de la face du premier clic :
+    /// le sol ou le dessus d'un bloc → un étage (X, Z) ; le côté d'un bloc → un mur vertical (X, Y) ou (Z, Y).</summary>
     public sealed class BuildPlan
     {
         private readonly GameContext ctx;
@@ -24,24 +25,43 @@ namespace Nucleaire.Game
         public event Action Changed;
         public IReadOnlyList<Vector3Int> Cells => cells;
         public bool Active => cells.Count > 0;
-        /// <summary>Étage de la pose multiple (celui de la première case).</summary>
-        public int Layer { get; private set; } = -1;
+        /// <summary>Face visée au premier clic (de la case d'appui vers la case posée) : sa normale fixe le plan.</summary>
+        public Direction Face { get; private set; } = Direction.Up;
+        /// <summary>Première case : le plan passe par elle.</summary>
+        public Vector3Int Origin { get; private set; }
+
+        /// <summary>Axe de grille fixé par le plan (0 = x, 1 = y, 2 = étage).</summary>
+        public static int AxisOf(Direction face) => face switch
+        {
+            Direction.East or Direction.West => 0,
+            Direction.North or Direction.South => 1,
+            _ => 2,
+        };
+
+        public bool InPlane(Vector3Int c) => !Active || c[AxisOf(Face)] == Origin[AxisOf(Face)];
 
         public bool Contains(Vector3Int c) => cells.Contains(c);
 
-        public bool Add(Vector3Int c)
+        /// <summary>Ajoute une case. La première fixe le plan, selon la face visée.</summary>
+        public bool Add(Vector3Int c, Direction face = Direction.Up)
         {
-            if (cells.Count == 0) Layer = c.z;
-            if (c.z != Layer || cells.Contains(c) || !ctx.World.InBounds(c)) return false;
+            if (cells.Count == 0) { Face = face; Origin = c; }
+            if (!InPlane(c) || cells.Contains(c) || !ctx.World.InBounds(c)) return false;
             cells.Add(c);
             Changed?.Invoke();
             return true;
         }
 
+        /// <summary>Libellé du plan, pour le panneau.</summary>
+        public string PlaneLabel => AxisOf(Face) switch
+        {
+            2 => $"étage {Origin.z + 1}",
+            _ => $"mur vertical {(AxisOf(Face) == 0 ? "nord-sud" : "est-ouest")}",
+        };
+
         public bool Remove(Vector3Int c)
         {
             if (!cells.Remove(c)) return false;
-            if (cells.Count == 0) Layer = -1;
             Changed?.Invoke();
             return true;
         }
@@ -50,7 +70,6 @@ namespace Nucleaire.Game
         {
             if (cells.Count == 0) return;
             cells.Clear();
-            Layer = -1;
             Changed?.Invoke();
         }
 

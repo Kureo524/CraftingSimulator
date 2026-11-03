@@ -1,61 +1,55 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using Nucleaire.Data;
 
 namespace Nucleaire.Game
 {
-    /// <summary>Barre rapide à 9 emplacements, comme dans Minecraft : on y range les objets posables de l'inventaire,
-    /// et seul l'emplacement « équipé » (touches 1 à 9 ou clic) se pose dans l'atelier.
-    /// Les nouveaux objets posables s'y rangent tout seuls s'il reste de la place.</summary>
+    /// <summary>Barre rapide : les 9 premiers emplacements de l'inventaire, comme dans Minecraft.
+    /// Seul l'emplacement « équipé » (touches 1 à 9 ou clic) se pose dans l'atelier ; le rééquiper vide les mains.</summary>
     public sealed class Hotbar
     {
-        public const int Size = 9;
+        public const int Size = Crafting.PlayerInventory.HotbarSize;
         private readonly GameContext ctx;
-        private readonly ResourceDef[] slots = new ResourceDef[Size];
         private bool syncing;
 
         public Hotbar(GameContext ctx)
         {
             this.ctx = ctx;
-            ctx.Session.Inventory.Changed += AutoFill;
-            ctx.Session.BoardReset += () => { Array.Clear(slots, 0, Size); Selected = -1; known.Clear(); AutoFill(); };
+            ctx.Session.Inventory.Changed += () =>
+            {
+                // La pile équipée a changé (épuisée, déplacée) : on rééquipe ce qu'il y a maintenant dans l'emplacement.
+                if (Selected >= 0 && this[Selected] != ctx.BuildItem) Equip(Selected);
+                Changed?.Invoke();
+            };
+            ctx.Session.BoardReset += () => { Selected = -1; Changed?.Invoke(); };
             ctx.BuildItemChanged += item =>
             {
                 if (syncing) return;
-                // Pose annulée (clic droit, Échap, plus d'objets) : plus rien d'équipé.
-                if (item == null || Selected < 0 || slots[Selected] != item) { Selected = -1; Changed?.Invoke(); }
+                // Pose annulée (clic droit, Échap) : plus rien d'équipé.
+                if (item == null || Selected < 0 || this[Selected] != item) { Selected = -1; Changed?.Invoke(); }
             };
-            AutoFill();
         }
 
         public event Action Changed;
         /// <summary>Emplacement équipé, ou -1 (mains vides : on sélectionne les machines).</summary>
         public int Selected { get; private set; } = -1;
-        public ResourceDef this[int i] => slots[i];
-        public int IndexOf(ResourceDef r) => Array.IndexOf(slots, r);
 
-        public bool CanHold(ResourceDef r) => r != null && (ctx.Db.PlaceableForItem(r) != null || r == ctx.Db.SorterItem);
-
-        /// <summary>Range un objet dans un emplacement (il quitte son ancien emplacement ; échange si occupé).</summary>
-        public bool Assign(int index, ResourceDef r)
+        public ResourceDef this[int i]
         {
-            if (index < 0 || index >= Size) return false;
-            if (r != null && !CanHold(r)) return false;
-            int old = r == null ? -1 : IndexOf(r);
-            if (old >= 0) slots[old] = slots[index];
-            slots[index] = r;
-            if (Selected == index || Selected == old) Equip(Selected);
-            Changed?.Invoke();
-            return true;
+            get
+            {
+                var s = ctx.Session.Inventory.Slots[i];
+                return s.IsEmpty ? null : s.Resource;
+            }
         }
+
+        public int IndexOf(ResourceDef r) => ctx.Session.Inventory.HotbarIndexOf(r);
 
         /// <summary>Équipe un emplacement ; le rééquiper le range (mains vides).</summary>
         public void Select(int index)
         {
             if (ctx.ToolModeActive) return;
             if (index == Selected) index = -1;
-            if (index >= 0 && slots[index] != null && !ctx.Require(PlayerPermission.Place)) return;
+            if (index >= 0 && this[index] != null && !ctx.Require(PlayerPermission.Place)) return;
             Equip(index);
             Changed?.Invoke();
         }
@@ -63,31 +57,11 @@ namespace Nucleaire.Game
         private void Equip(int index)
         {
             Selected = index;
-            var r = index >= 0 ? slots[index] : null;
+            var r = index >= 0 ? this[index] : null;
+            bool placeable = r != null && (ctx.Db.PlaceableForItem(r) != null || r == ctx.Db.SorterItem);
             syncing = true;
-            ctx.BuildItem = r != null && ctx.Session.Inventory.Count(r) > 0 ? r : null;
+            ctx.BuildItem = placeable ? r : null;
             syncing = false;
-        }
-
-        private readonly HashSet<ResourceDef> known = new();
-
-        /// <summary>Range dans la barre les objets posables <b>nouvellement</b> obtenus (pas ceux que le joueur en a retirés).</summary>
-        private void AutoFill()
-        {
-            bool changed = false;
-            var present = new HashSet<ResourceDef>();
-            foreach (var (r, _) in ctx.Session.Inventory.Items.ToList())
-            {
-                present.Add(r);
-                if (!known.Add(r)) continue;
-                if (!CanHold(r) || IndexOf(r) >= 0) continue;
-                int free = Array.IndexOf(slots, null);
-                if (free < 0) continue;
-                slots[free] = r;
-                changed = true;
-            }
-            known.IntersectWith(present); // un objet épuisé puis retrouvé se rangera de nouveau
-            if (changed) Changed?.Invoke();
         }
     }
 }

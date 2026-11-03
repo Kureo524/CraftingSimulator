@@ -1,4 +1,5 @@
 using System.Linq;
+using Nucleaire.Crafting;
 using Nucleaire.Data;
 using Nucleaire.Simulation;
 using UnityEngine.UIElements;
@@ -41,13 +42,8 @@ namespace Nucleaire.Game.UI
             hint = Ui.Text("", "system inventory__hint", panel);
 
             // Ce qu'on lâche sur l'inventaire : depuis une machine, il est récupéré ; depuis la barre rapide, il y est retiré.
-            ItemTransfer.RegisterTarget(panel, p => p.From != null || p.HotbarSlot >= 0, p =>
+            ItemTransfer.RegisterTarget(panel, p => p.From != null, p =>
             {
-                if (p.HotbarSlot >= 0)
-                {
-                    ctx.Hotbar.Assign(p.HotbarSlot, null);
-                    return p.Amount;
-                }
                 if (!ctx.Require(PlayerPermission.Take)) return 0;
                 int n = ctx.Session.Actions.Take(p.From, p.Resource, p.Amount);
                 if (n == 0) ctx.Notify($"Impossible de récupérer {p.Resource.DisplayName.ToLowerInvariant()}.");
@@ -56,7 +52,7 @@ namespace Nucleaire.Game.UI
 
             ctx.InventoryRequested += Toggle;
             ctx.Session.Inventory.Changed += () => { if (IsOpen) Rebuild(); };
-            ctx.Hotbar.Changed += () => { if (IsOpen) Rebuild(); };
+
             Ui.SetVisible(layer, false);
         }
 
@@ -83,6 +79,30 @@ namespace Nucleaire.Game.UI
             Closed?.Invoke();
         }
 
+
+        public void Rebuild()
+        {
+            layer.EnableInClassList("inventory-layer--machine", MachineMode);
+            hint.text = OpenMachine != null && OpenMachine is not VaultMachine
+                ? "[Glisse une pile sur la machine, ou clique-la puis clique la machine (clic droit sur la machine : une unité). Clic droit sur une pile : la moitié. Maj + clic : tout déposer.]"
+                : "[Comme dans Minecraft : glisse ou clique une pile pour la déplacer, clic droit pour en prendre la moitié, Maj + clic pour l'envoyer dans la barre rapide. Survol + 1–9 : échanger avec la barre. R / U : recette / usages.]";
+
+            var inv = ctx.Session.Inventory;
+            grid.Clear();
+            int f = filter.Selected;
+            int shown = 0;
+            for (int i = PlayerInventory.HotbarSize; i < inv.Slots.Count; i++)
+            {
+                var slot = inv.Slots[i];
+                // Avec un filtre : seulement les piles de cette catégorie.
+                if (f != 0 && (slot.IsEmpty || CategoryOf(slot.Resource) != f)) continue;
+                InventorySlotView.Build(grid, ctx, i, false);
+                shown++;
+            }
+            hotbarRow.Clear();
+            for (int i = 0; i < PlayerInventory.HotbarSize; i++) InventorySlotView.Build(hotbarRow, ctx, i, false);
+        }
+
         private int CategoryOf(ResourceDef r)
         {
             if (r.Kind is ResourceKind.Fluid or ResourceKind.Gas) return 4;
@@ -91,80 +111,6 @@ namespace Nucleaire.Game.UI
             if (p is TransmitterDef) return 2;
             if (ctx.Db.UpgradeForItem(r) != null) return 5;
             return 3;
-        }
-
-        public void Rebuild()
-        {
-            layer.EnableInClassList("inventory-layer--machine", MachineMode);
-            hint.text = OpenMachine != null && OpenMachine is not VaultMachine
-                ? "[Glisse un objet sur la machine, ou clique-le puis clique la machine. Clic droit sur une case : la moitié du stack ; clic droit sur la machine : une unité. Maj + clic : tout déposer.]"
-                : "[Range les machines et câbles dans la barre rapide : glisse-les dessus (Maj + clic : place libre). Survol + touche 1–9 : ranger à cet emplacement. R / U : recette / usages.]";
-
-            grid.Clear();
-            int f = filter.Selected;
-            var inv = ctx.Session.Inventory;
-            // Ce qui est rangé dans la barre rapide n'apparaît pas aussi dans la grille (comme dans Minecraft).
-            var items = inv.Items.Where(kv => ctx.Hotbar.IndexOf(kv.Key) < 0)
-                .Where(kv => f == 0 || CategoryOf(kv.Key) == f)
-                .OrderBy(kv => CategoryOf(kv.Key)).ThenBy(kv => kv.Key.Kind).ThenBy(kv => kv.Key.DisplayName).ToList();
-
-            int used = 0;
-            foreach (var (r, count) in items)
-            {
-                if (r.Kind == ResourceKind.Item) { ItemSlot(r, count); used++; continue; }
-                foreach (int amount in inv.Canisters(r)) { CanisterSlot(r, amount); used++; }
-            }
-
-            hotbarRow.Clear();
-            for (int i = 0; i < Hotbar.Size; i++) HotbarPanel.BuildSlot(hotbarRow, ctx, i, true);
-
-            int minRows = MachineMode ? 2 : 3;
-            int total = System.Math.Max(minRows * Columns, (used + Columns - 1) / Columns * Columns);
-            for (int i = used; i < total; i++) Ui.El("rslot rslot--inv rslot--empty", grid);
-        }
-
-        private void ItemSlot(ResourceDef r, int count)
-        {
-            var placeable = ctx.Db.PlaceableForItem(r);
-            var slot = IconSlot.Create(r, grid, count.ToString(), "rslot--inv",
-                () => $"×{count}" + (MachineMode ? " · glisse-le sur la machine" : placeable != null ? " · glisse-le dans la barre rapide" : ""));
-            ItemTransfer.RegisterSource(slot, () => new Payload(r, ctx.Session.Inventory.Count(r)), shift => Click(r, placeable, shift));
-        }
-
-        private void CanisterSlot(ResourceDef r, int amount)
-        {
-            int cap = ctx.Session.Inventory.CanisterCapacity;
-            var slot = Ui.El("rslot rslot--inv rslot--canister", grid);
-            var icon = new ResourceIcon(r) { Canister = true, Level = (float)amount / cap };
-            slot.Add(icon);
-            IconSlot.Bind(slot, () => r, () => $"{amount} / {cap} mB" + (r.Kind == ResourceKind.Gas ? " · bonbonne de gaz" : " · jerrican"));
-            ItemTransfer.RegisterSource(slot, () => new Payload(r, amount), shift => Click(r, null, shift, amount));
-        }
-
-        /// <summary>Clic simple sur une case. Renvoie faux pour « prendre en main » l'objet (écran machine).</summary>
-        private bool Click(ResourceDef r, PlaceableDef placeable, bool shift, int amount = int.MaxValue)
-        {
-            var m = OpenMachine;
-            if (m != null && m is not VaultMachine)
-            {
-                if (!shift) return false;
-                MachineDrop.Deposit(ctx, m, new Payload(r, System.Math.Min(amount, ctx.Session.Inventory.Count(r))));
-                return true;
-            }
-            if (placeable != null)
-            {
-                // Objet posable : on le prend en main pour le ranger dans la barre rapide (Maj + clic : premier emplacement libre).
-                if (!shift) return false;
-                var bar = ctx.Hotbar;
-                int free = -1;
-                for (int i = 0; i < Hotbar.Size && free < 0; i++) if (bar[i] == null) free = i;
-                if (bar.IndexOf(r) >= 0) ctx.Notify($"{r.DisplayName} est déjà dans la barre rapide.", EventSeverity.Info);
-                else if (free < 0) ctx.Notify("Barre rapide pleine : glisse l'objet sur un emplacement pour le remplacer.", EventSeverity.Info);
-                else bar.Assign(free, r);
-                return true;
-            }
-            ctx.OpenRecipeBook(r, 1);
-            return true;
         }
     }
 
@@ -182,7 +128,7 @@ namespace Nucleaire.Game.UI
                 return 0;
             }
             if (!ctx.Require(PlayerPermission.Deposit)) return 0;
-            int n = ctx.Session.Actions.Deposit(m, p.Resource, p.Amount);
+            int n = p.Slot >= 0 ? ctx.Session.Actions.DepositFromSlot(m, p.Slot, p.Amount) : ctx.Session.Actions.Deposit(m, p.Resource, p.Amount);
             if (n == 0) ctx.Notify($"{m.MachineDef.DisplayName} : pas d'emplacement libre pour {p.Resource.DisplayName.ToLowerInvariant()}.");
             return n;
         }
