@@ -56,8 +56,6 @@ namespace Nucleaire.Crafting
             return true;
         }
 
-        /// <summary>Démonte l'élément : il revient dans l'inventaire avec les solides qu'il contenait.
-        /// Les liquides et gaz qu'il contenait sont perdus.</summary>
         /// <summary>Déplace une machine (contenu, faces et améliorations conservés).</summary>
         public bool TryMove(Vector3Int from, Vector3Int to, out string error)
         {
@@ -66,6 +64,8 @@ namespace Nucleaire.Crafting
             return world.Move(from, to);
         }
 
+        /// <summary>Démonte l'élément : il revient dans l'inventaire avec les solides qu'il contenait.
+        /// Les liquides et gaz qu'il contenait sont perdus.</summary>
         public bool TryPickUp(Vector3Int pos, out string error)
         {
             if (!Gate.Check(PlayerPermission.PickUp, out error)) return false;

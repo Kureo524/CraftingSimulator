@@ -140,7 +140,7 @@ namespace Nucleaire.Tests
             }
         }
 
-        internal new T BuildMultiblock<T>(string id, Vector3Int min, Vector3Int size, string inside, int count) where T : Machine =>
+        internal T BuildMultiblock<T>(string id, Vector3Int min, Vector3Int size, string inside, int count) where T : Machine =>
             base.BuildMultiblock<T>(id, min, size, inside, count);
 
         private (long energy, long ticks, Dictionary<string, int> runs) Measure(ObjectiveDef o)

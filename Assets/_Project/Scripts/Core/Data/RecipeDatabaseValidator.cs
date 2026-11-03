@@ -52,7 +52,7 @@ namespace Nucleaire.Data
             foreach (var p in db.Machines.Cast<PlaceableDef>().Concat(db.Transmitters).Concat(db.Structures))
             {
                 if (p == null) { report.Errors.Add("Placeable nul dans la base."); continue; }
-                if (p is MachineDef { Behaviour: MachineBehaviour.Workbench }) report.Errors.Add($"{p.Id} : l'établi n'est plus une machine posable.");
+                if (p is MachineDef m && !System.Enum.IsDefined(typeof(MachineBehaviour), m.Behaviour)) report.Errors.Add($"{p.Id} : comportement de machine inconnu ({(int)m.Behaviour}).");
                 if (p.Item == null) report.Errors.Add($"{p.Id} n'a pas d'objet d'inventaire associé.");
             }
 
