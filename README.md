@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Kureo524/CraftingSimulator/releases/latest"><img alt="Release v1.0" src="https://img.shields.io/badge/release-v1.0-8aa8e0?style=flat-square&labelColor=16161e"></a>
+  <a href="https://github.com/Kureo524/CraftingSimulator/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/Kureo524/CraftingSimulator?style=flat-square&label=release&color=8aa8e0&labelColor=16161e"></a>
   <img alt="Unity 6.3 LTS" src="https://img.shields.io/badge/Unity-6000.3_LTS-8aa8e0?style=flat-square&logo=unity&logoColor=e8eefa&labelColor=16161e">
   <img alt="URP · UI Toolkit" src="https://img.shields.io/badge/URP-UI_Toolkit-a597c0?style=flat-square&labelColor=16161e">
   <img alt="Tests" src="https://img.shields.io/badge/tests_EditMode-106_au_vert-9ebd85?style=flat-square&labelColor=16161e">
