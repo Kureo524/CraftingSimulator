@@ -385,6 +385,25 @@ namespace Nucleaire.Game
                         yield return new WaitForSecondsRealtime(1f);
                     }
                     break;
+                case "reactor-hot":
+                {
+                    // Réacteur (après « multiblock ») qui brûle vite avec trop peu d'eau : l'alerte de surchauffe et sa cause.
+                    ctx.ContextTarget = null;
+                    ctx.Creative = false;
+                    var hot = w.FirstMachine<FissionReactor>();
+                    if (hot == null) break;
+                    hot.InsertManual(database.Energy, hot.EnergyCapacity);
+                    hot.InsertManual(R("fissile_fuel"), 4000);
+                    hot.InsertManual(R("water"), 1500);
+                    hot.SetBurnRate(hot.MaxBurnRate);
+                    ctx.Selection = hot;
+                    yield return null;
+                    uiDocument.rootVisualElement.Q("inspector").Q<SegmentedControl>()?.Select(1);
+                    while (hot.Heat < hot.Settings.meltdownHeat * 0.45f && !hot.IsScrammed) yield return null;
+                    if (!ctx.Runner.Paused) ctx.Runner.TogglePause();
+                    yield return new WaitForSecondsRealtime(0.6f);
+                    break;
+                }
                 case "cutaway":
                     ui.CloseAll();
                     ctx.Selection = null;
